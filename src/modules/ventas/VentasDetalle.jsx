@@ -44,6 +44,12 @@ export default function VentasDetalle() {
             <dt className="text-slate-400">Entrega comprometida</dt>
             <dd className="text-slate-700">{cotizacion.entregaSemanas} semanas</dd>
           </div>
+          {cotizacion.numeroSerie && (
+            <div>
+              <dt className="text-slate-400">Orden de fabricación</dt>
+              <dd className="text-slate-700">{cotizacion.numeroSerie}</dd>
+            </div>
+          )}
         </dl>
       </div>
     </div>
