@@ -128,7 +128,7 @@ export default function VentasDetalle() {
             <dd className="text-slate-700">
               {cotizacion.condicionPago === 'anticipo'
                 ? `Anticipo ${cotizacion.porcentajeAnticipo ?? ''}%`
-                : 'Crédito Fudeco (60-90 días)'}
+                : `Crédito Fudeco (${cotizacion.diasCredito ?? '60'} días)`}
             </dd>
           </div>
           <div>

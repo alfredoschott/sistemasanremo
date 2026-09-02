@@ -1,4 +1,4 @@
-import { Boxes, Factory, LayoutGrid, ShoppingCart, TrendingUp } from 'lucide-react'
+import { Boxes, Factory, LayoutGrid, ShoppingCart, TrendingUp, Wallet } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const links = [
@@ -7,6 +7,7 @@ const links = [
   { to: '/compras', label: 'Compras', icon: ShoppingCart },
   { to: '/produccion', label: 'Producción', icon: Factory },
   { to: '/almacen', label: 'Almacén', icon: Boxes },
+  { to: '/finanzas', label: 'Finanzas', icon: Wallet },
 ]
 
 export default function Sidebar({ mobileOpen = false, onCloseMobile }) {

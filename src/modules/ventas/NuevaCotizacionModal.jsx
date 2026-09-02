@@ -14,6 +14,7 @@ const initialForm = {
   monto: '',
   condicionPago: CONDICION_PAGO.ANTICIPO,
   porcentajeAnticipo: '30',
+  diasCredito: '60',
   entregaSemanas: '4',
 }
 
@@ -23,6 +24,7 @@ function formFromCotizacion(cotizacion) {
     monto: String(cotizacion.monto ?? ''),
     condicionPago: cotizacion.condicionPago ?? CONDICION_PAGO.ANTICIPO,
     porcentajeAnticipo: String(cotizacion.porcentajeAnticipo ?? '30'),
+    diasCredito: String(cotizacion.diasCredito ?? '60'),
     entregaSemanas: String(cotizacion.entregaSemanas ?? '4'),
   }
 }
@@ -47,6 +49,8 @@ function CotizacionForm({ onClose, cotizacion }) {
         condicionPago: form.condicionPago,
         porcentajeAnticipo:
           form.condicionPago === CONDICION_PAGO.ANTICIPO ? Number(form.porcentajeAnticipo) : null,
+        diasCredito:
+          form.condicionPago === CONDICION_PAGO.FUDECO ? Number(form.diasCredito) : null,
         entregaSemanas: Number(form.entregaSemanas),
       }
 
@@ -135,7 +139,7 @@ function CotizacionForm({ onClose, cotizacion }) {
               checked={form.condicionPago === CONDICION_PAGO.FUDECO}
               onChange={update('condicionPago')}
             />
-            Crédito Fudeco (60-90 días)
+            Crédito Fudeco
           </label>
         </div>
       </fieldset>
@@ -149,6 +153,19 @@ function CotizacionForm({ onClose, cotizacion }) {
             max="100"
             value={form.porcentajeAnticipo}
             onChange={update('porcentajeAnticipo')}
+            className={inputClass}
+          />
+        </label>
+      )}
+
+      {form.condicionPago === CONDICION_PAGO.FUDECO && (
+        <label className="text-sm font-medium text-slate-600">
+          Días de crédito
+          <input
+            type="number"
+            min="1"
+            value={form.diasCredito}
+            onChange={update('diasCredito')}
             className={inputClass}
           />
         </label>

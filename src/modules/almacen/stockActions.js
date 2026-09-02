@@ -29,7 +29,10 @@ export async function recibirOrdenCompra(oc) {
       })
     })
 
-    tx.update(doc(db, 'ordenesCompra', oc.id), { estado: 'recibida' })
+    tx.update(doc(db, 'ordenesCompra', oc.id), {
+      estado: 'recibida',
+      fechaRecibida: serverTimestamp(),
+    })
     return avisos
   })
 

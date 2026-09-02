@@ -90,6 +90,7 @@ export default function ComprasPage() {
             .join('; '),
       },
       { label: 'Plazo (días)', value: (oc) => oc.plazoEntregaDias },
+      { label: 'Monto total', value: (oc) => oc.montoTotal ?? '' },
       { label: 'Estado', value: (oc) => oc.estado },
     ])
   }
@@ -194,15 +195,16 @@ export default function ComprasPage() {
                 <th className="px-4 py-3">Proveedor</th>
                 <th className="px-4 py-3">Materiales</th>
                 <th className="px-4 py-3">Plazo</th>
+                <th className="px-4 py-3">Monto</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loadingOrdenes && <TableSkeleton rows={2} cols={5} />}
+              {loadingOrdenes && <TableSkeleton rows={2} cols={6} />}
               {!loadingOrdenes && ordenesFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <EmptyState
                       icon={PackageCheck}
                       title={search ? 'Sin resultados' : 'Sin órdenes de compra todavía'}
@@ -224,6 +226,9 @@ export default function ComprasPage() {
                     ))}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{oc.plazoEntregaDias} días</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {oc.montoTotal ? currency.format(oc.montoTotal) : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <span

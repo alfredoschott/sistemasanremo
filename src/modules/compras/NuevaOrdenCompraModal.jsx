@@ -21,6 +21,7 @@ function lineasFromOc(oc) {
 function OrdenCompraForm({ onClose, oc, lineaInicial }) {
   const [proveedorId, setProveedorId] = useState(oc?.proveedorId ?? '')
   const [plazoEntregaDias, setPlazoEntregaDias] = useState(String(oc?.plazoEntregaDias ?? '20'))
+  const [montoTotal, setMontoTotal] = useState(String(oc?.montoTotal ?? ''))
   const [materiales, setMateriales] = useState(() => {
     if (oc) return lineasFromOc(oc)
     if (lineaInicial) return [lineaInicial]
@@ -47,6 +48,7 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
       const data = {
         proveedorId,
         plazoEntregaDias: Number(plazoEntregaDias),
+        montoTotal: montoTotal ? Number(montoTotal) : null,
         materiales: materiales
           .filter((l) => l.materialId)
           .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad) || 1 })),
@@ -89,6 +91,18 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
           value={plazoEntregaDias}
           onChange={(e) => setPlazoEntregaDias(e.target.value)}
           className={inputClass}
+        />
+      </label>
+
+      <label className="text-sm font-medium text-slate-600">
+        Monto total (MXN) — opcional, para el flujo de caja
+        <input
+          type="number"
+          min="0"
+          value={montoTotal}
+          onChange={(e) => setMontoTotal(e.target.value)}
+          className={inputClass}
+          placeholder="Costo de esta O.C."
         />
       </label>
 

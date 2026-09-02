@@ -4,6 +4,7 @@ import AlmacenPage from './modules/almacen/AlmacenPage'
 import RequireAuth from './modules/auth/RequireAuth'
 import ComprasPage from './modules/compras/ComprasPage'
 import DashboardPage from './modules/dashboard/DashboardPage'
+import FinanzasPage from './modules/finanzas/FinanzasPage'
 import NotFoundPage from './modules/NotFoundPage'
 import ProduccionPage from './modules/produccion/ProduccionPage'
 import VentasDetalle from './modules/ventas/VentasDetalle'
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="compras" element={<ComprasPage />} />
           <Route path="produccion" element={<ProduccionPage />} />
           <Route path="almacen" element={<AlmacenPage />} />
+          <Route path="finanzas" element={<FinanzasPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
