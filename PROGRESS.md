@@ -22,31 +22,40 @@ documento original del proyecto.
   crédito Fudeco 60-90 días), ver detalle con timeline de estados
   (`Cotizado → OF abierta → Producción → Facturado`). Todo con listeners
   `onSnapshot` en tiempo real.
-- **Placeholders**: Compras, Producción, Almacén (solo mensaje "próxima
-  fase", sin lógica).
+- **Módulo Compras** (completo): sección "Cotizaciones por abrir OF"
+  (lista cotizaciones en estado `Cotizado` con botón "Abrir OF" — asigna
+  proveedor + plazo 15-30 días, genera número de serie `OF-YYYY-XXXXXX`,
+  crea el doc en `/ordenesFabricacion` y actualiza la cotización a
+  "OF abierta" con `writeBatch` atómico). Sección "Órdenes de compra"
+  (listar + crear O.C. con proveedor, líneas de material/cantidad, plazo,
+  estado pendiente/recibida). `ProveedorPicker`/`useProveedores` maneja
+  la colección `/proveedores` compartida (permite crear proveedor inline
+  al vuelo desde cualquiera de los dos formularios).
+- **Placeholders**: Producción, Almacén (solo mensaje "próxima fase", sin
+  lógica).
+- Datos de prueba ya sembrados en Firestore real (`npm run seed` corrido
+  con éxito: 3 clientes, 3 cotizaciones).
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
 
-1. **Sembrar datos de prueba**: falta que el usuario descargue la service
-   account key (Firebase Console → Configuración del proyecto → Cuentas
-   de servicio → Generar nueva clave privada) y la guarde en
-   `scripts/serviceAccountKey.json` (ya está en `.gitignore`). Con eso se
-   corre `npm run seed`.
-2. **Módulo Compras** (O.C. — orden de compra): proveedorId, materiales,
-   plazo de entrega 15-30 días, estado pendiente/recibida.
-3. **Módulo Producción** (OF — orden de fabricación): número de serie,
-   cotizacionId, BOM consumido, avance.
-4. **Módulo Almacén**: catálogo de materiales + stock, movimientos de
+1. **Módulo Producción** (OF — orden de fabricación): mostrar avance de
+   las OF abiertas (ya se crean desde Compras), consumo de BOM, timeline
+   de estados propio.
+2. **Recepción de O.C.**: falta el botón "Marcar recibida" en Compras —
+   se dejó pendiente a propósito porque sumar stock en `/materiales`
+   pertenece al módulo Almacén (usar `runTransaction`, no `update`
+   simple, por la condición de carrera real entre módulos).
+3. **Módulo Almacén**: catálogo de materiales + stock, movimientos de
    entrada/salida. Riesgo a mitigar activamente: toda operación que
    sume/reste stock debe usar `runTransaction` de Firestore (condición de
    carrera real con 4 módulos conectados), nunca un `update` simple.
-5. **Cloud Functions** (automatizaciones): OC recibida → suma stock; OF
+4. **Cloud Functions** (automatizaciones): OC recibida → suma stock; OF
    abierta → resta stock o marca "en espera de material"; stock bajo
    mínimo → sugiere/genera borrador de O.C.
-6. **Roles por área** — sin definir con Sanremo todavía. Hoy cualquier
+5. **Roles por área** — sin definir con Sanremo todavía. Hoy cualquier
    usuario autenticado puede escribir en cualquier colección.
-7. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
+6. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
    monto y referencia a la OF; integración a un PAC (Facturama, SW Sapien)
    es fase futura.
 
