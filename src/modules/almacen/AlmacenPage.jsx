@@ -5,6 +5,7 @@ import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import Pagination from '../../components/Pagination'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
@@ -114,14 +115,22 @@ function NombreEditable({ material }) {
   )
 }
 
+const POR_PAGINA = 20
+
 export default function AlmacenPage() {
   const { materiales, loading } = useMateriales()
   const movimientosHoy = useMovimientosHoy()
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [historialMaterial, setHistorialMaterial] = useState(null)
   const [ocSugerida, setOcSugerida] = useState(null)
   const toast = useToast()
+
+  const buscar = (value) => {
+    setSearch(value)
+    setPage(1)
+  }
 
   const eliminarMaterial = async (material) => {
     if (!window.confirm(`¿Eliminar "${material.nombre}"?`)) return
@@ -149,6 +158,13 @@ export default function AlmacenPage() {
     () =>
       materiales.filter((m) => m.nombre?.toLowerCase().includes(search.toLowerCase().trim())),
     [materiales, search],
+  )
+
+  const totalPaginas = Math.max(1, Math.ceil(materialesFiltrados.length / POR_PAGINA))
+  const paginaActual = Math.min(page, totalPaginas)
+  const materialesPagina = materialesFiltrados.slice(
+    (paginaActual - 1) * POR_PAGINA,
+    paginaActual * POR_PAGINA,
   )
 
   const exportar = () => {
@@ -196,7 +212,7 @@ export default function AlmacenPage() {
         <MetricCard label="Movimientos hoy" value={movimientosHoy} variant="accent" />
       </MetricsRow>
 
-      <SearchInput value={search} onChange={setSearch} placeholder="Buscar material…" />
+      <SearchInput value={search} onChange={buscar} placeholder="Buscar material…" />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
@@ -222,7 +238,7 @@ export default function AlmacenPage() {
                 </td>
               </tr>
             )}
-            {materialesFiltrados.map((material) => {
+            {materialesPagina.map((material) => {
               const bajoMinimo = (material.stock ?? 0) < (material.minimo ?? 0)
               return (
                 <tr key={material.id} className="transition-colors hover:bg-brand-50/40">
@@ -280,6 +296,7 @@ export default function AlmacenPage() {
             })}
           </tbody>
         </table>
+        <Pagination page={paginaActual} totalPages={totalPaginas} onChange={setPage} />
       </div>
 
       <MovimientoModal open={modalOpen} onClose={() => setModalOpen(false)} />
