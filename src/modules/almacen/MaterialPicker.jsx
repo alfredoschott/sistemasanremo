@@ -24,7 +24,7 @@ export default function MaterialPicker({ value, onChange }) {
   const confirmNuevo = async () => {
     const nombre = creatingName.trim()
     if (!nombre) return
-    const ref = await addDoc(collection(db, 'materiales'), { nombre, stock: 0, minimo: 0 })
+    const ref = await addDoc(collection(db, 'materiales'), { nombre, unidad: 'pza', stock: 0, minimo: 0 })
     setCreatingName(null)
     onChange(ref.id)
   }

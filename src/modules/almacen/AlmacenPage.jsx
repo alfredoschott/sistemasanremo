@@ -42,6 +42,33 @@ function MinimoInput({ material }) {
   )
 }
 
+const UNIDADES_SUGERIDAS = ['pza', 'caja', 'rollo', 'par', 'kg', 'litro', 'metro', 'hoja', 'juego', 'cubeta', 'lata']
+
+function UnidadInput({ material }) {
+  const [value, setValue] = useState(material.unidad ?? 'pza')
+  const toast = useToast()
+
+  const commit = () => {
+    const unidad = value.trim() || 'pza'
+    setValue(unidad)
+    if (unidad !== (material.unidad ?? 'pza')) {
+      updateDoc(doc(db, 'materiales', material.id), { unidad }).catch(() =>
+        toast('No se pudo actualizar la unidad.', 'error'),
+      )
+    }
+  }
+
+  return (
+    <input
+      list="unidades-sugeridas"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+    />
+  )
+}
+
 function NombreEditable({ material }) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(material.nombre)
@@ -127,6 +154,7 @@ export default function AlmacenPage() {
   const exportar = () => {
     exportCsv(`materiales_${new Date().toISOString().slice(0, 10)}.csv`, materialesFiltrados, [
       { label: 'Material', value: (m) => m.nombre },
+      { label: 'Unidad', value: (m) => m.unidad ?? 'pza' },
       { label: 'Stock actual', value: (m) => m.stock ?? 0 },
       { label: 'Mínimo', value: (m) => m.minimo ?? 0 },
     ])
@@ -134,6 +162,12 @@ export default function AlmacenPage() {
 
   return (
     <div>
+      <datalist id="unidades-sugeridas">
+        {UNIDADES_SUGERIDAS.map((u) => (
+          <option key={u} value={u} />
+        ))}
+      </datalist>
+
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">Materiales</h1>
@@ -169,16 +203,17 @@ export default function AlmacenPage() {
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">Material</th>
+              <th className="px-4 py-3">Unidad</th>
               <th className="px-4 py-3">Stock actual</th>
               <th className="px-4 py-3">Mínimo</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {loading && <TableSkeleton rows={3} cols={4} />}
+            {loading && <TableSkeleton rows={3} cols={5} />}
             {!loading && materialesFiltrados.length === 0 && (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <EmptyState
                     icon={Boxes}
                     title={search ? 'Sin resultados' : 'Sin materiales todavía'}
@@ -193,6 +228,9 @@ export default function AlmacenPage() {
                 <tr key={material.id} className="transition-colors hover:bg-brand-50/40">
                   <td className="px-4 py-3">
                     <NombreEditable material={material} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <UnidadInput material={material} />
                   </td>
                   <td
                     className={`px-4 py-3 font-medium ${bajoMinimo ? 'text-red-600' : 'text-slate-600'}`}
