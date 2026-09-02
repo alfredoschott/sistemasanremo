@@ -70,32 +70,57 @@ documento original del proyecto.
   el mockup HTML que el usuario ya tenía (`sistema_sanremo_demo.html`).
   Buscador por cliente en Ventas. Nombre de material editable inline en
   Almacén.
+- **Adjuntos, cancelación, auditoría, export y más**:
+  - Adjuntos por cotización vía Firebase Storage (`Adjuntos.jsx`,
+    `storage.rules` — falta publicar las reglas, ver Pendiente).
+  - Cancelar cotización (nuevo estado "Cancelado", con confirmación).
+  - Auditoría (`/auditoria`, visible en el detalle de cada cotización):
+    creación, edición, cancelación, OF abierta, entrada a producción,
+    completada/facturada — con usuario y fecha.
+  - Exportar cotizaciones a CSV desde Ventas.
+  - Buscadores en Compras (proveedor), Producción (cliente) y Almacén
+    (material).
+  - `ProveedoresPanel` dentro de Compras: lista de proveedores con
+    nombre editable inline.
+  - Dashboard de inicio (ruta `/`, primer ítem del sidebar): KPIs
+    combinados de los 4 módulos + feed de actividad reciente.
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
 
-1. **Cloud Functions** (automatizaciones del lado servidor): hoy la
+1. **Publicar storage.rules**: igual que se hizo con firestore.rules,
+   falta pegar el contenido de `storage.rules` en Firebase Console →
+   Storage → Reglas (o `firebase deploy --only storage` con el CLI) para
+   que la función de adjuntos funcione de verdad.
+2. **Cloud Functions** (automatizaciones del lado servidor): hoy la
    suma/resta de stock corre client-side vía `runTransaction`, lo cual
    funciona pero no es a prueba de un cliente malicioso o con Firestore
    rules más laxas. Migrar a Cloud Functions da más control (ej. trigger
    al marcar O.C. recibida, resta automática al consumir BOM en
    Producción, sugerencia de O.C. cuando stock < mínimo).
-2. **Consumo de BOM en Producción**: hoy Producción no resta stock del
+3. **Consumo de BOM en Producción**: hoy Producción no resta stock del
    material — falta enlazar el catálogo de materiales de este sistema
    con el proyecto de tornillería/BOM que Yamil está armando por
    separado (ver contexto del proyecto), y que Producción reste stock al
    avanzar.
-3. **Roles por área** — sin definir con Sanremo todavía. Hoy cualquier
-   usuario autenticado puede escribir en cualquier colección.
-4. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
+4. **Roles por área** — sin definir con Sanremo todavía, dejado fuera a
+   propósito (ver Decisiones). Hoy cualquier usuario autenticado puede
+   escribir en cualquier colección.
+5. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
    monto y referencia a la OF; integración a un PAC (Facturama, SW Sapien)
    es fase futura.
-5. **Deploy**: reglas de Firestore ya publicadas manualmente desde la
+6. **Deploy**: reglas de Firestore ya publicadas manualmente desde la
    consola; falta hacer `firebase deploy --only hosting` (o similar) para
    tener una URL real que el equipo de Sanremo pueda usar, hoy solo
    corre en `localhost`.
 
 ## Decisiones tomadas en esta fase
+
+- Roles por usuario: pedido explícitamente por el usuario junto con
+  varias otras cosas ("todo"), pero se dejó fuera a propósito porque el
+  documento original dice "sin definir aún, no asumir, preguntar" sobre
+  permisos por área. Retomar cuando Sanremo defina quién puede escribir
+  en qué módulo.
 
 - Orden de construcción del MVP: Ventas → Compras → Producción → Almacén
   (confirmado con el usuario).
