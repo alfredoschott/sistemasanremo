@@ -1,4 +1,4 @@
-import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc } from 'firebase/firestore'
 import { AlertTriangle, Boxes, Check, Clock, Download, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
@@ -13,6 +13,7 @@ import { useToast } from '../../lib/ToastContext'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
 import HistorialMaterialModal from './HistorialMaterialModal'
 import MovimientoModal from './MovimientoModal'
+import { eliminarMaterial as eliminarMaterialSeguro, restaurarMaterial } from './stockActions'
 import { useMateriales } from './useMateriales'
 import { useMovimientosHoy } from './useMovimientosHoy'
 
@@ -96,17 +97,18 @@ export default function AlmacenPage() {
   const toast = useToast()
 
   const eliminarMaterial = async (material) => {
-    if (
-      !window.confirm(
-        `¿Eliminar "${material.nombre}"? Solo hazlo si ya no se usa en ninguna O.C. ni OF.`,
-      )
-    )
-      return
+    if (!window.confirm(`¿Eliminar "${material.nombre}"?`)) return
     try {
-      await deleteDoc(doc(db, 'materiales', material.id))
-      toast(`${material.nombre} eliminado`)
-    } catch {
-      toast('No se pudo eliminar el material.', 'error')
+      const data = await eliminarMaterialSeguro(material)
+      toast(`${material.nombre} eliminado`, 'success', {
+        onUndo: () => restaurarMaterial(material.id, data),
+      })
+    } catch (err) {
+      if (err.message === 'material-en-uso') {
+        toast(`No se puede eliminar: "${material.nombre}" está en una O.C. pendiente.`, 'error')
+      } else {
+        toast('No se pudo eliminar el material.', 'error')
+      }
     }
   }
 

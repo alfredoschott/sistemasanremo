@@ -37,8 +37,12 @@ export default function MovimientoModal({ open, onClose }) {
       toast(`Movimiento de ${tipo} registrado`, 'success', {
         onUndo: () => revertirMovimientoManual(registrado),
       })
-    } catch {
-      toast('No se pudo registrar el movimiento. Intenta de nuevo.', 'error')
+    } catch (err) {
+      if (err.message === 'stock-insuficiente') {
+        toast('Ya no hay suficiente stock: alguien más registró un movimiento primero.', 'error')
+      } else {
+        toast('No se pudo registrar el movimiento. Intenta de nuevo.', 'error')
+      }
     } finally {
       setSaving(false)
     }

@@ -1,11 +1,14 @@
 import {
   collection,
+  deleteDoc,
   deleteField,
   doc,
+  getDoc,
   getDocs,
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   where,
 } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
@@ -91,6 +94,13 @@ export async function registrarMovimientoManual({ materialId, tipo, cantidad }) 
     const delta = tipo === 'entrada' ? cantidad : -cantidad
     const nuevoStock = (data.stock ?? 0) + delta
 
+    // Se valida aquí (dentro de la transacción) y no solo en el formulario,
+    // porque dos salidas simultáneas del mismo material podrían pasar ambas
+    // la validación del cliente y dejar el stock en negativo.
+    if (nuevoStock < 0) {
+      throw new Error('stock-insuficiente')
+    }
+
     tx.update(materialRef, { stock: nuevoStock })
     tx.set(movimientoRef, {
       materialId,
@@ -121,4 +131,34 @@ export async function revertirMovimientoManual({ movimientoId, materialId, tipo,
     tx.update(materialRef, { stock: stockActual + delta })
     tx.delete(doc(db, 'movimientosAlmacen', movimientoId))
   })
+}
+
+// Borra un material solo si no está referenciado en una O.C. que todavía no
+// se recibe: si esa O.C. se recibiera después, recibirOrdenCompra() fallaría
+// al no encontrar el documento del material. Devuelve los datos borrados
+// para poder restaurarlo desde el "Deshacer" del toast.
+export async function eliminarMaterial(material) {
+  const pendientesSnap = await getDocs(
+    query(collection(db, 'ordenesCompra'), where('estado', '==', 'pendiente')),
+  )
+  const enUso = pendientesSnap.docs.some((d) =>
+    (d.data().materiales ?? []).some((linea) => linea.materialId === material.id),
+  )
+  if (enUso) {
+    throw new Error('material-en-uso')
+  }
+
+  const materialRef = doc(db, 'materiales', material.id)
+  const snap = await getDoc(materialRef)
+  const data = snap.data()
+  await deleteDoc(materialRef)
+  return data
+}
+
+// Restaura un material eliminado (usado por el toast "Deshacer"), con el
+// mismo id para que las O.C./movimientos históricos que lo referencian
+// vuelvan a resolverse.
+export async function restaurarMaterial(materialId, data) {
+  if (!data) return
+  await setDoc(doc(db, 'materiales', materialId), data)
 }
