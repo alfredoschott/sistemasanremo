@@ -108,6 +108,17 @@ documento original del proyecto.
   Ventas, exportar CSV en Compras/Producción/Almacén (antes solo en
   Ventas), eliminar material/proveedor con confirmación, notas internas
   por cotización (`/notas`, separado de documentos adjuntos).
+- **Finanzas** (`/finanzas`, nuevo módulo — surgió de un problema real
+  que describió el administrativo: cobran a 60-90 días con Fudeco pero
+  pagan a proveedores antes, hoy hacen la cuenta mentalmente). Cuentas
+  por cobrar (cotizaciones Facturado + Fudeco, vencimiento = fecha
+  facturado + `diasCredito` propio de cada cotización) y por pagar
+  (O.C. recibidas con `montoTotal`, vencimiento = fecha recibida +
+  `plazoPagoDias` propio de cada proveedor). Botones "Cobrado"/"Pagado",
+  badges de vencida, y saldo proyectado a 30 días. Requirió campos
+  nuevos: `diasCredito`/`fechaFacturado`/`cobrado` en cotización,
+  `plazoPagoDias` en proveedor (editable, `ProveedoresPanel` ahora es
+  tabla), `montoTotal`/`fechaRecibida`/`pagado` en O.C.
 - Repo git local inicializado con commits por feature.
 
 **Nota para la próxima sesión**: el sistema ya cubre el flujo completo
@@ -117,6 +128,15 @@ ahí van a salir los pendientes reales.
 
 ## Pendiente / próximos pasos
 
+0. **Finanzas — alcance a propósito recortado**: "por cobrar" solo
+   cubre crédito Fudeco. El resto del anticipo (cuando la condición es
+   "anticipo") no se rastrea como cuenta por cobrar porque no hay una
+   regla de negocio clara sobre cuándo se cobra ese resto — preguntar a
+   Sanremo si vale la pena. `montoTotal` en O.C. es opcional y manual
+   (no hay catálogo de precios de materiales), así que una O.C. sin ese
+   campo no aparece en "por pagar" aunque exista. Sin recordatorios
+   automáticos ni Cloud Functions — es una pantalla de visibilidad, el
+   admin sigue marcando manualmente cobrado/pagado.
 1. **Publicar storage.rules**: igual que se hizo con firestore.rules,
    falta pegar el contenido de `storage.rules` en Firebase Console →
    Storage → Reglas (o `firebase deploy --only storage` con el CLI) para
