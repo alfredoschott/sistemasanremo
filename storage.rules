@@ -2,13 +2,18 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function autorizado() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/usuariosAutorizados/$(request.auth.token.email));
+    }
+
     match /cotizaciones/{cotizacionId}/{fileName} {
-      allow read, delete: if request.auth != null;
-      allow create, update: if request.auth != null && request.resource.size < 20 * 1024 * 1024;
+      allow read, delete: if autorizado();
+      allow create, update: if autorizado() && request.resource.size < 20 * 1024 * 1024;
     }
     match /ordenesCompra/{ocId}/{fileName} {
-      allow read, delete: if request.auth != null;
-      allow create, update: if request.auth != null && request.resource.size < 20 * 1024 * 1024;
+      allow read, delete: if autorizado();
+      allow create, update: if autorizado() && request.resource.size < 20 * 1024 * 1024;
     }
   }
 }

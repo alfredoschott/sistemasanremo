@@ -2,15 +2,17 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
+    function autorizado() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email));
     }
 
-    // MVP: cualquier usuario autenticado puede leer/escribir.
-    // TODO: roles por área (Ventas/Compras/Producción/Almacén) — pendiente de
-    // definir con Sanremo (ver CLAUDE.md, "Alcance de negocio pendiente de aclarar").
+    // Acceso restringido a la lista en /usuariosAutorizados (agregar
+    // correos con scripts/agregarUsuario.mjs). Roles por área
+    // (Ventas/Compras/Producción/Almacén) siguen pendientes de definir
+    // con Sanremo — ver CLAUDE.md.
     match /{document=**} {
-      allow read, write: if signedIn();
+      allow read, write: if autorizado();
     }
   }
 }
