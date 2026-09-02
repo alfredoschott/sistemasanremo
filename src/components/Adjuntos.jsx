@@ -2,8 +2,8 @@ import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { FileText, Paperclip, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { db, storage } from '../../lib/firebase'
-import { useToast } from '../../lib/ToastContext'
+import { db, storage } from '../lib/firebase'
+import { useToast } from '../lib/ToastContext'
 
 function formatSize(bytes) {
   if (!bytes) return ''
@@ -11,21 +11,23 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function Adjuntos({ cotizacion }) {
+// Adjuntos genérico: sirve para cotizaciones (documentos que usa Ventas),
+// órdenes de compra (facturas de proveedor), o cualquier otra colección que
+// necesite archivos más adelante — solo cambia `coleccion` y `docId`.
+export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
   const [uploading, setUploading] = useState(false)
   const [deletingPath, setDeletingPath] = useState(null)
   const inputRef = useRef(null)
   const toast = useToast()
-  const adjuntos = cotizacion.adjuntos ?? []
 
   const subirArchivo = async (file) => {
     setUploading(true)
     try {
-      const path = `cotizaciones/${cotizacion.id}/${Date.now()}_${file.name}`
+      const path = `${coleccion}/${docId}/${Date.now()}_${file.name}`
       const fileRef = ref(storage, path)
       await uploadBytes(fileRef, file)
       const url = await getDownloadURL(fileRef)
-      await updateDoc(doc(db, 'cotizaciones', cotizacion.id), {
+      await updateDoc(doc(db, coleccion, docId), {
         adjuntos: arrayUnion({
           nombre: file.name,
           path,
@@ -45,7 +47,7 @@ export default function Adjuntos({ cotizacion }) {
     setDeletingPath(adjunto.path)
     try {
       await deleteObject(ref(storage, adjunto.path)).catch(() => {})
-      await updateDoc(doc(db, 'cotizaciones', cotizacion.id), {
+      await updateDoc(doc(db, coleccion, docId), {
         adjuntos: arrayRemove(adjunto),
       })
     } finally {
@@ -54,7 +56,7 @@ export default function Adjuntos({ cotizacion }) {
   }
 
   return (
-    <div className="mt-6 border-t border-slate-100 pt-6">
+    <div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
           <Paperclip className="h-4 w-4" />

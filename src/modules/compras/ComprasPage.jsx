@@ -1,8 +1,10 @@
-import { ClipboardList, PackageCheck, Pencil, Plus, Search } from 'lucide-react'
+import { ClipboardList, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import Modal from '../../components/Modal'
 import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra } from '../almacen/stockActions'
@@ -37,8 +39,10 @@ export default function ComprasPage() {
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
   const [ocParaEditar, setOcParaEditar] = useState(null)
+  const [ocDocumentosId, setOcDocumentosId] = useState(null)
   const [recibiendoId, setRecibiendoId] = useState(null)
   const [search, setSearch] = useState('')
+  const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
 
   const nombreProveedor = useMemo(() => {
@@ -194,25 +198,39 @@ export default function ComprasPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {oc.estado === 'pendiente' && (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => setOcParaEditar(oc)}
-                          className="text-slate-400 transition-colors hover:text-brand-700"
-                          title="Editar"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={recibiendoId === oc.id}
-                          onClick={() => marcarRecibida(oc)}
-                        >
-                          {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setOcDocumentosId(oc.id)}
+                        className="relative text-slate-400 transition-colors hover:text-brand-700"
+                        title="Documentos"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                        {(oc.adjuntos?.length ?? 0) > 0 && (
+                          <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[9px] font-semibold text-white">
+                            {oc.adjuntos.length}
+                          </span>
+                        )}
+                      </button>
+                      {oc.estado === 'pendiente' && (
+                        <>
+                          <button
+                            onClick={() => setOcParaEditar(oc)}
+                            className="text-slate-400 transition-colors hover:text-brand-700"
+                            title="Editar"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={recibiendoId === oc.id}
+                            onClick={() => marcarRecibida(oc)}
+                          >
+                            {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -230,6 +248,21 @@ export default function ComprasPage() {
         onClose={() => setOcParaEditar(null)}
         oc={ocParaEditar}
       />
+
+      <Modal
+        open={Boolean(ocDocumentos)}
+        onClose={() => setOcDocumentosId(null)}
+        title="Documentos de la O.C."
+        subtitle={ocDocumentos ? nombreProveedor(ocDocumentos.proveedorId) : ''}
+      >
+        {ocDocumentos && (
+          <Adjuntos
+            coleccion="ordenesCompra"
+            docId={ocDocumentos.id}
+            adjuntos={ocDocumentos.adjuntos}
+          />
+        )}
+      </Modal>
     </div>
   )
 }

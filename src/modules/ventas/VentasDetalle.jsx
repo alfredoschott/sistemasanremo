@@ -1,11 +1,11 @@
 import { ArrowLeft, Ban, Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EstadoBadge from '../../components/EstadoBadge'
 import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
-import Adjuntos from './Adjuntos'
 import Auditoria from './Auditoria'
 import { cancelarCotizacion } from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
@@ -104,7 +104,13 @@ export default function VentasDetalle() {
           )}
         </dl>
 
-        <Adjuntos cotizacion={cotizacion} />
+        <div className="mt-6 border-t border-slate-100 pt-6">
+          <Adjuntos
+            coleccion="cotizaciones"
+            docId={cotizacion.id}
+            adjuntos={cotizacion.adjuntos}
+          />
+        </div>
         <Auditoria cotizacionId={cotizacion.id} />
       </div>
 
