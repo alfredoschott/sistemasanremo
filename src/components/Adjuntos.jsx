@@ -37,6 +37,8 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
         }),
       })
       toast(`${file.name} adjuntado`)
+    } catch {
+      toast('No se pudo subir el archivo. Intenta de nuevo.', 'error')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -44,12 +46,15 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
   }
 
   const eliminarArchivo = async (adjunto) => {
+    if (!window.confirm(`¿Eliminar "${adjunto.nombre}"?`)) return
     setDeletingPath(adjunto.path)
     try {
       await deleteObject(ref(storage, adjunto.path)).catch(() => {})
       await updateDoc(doc(db, coleccion, docId), {
         adjuntos: arrayRemove(adjunto),
       })
+    } catch {
+      toast('No se pudo eliminar el archivo. Intenta de nuevo.', 'error')
     } finally {
       setDeletingPath(null)
     }

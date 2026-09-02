@@ -5,6 +5,7 @@ import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import MaterialPicker from './MaterialPicker'
 import { registrarMovimientoManual } from './stockActions'
+import { useMateriales } from './useMateriales'
 
 export default function MovimientoModal({ open, onClose }) {
   const [materialId, setMaterialId] = useState('')
@@ -12,16 +13,26 @@ export default function MovimientoModal({ open, onClose }) {
   const [cantidad, setCantidad] = useState('1')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
+  const { materiales } = useMateriales()
 
   const submit = async (e) => {
     e.preventDefault()
+    const cantidadNum = Number(cantidad)
+    const material = materiales.find((m) => m.id === materialId)
+    if (tipo === 'salida' && material && cantidadNum > (material.stock ?? 0)) {
+      toast(`Solo hay ${material.stock ?? 0} disponibles de ${material.nombre}`, 'error')
+      return
+    }
+
     setSaving(true)
     try {
-      await registrarMovimientoManual({ materialId, tipo, cantidad: Number(cantidad) })
+      await registrarMovimientoManual({ materialId, tipo, cantidad: cantidadNum })
       setMaterialId('')
       setCantidad('1')
       onClose()
       toast(`Movimiento de ${tipo} registrado`)
+    } catch {
+      toast('No se pudo registrar el movimiento. Intenta de nuevo.', 'error')
     } finally {
       setSaving(false)
     }

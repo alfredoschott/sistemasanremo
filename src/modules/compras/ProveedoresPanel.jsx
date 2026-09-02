@@ -3,17 +3,21 @@ import { Check, Pencil, Truck } from 'lucide-react'
 import { useState } from 'react'
 import EmptyState from '../../components/EmptyState'
 import { db } from '../../lib/firebase'
+import { useToast } from '../../lib/ToastContext'
 import { useProveedores } from './useProveedores'
 
 function NombreEditable({ proveedor }) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(proveedor.nombre)
+  const toast = useToast()
 
   const commit = () => {
     const nombre = value.trim()
     setEditing(false)
     if (nombre && nombre !== proveedor.nombre) {
-      updateDoc(doc(db, 'proveedores', proveedor.id), { nombre })
+      updateDoc(doc(db, 'proveedores', proveedor.id), { nombre }).catch(() =>
+        toast('No se pudo actualizar el nombre.', 'error'),
+      )
     } else {
       setValue(proveedor.nombre)
     }

@@ -6,6 +6,7 @@ import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
+import { useToast } from '../../lib/ToastContext'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
 import HistorialMaterialModal from './HistorialMaterialModal'
 import MovimientoModal from './MovimientoModal'
@@ -14,11 +15,14 @@ import { useMovimientosHoy } from './useMovimientosHoy'
 
 function MinimoInput({ material }) {
   const [value, setValue] = useState(material.minimo ?? 0)
+  const toast = useToast()
 
   const commit = () => {
     const minimo = Number(value) || 0
     if (minimo !== material.minimo) {
-      updateDoc(doc(db, 'materiales', material.id), { minimo })
+      updateDoc(doc(db, 'materiales', material.id), { minimo }).catch(() =>
+        toast('No se pudo actualizar el mínimo.', 'error'),
+      )
     }
   }
 
@@ -37,12 +41,15 @@ function MinimoInput({ material }) {
 function NombreEditable({ material }) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(material.nombre)
+  const toast = useToast()
 
   const commit = () => {
     const nombre = value.trim()
     setEditing(false)
     if (nombre && nombre !== material.nombre) {
-      updateDoc(doc(db, 'materiales', material.id), { nombre })
+      updateDoc(doc(db, 'materiales', material.id), { nombre }).catch(() =>
+        toast('No se pudo actualizar el nombre.', 'error'),
+      )
     } else {
       setValue(material.nombre)
     }

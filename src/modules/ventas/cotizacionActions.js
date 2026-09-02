@@ -1,4 +1,4 @@
-import { doc, updateDoc } from 'firebase/firestore'
+import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -14,4 +14,23 @@ export async function cancelarCotizacion(cotizacion) {
     mensaje: `Cotización de ${cotizacion.cliente} cancelada`,
     tipo: 'warning',
   })
+}
+
+export async function duplicarCotizacion(cotizacion) {
+  const ref = await addDoc(collection(db, 'cotizaciones'), {
+    cliente: cotizacion.cliente,
+    monto: cotizacion.monto,
+    condicionPago: cotizacion.condicionPago,
+    porcentajeAnticipo: cotizacion.porcentajeAnticipo ?? null,
+    entregaSemanas: cotizacion.entregaSemanas,
+    estado: 'Cotizado',
+    fecha: serverTimestamp(),
+  })
+  await registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: ref.id,
+    accion: 'Creada',
+    detalle: `Duplicada de la cotización anterior de ${cotizacion.cliente}`,
+  })
+  return ref.id
 }

@@ -85,3 +85,16 @@ body {
   background: var(--color-brand-100);
   color: var(--color-brand-900);
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}

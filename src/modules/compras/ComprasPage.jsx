@@ -76,6 +76,8 @@ export default function ComprasPage() {
     try {
       await recibirOrdenCompra(oc)
       toast('O.C. recibida — stock actualizado')
+    } catch {
+      toast('No se pudo marcar como recibida. Intenta de nuevo.', 'error')
     } finally {
       setRecibiendoId(null)
     }

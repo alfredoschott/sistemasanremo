@@ -1,13 +1,14 @@
-import { ArrowLeft, Ban, Pencil } from 'lucide-react'
+import { ArrowLeft, Ban, Copy, Pencil, Printer } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EstadoBadge from '../../components/EstadoBadge'
 import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
+import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
-import { cancelarCotizacion } from './cotizacionActions'
+import { cancelarCotizacion, duplicarCotizacion } from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
 
@@ -19,6 +20,9 @@ export default function VentasDetalle() {
   const [editOpen, setEditOpen] = useState(false)
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const [cancelando, setCancelando] = useState(false)
+  const [duplicando, setDuplicando] = useState(false)
+  const toast = useToast()
+  const navigate = useNavigate()
 
   if (loading) return <p className="text-slate-400">Cargando…</p>
   if (!cotizacion) return <p className="text-slate-400">Cotización no encontrada.</p>
@@ -31,8 +35,23 @@ export default function VentasDetalle() {
     try {
       await cancelarCotizacion(cotizacion)
       setConfirmCancelOpen(false)
+    } catch {
+      toast('No se pudo cancelar. Intenta de nuevo.', 'error')
     } finally {
       setCancelando(false)
+    }
+  }
+
+  const duplicar = async () => {
+    setDuplicando(true)
+    try {
+      const nuevaId = await duplicarCotizacion(cotizacion)
+      toast(`Cotización duplicada para ${cotizacion.cliente}`)
+      navigate(`/ventas/${nuevaId}`)
+    } catch {
+      toast('No se pudo duplicar la cotización. Intenta de nuevo.', 'error')
+    } finally {
+      setDuplicando(false)
     }
   }
 
@@ -40,7 +59,7 @@ export default function VentasDetalle() {
     <div>
       <Link
         to="/ventas"
-        className="inline-flex items-center gap-1 text-sm text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+        className="no-print inline-flex items-center gap-1 text-sm text-brand-700 transition-colors hover:text-brand-800 hover:underline"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Volver a cotizaciones
@@ -52,8 +71,27 @@ export default function VentasDetalle() {
             <h1 className="text-xl font-semibold text-slate-800">{cotizacion.cliente}</h1>
             <p className="text-sm text-slate-500">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="no-print flex items-center gap-2">
             <EstadoBadge estado={cotizacion.estado} />
+            <Button
+              size="sm"
+              variant="outline"
+              className="inline-flex items-center gap-1"
+              onClick={() => window.print()}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Imprimir
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={duplicando}
+              className="inline-flex items-center gap-1"
+              onClick={duplicar}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Duplicar
+            </Button>
             {puedeEditar && (
               <Button
                 size="sm"
@@ -104,14 +142,16 @@ export default function VentasDetalle() {
           )}
         </dl>
 
-        <div className="mt-6 border-t border-slate-100 pt-6">
+        <div className="no-print mt-6 border-t border-slate-100 pt-6">
           <Adjuntos
             coleccion="cotizaciones"
             docId={cotizacion.id}
             adjuntos={cotizacion.adjuntos}
           />
         </div>
-        <Auditoria cotizacionId={cotizacion.id} />
+        <div className="no-print">
+          <Auditoria cotizacionId={cotizacion.id} />
+        </div>
       </div>
 
       <NuevaCotizacionModal

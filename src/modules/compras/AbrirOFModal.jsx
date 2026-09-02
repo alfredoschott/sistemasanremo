@@ -56,6 +56,8 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
         accion: 'OF abierta',
         detalle: numeroSerie,
       })
+    } catch {
+      toast('No se pudo abrir la OF. Intenta de nuevo.', 'error')
     } finally {
       setSaving(false)
     }

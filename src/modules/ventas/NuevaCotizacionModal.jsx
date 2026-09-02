@@ -66,6 +66,8 @@ function CotizacionForm({ onClose, cotizacion }) {
       }
 
       onClose()
+    } catch {
+      toast('No se pudo guardar la cotización. Intenta de nuevo.', 'error')
     } finally {
       setSaving(false)
     }

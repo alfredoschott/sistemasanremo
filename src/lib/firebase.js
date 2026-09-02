@@ -1,6 +1,10 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -13,6 +17,14 @@ const firebaseConfig = {
 }
 
 export const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
+
+// Caché local persistente: si se cae el wifi en planta (Almacén/Producción),
+// la app sigue funcionando con los últimos datos y sincroniza sola al
+// reconectar. persistentMultipleTabManager permite tener varias pestañas
+// abiertas sin que compitan por el mismo storage.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+})
+
 export const auth = getAuth(app)
 export const storage = getStorage(app)

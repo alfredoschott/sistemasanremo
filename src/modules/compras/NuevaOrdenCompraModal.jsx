@@ -66,6 +66,8 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
       }
 
       onClose()
+    } catch {
+      toast('No se pudo guardar la orden de compra. Intenta de nuevo.', 'error')
     } finally {
       setSaving(false)
     }

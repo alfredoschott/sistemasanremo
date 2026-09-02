@@ -25,6 +25,8 @@ function OrdenFabricacionCard({ of }) {
     try {
       await action()
       if (message) toast(message)
+    } catch {
+      toast('No se pudo completar la acción. Intenta de nuevo.', 'error')
     } finally {
       setBusy(false)
     }
@@ -101,7 +103,11 @@ function OrdenFabricacionCard({ of }) {
             step="5"
             value={of.avance ?? 0}
             disabled={busy}
-            onChange={(e) => actualizarAvance(of.id, Number(e.target.value))}
+            onChange={(e) =>
+              actualizarAvance(of.id, Number(e.target.value)).catch(() =>
+                toast('No se pudo actualizar el avance.', 'error'),
+              )
+            }
             className="mb-3 w-full accent-brand-700"
           />
           <Button
