@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // MVP: cualquier usuario autenticado puede leer/escribir.
+    // TODO: roles por área (Ventas/Compras/Producción/Almacén) — pendiente de
+    // definir con Sanremo (ver CLAUDE.md, "Alcance de negocio pendiente de aclarar").
+    match /{document=**} {
+      allow read, write: if signedIn();
+    }
+  }
+}
