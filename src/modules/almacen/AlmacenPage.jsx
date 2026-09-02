@@ -1,9 +1,11 @@
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { AlertTriangle, Boxes, Check, Clock, Download, Pencil, Plus, ShoppingCart, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, Boxes, Check, Clock, Download, Pencil, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
+import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
@@ -158,15 +160,7 @@ export default function AlmacenPage() {
         <MetricCard label="Movimientos hoy" value={movimientosHoy} variant="accent" />
       </MetricsRow>
 
-      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
-        <Search className="h-4 w-4 text-slate-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar material…"
-          className="w-full text-sm outline-none"
-        />
-      </div>
+      <SearchInput value={search} onChange={setSearch} placeholder="Buscar material…" />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
@@ -207,14 +201,15 @@ export default function AlmacenPage() {
                     <MinimoInput material={material} />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1">
                       {bajoMinimo && (
                         <>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                          <span className="mr-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
                             <AlertTriangle className="h-3 w-3" />
                             Bajo mínimo
                           </span>
-                          <button
+                          <IconButton
+                            icon={ShoppingCart}
                             onClick={() =>
                               setOcSugerida({
                                 materialId: material.id,
@@ -223,27 +218,21 @@ export default function AlmacenPage() {
                                 ),
                               })
                             }
-                            className="text-slate-400 transition-colors hover:text-brand-700"
                             title="Generar O.C. sugerida"
-                          >
-                            <ShoppingCart className="h-4 w-4" />
-                          </button>
+                          />
                         </>
                       )}
-                      <button
+                      <IconButton
+                        icon={Clock}
                         onClick={() => setHistorialMaterial(material)}
-                        className="text-slate-400 transition-colors hover:text-brand-700"
                         title="Ver historial"
-                      >
-                        <Clock className="h-4 w-4" />
-                      </button>
-                      <button
+                      />
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
                         onClick={() => eliminarMaterial(material)}
-                        className="text-slate-400 transition-colors hover:text-red-600"
                         title="Eliminar material"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      />
                     </div>
                   </td>
                 </tr>

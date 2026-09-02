@@ -1,15 +1,22 @@
-import { AlertTriangle, Download, Factory, Search } from 'lucide-react'
+import { AlertTriangle, Download, Factory } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import SearchInput from '../../components/SearchInput'
 import Skeleton from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import { useProveedores } from '../compras/useProveedores'
 import ProveedorNombre from '../compras/ProveedorNombre'
-import { actualizarAvance, completarYFacturar, iniciarProduccion } from './ofActions'
+import {
+  actualizarAvance,
+  completarYFacturar,
+  deshacerCompletarYFacturar,
+  deshacerIniciarProduccion,
+  iniciarProduccion,
+} from './ofActions'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
 
 const ESTADO_OF_BADGE = {
@@ -22,11 +29,11 @@ function OrdenFabricacionCard({ of }) {
   const [busy, setBusy] = useState(false)
   const toast = useToast()
 
-  const runAction = async (action, message) => {
+  const runAction = async (action, message, onUndo) => {
     setBusy(true)
     try {
       await action()
-      if (message) toast(message)
+      if (message) toast(message, 'success', { onUndo })
     } catch {
       toast('No se pudo completar la acción. Intenta de nuevo.', 'error')
     } finally {
@@ -77,9 +84,13 @@ function OrdenFabricacionCard({ of }) {
       {of.estado === 'Abierta' && (
         <Button
           className="w-full"
-          disabled={busy}
+          loading={busy}
           onClick={() =>
-            runAction(() => iniciarProduccion(of), `${of.numeroSerie} en producción`)
+            runAction(
+              () => iniciarProduccion(of),
+              `${of.numeroSerie} en producción`,
+              () => deshacerIniciarProduccion(of),
+            )
           }
         >
           Iniciar producción
@@ -114,9 +125,13 @@ function OrdenFabricacionCard({ of }) {
           />
           <Button
             className="w-full"
-            disabled={busy}
+            loading={busy}
             onClick={() =>
-              runAction(() => completarYFacturar(of), `${of.numeroSerie} completada y facturada`)
+              runAction(
+                () => completarYFacturar(of),
+                `${of.numeroSerie} completada y facturada`,
+                () => deshacerCompletarYFacturar(of),
+              )
             }
           >
             Completar y facturar
@@ -187,15 +202,7 @@ export default function ProduccionPage() {
         <MetricCard label="Completadas" value={metrics.completadas} variant="accent" />
       </MetricsRow>
 
-      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
-        <Search className="h-4 w-4 text-slate-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por cliente…"
-          className="w-full text-sm outline-none"
-        />
-      </div>
+      <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
 
       {loading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

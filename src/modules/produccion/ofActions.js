@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { deleteField, doc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -19,6 +19,13 @@ export async function iniciarProduccion(of) {
     accion: 'En producción',
     detalle: of.numeroSerie,
   })
+}
+
+export async function deshacerIniciarProduccion(of) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'Abierta', avance: 0 })
+  batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'OF abierta' })
+  await batch.commit()
 }
 
 export async function actualizarAvance(ofId, avance) {
@@ -44,4 +51,17 @@ export async function completarYFacturar(of) {
     accion: 'Completada y facturada',
     detalle: of.numeroSerie,
   })
+}
+
+export async function deshacerCompletarYFacturar(of) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'ordenesFabricacion', of.id), {
+    estado: 'En producción',
+    avance: of.avance ?? 0,
+  })
+  batch.update(doc(db, 'cotizaciones', of.cotizacionId), {
+    estado: 'Producción',
+    fechaFacturado: deleteField(),
+  })
+  await batch.commit()
 }

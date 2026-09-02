@@ -1,4 +1,13 @@
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  deleteField,
+  doc,
+  getDocs,
+  query,
+  runTransaction,
+  serverTimestamp,
+  where,
+} from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 
@@ -41,7 +50,40 @@ export async function recibirOrdenCompra(oc) {
   }
 }
 
+// Revierte una O.C. de "recibida" a "pendiente": resta el stock que se
+// había sumado y borra los movimientos que generó esa recepción. Pensado
+// tanto para el botón "Deshacer" del toast como para corregir un error de
+// captura desde la edición de la O.C.
+export async function revertirRecepcion(oc) {
+  const movimientosSnap = await getDocs(
+    query(
+      collection(db, 'movimientosAlmacen'),
+      where('referencia.tipo', '==', 'ordenCompra'),
+      where('referencia.id', '==', oc.id),
+    ),
+  )
+
+  await runTransaction(db, async (tx) => {
+    const materialRefs = oc.materiales.map((linea) => doc(db, 'materiales', linea.materialId))
+    const snaps = await Promise.all(materialRefs.map((ref) => tx.get(ref)))
+
+    snaps.forEach((snap, i) => {
+      const stockActual = snap.data()?.stock ?? 0
+      tx.update(materialRefs[i], { stock: stockActual - oc.materiales[i].cantidad })
+    })
+
+    movimientosSnap.docs.forEach((d) => tx.delete(d.ref))
+
+    tx.update(doc(db, 'ordenesCompra', oc.id), {
+      estado: 'pendiente',
+      fechaRecibida: deleteField(),
+    })
+  })
+}
+
 export async function registrarMovimientoManual({ materialId, tipo, cantidad }) {
+  const movimientoRef = doc(collection(db, 'movimientosAlmacen'))
+
   const aviso = await runTransaction(db, async (tx) => {
     const materialRef = doc(db, 'materiales', materialId)
     const snap = await tx.get(materialRef)
@@ -50,7 +92,7 @@ export async function registrarMovimientoManual({ materialId, tipo, cantidad }) 
     const nuevoStock = (data.stock ?? 0) + delta
 
     tx.update(materialRef, { stock: nuevoStock })
-    tx.set(doc(collection(db, 'movimientosAlmacen')), {
+    tx.set(movimientoRef, {
       materialId,
       tipo,
       cantidad,
@@ -64,4 +106,19 @@ export async function registrarMovimientoManual({ materialId, tipo, cantidad }) 
   if (aviso) {
     await crearNotificacion({ mensaje: `${aviso} quedó bajo el mínimo`, tipo: 'warning', link: '/almacen' })
   }
+
+  return { movimientoId: movimientoRef.id, materialId, tipo, cantidad }
+}
+
+// Deshace un movimiento manual específico (usado por el toast "Deshacer").
+export async function revertirMovimientoManual({ movimientoId, materialId, tipo, cantidad }) {
+  await runTransaction(db, async (tx) => {
+    const materialRef = doc(db, 'materiales', materialId)
+    const snap = await tx.get(materialRef)
+    const stockActual = snap.data()?.stock ?? 0
+    const delta = tipo === 'entrada' ? -cantidad : cantidad
+
+    tx.update(materialRef, { stock: stockActual + delta })
+    tx.delete(doc(db, 'movimientosAlmacen', movimientoId))
+  })
 }

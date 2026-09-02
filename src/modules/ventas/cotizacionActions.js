@@ -17,6 +17,15 @@ export async function cancelarCotizacion(cotizacion) {
   })
 }
 
+export async function deshacerCancelacion(cotizacion) {
+  await updateDoc(doc(db, 'cotizaciones', cotizacion.id), { estado: cotizacion.estado })
+  await registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: cotizacion.id,
+    accion: 'Cancelación deshecha',
+  })
+}
+
 export async function duplicarCotizacion(cotizacion) {
   const ref = await addDoc(collection(db, 'cotizaciones'), {
     cliente: cotizacion.cliente,

@@ -175,7 +175,7 @@ function CotizacionForm({ onClose, cotizacion }) {
         <Button type="button" variant="secondary" onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" loading={saving}>
           {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear cotización'}
         </Button>
       </div>

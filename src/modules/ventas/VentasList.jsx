@@ -1,10 +1,11 @@
-import { AlertTriangle, Download, FileText, Plus, Search } from 'lucide-react'
+import { AlertTriangle, Download, FileText, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import EstadoBadge from '../../components/EstadoBadge'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
@@ -84,15 +85,7 @@ export default function VentasList() {
         <MetricCard label="Anticipos pendientes" value={currency.format(metrics.anticipos)} />
       </MetricsRow>
 
-      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
-        <Search className="h-4 w-4 text-slate-400" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por cliente…"
-          className="w-full text-sm outline-none"
-        />
-      </div>
+      <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">

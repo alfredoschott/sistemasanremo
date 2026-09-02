@@ -31,3 +31,16 @@ export async function marcarPagado(oc) {
     link: '/finanzas',
   })
 }
+
+export async function deshacerCobrado(cotizacion) {
+  await updateDoc(doc(db, 'cotizaciones', cotizacion.id), { cobrado: false, fechaCobro: null })
+  await registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: cotizacion.id,
+    accion: 'Cobro deshecho',
+  })
+}
+
+export async function deshacerPagado(oc) {
+  await updateDoc(doc(db, 'ordenesCompra', oc.id), { pagado: false, fechaPago: null })
+}

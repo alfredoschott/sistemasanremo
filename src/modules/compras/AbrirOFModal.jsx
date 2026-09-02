@@ -89,7 +89,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={saving || !proveedorId}>
+          <Button type="submit" loading={saving} disabled={!proveedorId}>
             {saving ? 'Abriendo…' : 'Abrir OF'}
           </Button>
         </div>

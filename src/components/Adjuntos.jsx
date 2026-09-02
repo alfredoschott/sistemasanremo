@@ -4,6 +4,8 @@ import { FileText, Paperclip, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { db, storage } from '../lib/firebase'
 import { useToast } from '../lib/ToastContext'
+import Button from './Button'
+import IconButton from './IconButton'
 
 function formatSize(bytes) {
   if (!bytes) return ''
@@ -67,14 +69,16 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
           <Paperclip className="h-4 w-4" />
           Documentos ({adjuntos.length})
         </h2>
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 disabled:opacity-60"
+          loading={uploading}
         >
-          <Upload className="h-3.5 w-3.5" />
+          {!uploading && <Upload className="h-3.5 w-3.5" />}
           {uploading ? 'Subiendo…' : 'Adjuntar archivo'}
-        </button>
+        </Button>
         <input
           ref={inputRef}
           type="file"
@@ -102,13 +106,13 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
                 <span className="truncate">{a.nombre}</span>
                 <span className="shrink-0 text-xs text-slate-400">{formatSize(a.tamano)}</span>
               </a>
-              <button
+              <IconButton
+                icon={Trash2}
+                variant="danger"
                 onClick={() => eliminarArchivo(a)}
                 disabled={deletingPath === a.path}
-                className="shrink-0 text-slate-300 transition-colors hover:text-red-600 disabled:opacity-60"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                className="shrink-0"
+              />
             </li>
           ))}
         </ul>

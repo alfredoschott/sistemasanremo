@@ -2,6 +2,7 @@ import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
 import { Check, Pencil, Trash2, Truck } from 'lucide-react'
 import { useState } from 'react'
 import EmptyState from '../../components/EmptyState'
+import IconButton from '../../components/IconButton'
 import { db } from '../../lib/firebase'
 import { useToast } from '../../lib/ToastContext'
 import { useProveedores } from './useProveedores'
@@ -127,13 +128,12 @@ export default function ProveedoresPanel() {
                     <PlazoPagoInput proveedor={p} />
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button
+                    <IconButton
+                      icon={Trash2}
+                      variant="danger"
                       onClick={() => eliminarProveedor(p)}
-                      className="text-slate-400 transition-colors hover:text-red-600"
                       title="Eliminar proveedor"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    />
                   </td>
                 </tr>
               ))}

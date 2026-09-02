@@ -4,11 +4,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EstadoBadge from '../../components/EstadoBadge'
+import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
-import { cancelarCotizacion, duplicarCotizacion } from './cotizacionActions'
+import { cancelarCotizacion, deshacerCancelacion, duplicarCotizacion } from './cotizacionActions'
 import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
@@ -36,6 +37,9 @@ export default function VentasDetalle() {
     try {
       await cancelarCotizacion(cotizacion)
       setConfirmCancelOpen(false)
+      toast(`Cotización de ${cotizacion.cliente} cancelada`, 'success', {
+        onUndo: () => deshacerCancelacion(cotizacion),
+      })
     } catch {
       toast('No se pudo cancelar. Intenta de nuevo.', 'error')
     } finally {
@@ -72,49 +76,41 @@ export default function VentasDetalle() {
             <h1 className="text-xl font-semibold text-slate-800">{cotizacion.cliente}</h1>
             <p className="text-sm text-slate-500">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
-          <div className="no-print flex items-center gap-2">
+          <div className="no-print flex items-center gap-3">
             <EstadoBadge estado={cotizacion.estado} />
-            <Button
-              size="sm"
-              variant="outline"
-              className="inline-flex items-center gap-1"
-              onClick={() => window.print()}
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Imprimir
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={duplicando}
-              className="inline-flex items-center gap-1"
-              onClick={duplicar}
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Duplicar
-            </Button>
-            {puedeEditar && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="inline-flex items-center gap-1"
-                onClick={() => setEditOpen(true)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Editar
-              </Button>
-            )}
-            {puedeCancelar && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="inline-flex items-center gap-1"
-                onClick={() => setConfirmCancelOpen(true)}
-              >
-                <Ban className="h-3.5 w-3.5" />
-                Cancelar
-              </Button>
-            )}
+            <div className="flex items-center gap-1 border-r border-slate-200 pr-2">
+              <IconButton icon={Printer} onClick={() => window.print()} title="Imprimir" />
+              <IconButton
+                icon={Copy}
+                onClick={duplicar}
+                disabled={duplicando}
+                title="Duplicar cotización"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {puedeEditar && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center gap-1"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </Button>
+              )}
+              {puedeCancelar && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="inline-flex items-center gap-1"
+                  onClick={() => setConfirmCancelOpen(true)}
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  Cancelar
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -172,7 +168,7 @@ export default function VentasDetalle() {
           <Button variant="secondary" onClick={() => setConfirmCancelOpen(false)}>
             No, mantener
           </Button>
-          <Button variant="primary" disabled={cancelando} onClick={confirmarCancelacion}>
+          <Button variant="primary" loading={cancelando} onClick={confirmarCancelacion}>
             {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
           </Button>
         </div>

@@ -4,7 +4,7 @@ import Modal from '../../components/Modal'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import MaterialPicker from './MaterialPicker'
-import { registrarMovimientoManual } from './stockActions'
+import { registrarMovimientoManual, revertirMovimientoManual } from './stockActions'
 import { useMateriales } from './useMateriales'
 
 export default function MovimientoModal({ open, onClose }) {
@@ -26,11 +26,17 @@ export default function MovimientoModal({ open, onClose }) {
 
     setSaving(true)
     try {
-      await registrarMovimientoManual({ materialId, tipo, cantidad: cantidadNum })
+      const registrado = await registrarMovimientoManual({
+        materialId,
+        tipo,
+        cantidad: cantidadNum,
+      })
       setMaterialId('')
       setCantidad('1')
       onClose()
-      toast(`Movimiento de ${tipo} registrado`)
+      toast(`Movimiento de ${tipo} registrado`, 'success', {
+        onUndo: () => revertirMovimientoManual(registrado),
+      })
     } catch {
       toast('No se pudo registrar el movimiento. Intenta de nuevo.', 'error')
     } finally {
@@ -90,7 +96,7 @@ export default function MovimientoModal({ open, onClose }) {
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={saving || !materialId}>
+          <Button type="submit" loading={saving} disabled={!materialId}>
             {saving ? 'Guardando…' : 'Registrar'}
           </Button>
         </div>

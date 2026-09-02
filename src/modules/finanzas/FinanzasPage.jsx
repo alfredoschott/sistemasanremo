@@ -8,7 +8,7 @@ import ProveedorNombre from '../compras/ProveedorNombre'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useProveedores } from '../compras/useProveedores'
 import { useCotizaciones } from '../ventas/useCotizaciones'
-import { marcarCobrado, marcarPagado } from './finanzasActions'
+import { deshacerCobrado, deshacerPagado, marcarCobrado, marcarPagado } from './finanzasActions'
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 const DIA_MS = 24 * 60 * 60 * 1000
@@ -73,7 +73,9 @@ export default function FinanzasPage() {
     setBusyId(cotizacion.id)
     try {
       await marcarCobrado(cotizacion)
-      toast(`Cobro de ${cotizacion.cliente} registrado`)
+      toast(`Cobro de ${cotizacion.cliente} registrado`, 'success', {
+        onUndo: () => deshacerCobrado(cotizacion),
+      })
     } catch {
       toast('No se pudo registrar el cobro. Intenta de nuevo.', 'error')
     } finally {
@@ -85,7 +87,7 @@ export default function FinanzasPage() {
     setBusyId(oc.id)
     try {
       await marcarPagado(oc)
-      toast('Pago registrado')
+      toast('Pago registrado', 'success', { onUndo: () => deshacerPagado(oc) })
     } catch {
       toast('No se pudo registrar el pago. Intenta de nuevo.', 'error')
     } finally {
@@ -139,11 +141,11 @@ export default function FinanzasPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={busyId === c.id}
+                          loading={busyId === c.id}
                           onClick={() => accionCobrar(c)}
                           className="inline-flex items-center gap-1"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          {busyId !== c.id && <Check className="h-3.5 w-3.5" />}
                           Cobrado
                         </Button>
                       </div>
@@ -185,11 +187,11 @@ export default function FinanzasPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={busyId === o.id}
+                          loading={busyId === o.id}
                           onClick={() => accionPagar(o)}
                           className="inline-flex items-center gap-1"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          {busyId !== o.id && <Check className="h-3.5 w-3.5" />}
                           Pagado
                         </Button>
                       </div>

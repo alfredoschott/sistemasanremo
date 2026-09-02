@@ -1,13 +1,15 @@
-import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
+import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
+import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import Modal from '../../components/Modal'
+import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
-import { recibirOrdenCompra } from '../almacen/stockActions'
+import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
 import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
@@ -45,6 +47,7 @@ export default function ComprasPage() {
   const [ocParaEditar, setOcParaEditar] = useState(null)
   const [ocDocumentosId, setOcDocumentosId] = useState(null)
   const [recibiendoId, setRecibiendoId] = useState(null)
+  const [revirtiendoId, setRevirtiendoId] = useState(null)
   const [search, setSearch] = useState('')
   const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
@@ -95,11 +98,25 @@ export default function ComprasPage() {
     ])
   }
 
+  const revertir = async (oc) => {
+    setRevirtiendoId(oc.id)
+    try {
+      await revertirRecepcion(oc)
+      toast('O.C. regresada a pendiente — stock ajustado')
+    } catch {
+      toast('No se pudo revertir. Intenta de nuevo.', 'error')
+    } finally {
+      setRevirtiendoId(null)
+    }
+  }
+
   const marcarRecibida = async (oc) => {
     setRecibiendoId(oc.id)
     try {
       await recibirOrdenCompra(oc)
-      toast('O.C. recibida — stock actualizado')
+      toast('O.C. recibida — stock actualizado', 'success', {
+        onUndo: () => revertir(oc),
+      })
     } catch {
       toast('No se pudo marcar como recibida. Intenta de nuevo.', 'error')
     } finally {
@@ -179,15 +196,7 @@ export default function ComprasPage() {
             </Button>
           </div>
         </div>
-        <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
-          <Search className="h-4 w-4 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por proveedor…"
-            className="w-full text-sm outline-none"
-          />
-        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por proveedor…" />
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -250,37 +259,44 @@ export default function ComprasPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
+                    <div className="flex items-center justify-end gap-1">
+                      <IconButton
+                        icon={Paperclip}
+                        badge={oc.adjuntos?.length ?? 0}
                         onClick={() => setOcDocumentosId(oc.id)}
-                        className="relative text-slate-400 transition-colors hover:text-brand-700"
                         title="Documentos"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                        {(oc.adjuntos?.length ?? 0) > 0 && (
-                          <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[9px] font-semibold text-white">
-                            {oc.adjuntos.length}
-                          </span>
-                        )}
-                      </button>
+                      />
+                      <IconButton
+                        icon={Pencil}
+                        onClick={() => setOcParaEditar(oc)}
+                        title="Editar"
+                      />
                       {oc.estado === 'pendiente' && (
-                        <>
-                          <button
-                            onClick={() => setOcParaEditar(oc)}
-                            className="text-slate-400 transition-colors hover:text-brand-700"
-                            title="Editar"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={recibiendoId === oc.id}
-                            onClick={() => marcarRecibida(oc)}
-                          >
-                            {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
-                          </Button>
-                        </>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={recibiendoId === oc.id}
+                          onClick={() => marcarRecibida(oc)}
+                          className="ml-1"
+                        >
+                          {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                        </Button>
+                      )}
+                      {oc.estado === 'recibida' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          loading={revirtiendoId === oc.id}
+                          onClick={() => {
+                            if (window.confirm('¿Regresar esta O.C. a pendiente? Se restará el stock que sumó.')) {
+                              revertir(oc)
+                            }
+                          }}
+                          className="ml-1"
+                          title="Revertir a pendiente"
+                        >
+                          {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
+                        </Button>
                       )}
                     </div>
                   </td>
