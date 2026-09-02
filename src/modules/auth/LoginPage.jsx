@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BrandMark from '../../components/BrandMark'
+import Button from '../../components/Button'
 import { authProviders } from '../../lib/authProviders'
 
 export default function LoginPage() {
@@ -37,14 +38,14 @@ export default function LoginPage() {
 
         <div className="flex flex-col gap-2">
           {authProviders.map((provider) => (
-            <button
+            <Button
               key={provider.id}
+              variant="outline"
               onClick={() => handleSignIn(provider)}
-              disabled={pending === provider.id}
-              className="rounded-md border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-all duration-150 hover:border-brand-700 hover:bg-brand-50 active:scale-[0.98] disabled:opacity-60"
+              loading={pending === provider.id}
             >
               {pending === provider.id ? 'Conectando…' : provider.label}
-            </button>
+            </Button>
           ))}
         </div>
 
