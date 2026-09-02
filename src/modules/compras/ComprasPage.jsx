@@ -1,4 +1,4 @@
-import { ClipboardList, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
+import { AlertTriangle, ClipboardList, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
@@ -8,6 +8,7 @@ import Modal from '../../components/Modal'
 import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra } from '../almacen/stockActions'
+import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import AbrirOFModal from './AbrirOFModal'
 import NuevaOrdenCompraModal from './NuevaOrdenCompraModal'
@@ -189,13 +190,24 @@ export default function ComprasPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{oc.plazoEntregaDias} días</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                        OC_BADGE[oc.estado] ?? 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {oc.estado}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                          OC_BADGE[oc.estado] ?? 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {oc.estado}
+                      </span>
+                      {oc.estado === 'pendiente' && estaVencido(oc.fecha, oc.plazoEntregaDias) && (
+                        <span
+                          title="Plazo vencido"
+                          className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          Vencida
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">

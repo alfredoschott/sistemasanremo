@@ -28,9 +28,18 @@ export default function Topbar() {
             onBlur={() => setTimeout(() => setMenuOpen(false), 120)}
             className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-sm text-brand-50/90 transition-colors hover:bg-white/10"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-xs font-semibold">
-              {user?.email?.[0]?.toUpperCase()}
-            </span>
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="h-6 w-6 rounded-full"
+              />
+            ) : (
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-xs font-semibold">
+                {user?.email?.[0]?.toUpperCase()}
+              </span>
+            )}
             <span className="hidden max-w-40 truncate sm:inline">{user?.email}</span>
           </button>
 

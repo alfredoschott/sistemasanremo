@@ -1,9 +1,10 @@
-import { Factory, Search } from 'lucide-react'
+import { AlertTriangle, Factory, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import Skeleton from '../../components/Skeleton'
+import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { actualizarAvance, completarYFacturar, iniciarProduccion } from './ofActions'
@@ -36,13 +37,24 @@ function OrdenFabricacionCard({ of }) {
           <p className="text-sm text-slate-400">{of.numeroSerie}</p>
           <h3 className="text-lg font-semibold text-slate-800">{of.cliente}</h3>
         </div>
-        <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-            ESTADO_OF_BADGE[of.estado] ?? 'bg-slate-100 text-slate-700'
-          }`}
-        >
-          {of.estado}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+              ESTADO_OF_BADGE[of.estado] ?? 'bg-slate-100 text-slate-700'
+            }`}
+          >
+            {of.estado}
+          </span>
+          {of.estado !== 'Completada' && estaVencido(of.fecha, of.plazoEntregaDias) && (
+            <span
+              title="Plazo del proveedor vencido"
+              className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              Vencida
+            </span>
+          )}
+        </div>
       </div>
 
       <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">

@@ -1,11 +1,13 @@
 import { doc, updateDoc } from 'firebase/firestore'
-import { AlertTriangle, Boxes, Check, Pencil, Plus, Search } from 'lucide-react'
+import { AlertTriangle, Boxes, Check, Clock, Pencil, Plus, ShoppingCart, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
+import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
+import HistorialMaterialModal from './HistorialMaterialModal'
 import MovimientoModal from './MovimientoModal'
 import { useMateriales } from './useMateriales'
 import { useMovimientosHoy } from './useMovimientosHoy'
@@ -79,6 +81,8 @@ export default function AlmacenPage() {
   const movimientosHoy = useMovimientosHoy()
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [historialMaterial, setHistorialMaterial] = useState(null)
+  const [ocSugerida, setOcSugerida] = useState(null)
 
   const metrics = useMemo(() => {
     const critico = materiales.filter((m) => (m.stock ?? 0) <= 0).length
@@ -161,12 +165,37 @@ export default function AlmacenPage() {
                     <MinimoInput material={material} />
                   </td>
                   <td className="px-4 py-3">
-                    {bajoMinimo && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
-                        <AlertTriangle className="h-3 w-3" />
-                        Bajo mínimo
-                      </span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {bajoMinimo && (
+                        <>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                            <AlertTriangle className="h-3 w-3" />
+                            Bajo mínimo
+                          </span>
+                          <button
+                            onClick={() =>
+                              setOcSugerida({
+                                materialId: material.id,
+                                cantidad: String(
+                                  Math.max(1, (material.minimo ?? 0) - (material.stock ?? 0)),
+                                ),
+                              })
+                            }
+                            className="text-slate-400 transition-colors hover:text-brand-700"
+                            title="Generar O.C. sugerida"
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => setHistorialMaterial(material)}
+                        className="text-slate-400 transition-colors hover:text-brand-700"
+                        title="Ver historial"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )
@@ -176,6 +205,15 @@ export default function AlmacenPage() {
       </div>
 
       <MovimientoModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <HistorialMaterialModal
+        material={historialMaterial}
+        onClose={() => setHistorialMaterial(null)}
+      />
+      <NuevaOrdenCompraModal
+        open={Boolean(ocSugerida)}
+        onClose={() => setOcSugerida(null)}
+        lineaInicial={ocSugerida}
+      />
     </div>
   )
 }

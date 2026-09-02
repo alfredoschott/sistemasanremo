@@ -18,10 +18,14 @@ function lineasFromOc(oc) {
     : [{ ...lineaVacia }]
 }
 
-function OrdenCompraForm({ onClose, oc }) {
+function OrdenCompraForm({ onClose, oc, lineaInicial }) {
   const [proveedorId, setProveedorId] = useState(oc?.proveedorId ?? '')
   const [plazoEntregaDias, setPlazoEntregaDias] = useState(String(oc?.plazoEntregaDias ?? '20'))
-  const [materiales, setMateriales] = useState(() => (oc ? lineasFromOc(oc) : [{ ...lineaVacia }]))
+  const [materiales, setMateriales] = useState(() => {
+    if (oc) return lineasFromOc(oc)
+    if (lineaInicial) return [lineaInicial]
+    return [{ ...lineaVacia }]
+  })
   const [saving, setSaving] = useState(false)
   const toast = useToast()
   const isEdit = Boolean(oc)
@@ -137,7 +141,7 @@ function OrdenCompraForm({ onClose, oc }) {
   )
 }
 
-export default function NuevaOrdenCompraModal({ open, onClose, oc = null }) {
+export default function NuevaOrdenCompraModal({ open, onClose, oc = null, lineaInicial = null }) {
   return (
     <Modal
       open={open}
@@ -145,7 +149,12 @@ export default function NuevaOrdenCompraModal({ open, onClose, oc = null }) {
       title={oc ? 'Editar orden de compra' : 'Nueva orden de compra'}
       maxWidth="max-w-lg"
     >
-      <OrdenCompraForm key={oc?.id ?? 'new'} onClose={onClose} oc={oc} />
+      <OrdenCompraForm
+        key={oc?.id ?? lineaInicial?.materialId ?? 'new'}
+        onClose={onClose}
+        oc={oc}
+        lineaInicial={lineaInicial}
+      />
     </Modal>
   )
 }
