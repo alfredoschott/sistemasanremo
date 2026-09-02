@@ -1,4 +1,4 @@
-import { Download, FileText, Plus, Search } from 'lucide-react'
+import { AlertTriangle, Download, FileText, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
@@ -7,6 +7,7 @@ import EstadoBadge from '../../components/EstadoBadge'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
+import { estaVencido } from '../../lib/plazos'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
 
@@ -130,7 +131,18 @@ export default function VentasList() {
                     ? `Anticipo ${cot.porcentajeAnticipo ?? ''}%`
                     : 'Crédito Fudeco'}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{cot.entregaSemanas} sem.</td>
+                <td className="px-4 py-3 text-slate-600">
+                  <span className="inline-flex items-center gap-1">
+                    {cot.entregaSemanas} sem.
+                    {!['Facturado', 'Cancelado'].includes(cot.estado) &&
+                      estaVencido(cot.fecha, (cot.entregaSemanas ?? 0) * 7) && (
+                        <AlertTriangle
+                          className="h-3.5 w-3.5 text-red-500"
+                          title="Entrega comprometida vencida"
+                        />
+                      )}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <EstadoBadge estado={cot.estado} />
                 </td>

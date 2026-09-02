@@ -1,6 +1,7 @@
-import { doc, writeBatch } from 'firebase/firestore'
+import { doc, updateDoc, writeBatch } from 'firebase/firestore'
 import { AlertTriangle, Bell, CheckCircle2, Info } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { db } from '../lib/firebase'
 import { useNotificaciones } from '../lib/useNotificaciones'
 
@@ -30,6 +31,7 @@ function timeAgo(fecha) {
 export default function NotificationBell() {
   const { notificaciones, noLeidas } = useNotificaciones()
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
 
   const marcarTodasLeidas = async () => {
     const pendientes = notificaciones.filter((n) => !n.leida)
@@ -37,6 +39,12 @@ export default function NotificationBell() {
     const batch = writeBatch(db)
     pendientes.forEach((n) => batch.update(doc(db, 'notificaciones', n.id), { leida: true }))
     await batch.commit()
+  }
+
+  const handleClick = (n) => {
+    setOpen(false)
+    if (!n.leida) updateDoc(doc(db, 'notificaciones', n.id), { leida: true }).catch(() => {})
+    if (n.link) navigate(n.link)
   }
 
   return (
@@ -75,9 +83,10 @@ export default function NotificationBell() {
             {notificaciones.map((n) => {
               const Icon = ICONS[n.tipo] ?? Info
               return (
-                <div
+                <button
                   key={n.id}
-                  className={`flex items-start gap-2.5 border-b border-slate-50 px-4 py-2.5 text-sm last:border-0 ${
+                  onMouseDown={() => handleClick(n)}
+                  className={`flex w-full items-start gap-2.5 border-b border-slate-50 px-4 py-2.5 text-left text-sm transition-colors last:border-0 hover:bg-slate-50 ${
                     n.leida ? '' : 'bg-brand-50/50'
                   }`}
                 >
@@ -86,7 +95,7 @@ export default function NotificationBell() {
                     <p className="text-slate-700">{n.mensaje}</p>
                     <p className="text-xs text-slate-400">{timeAgo(n.fecha)}</p>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>

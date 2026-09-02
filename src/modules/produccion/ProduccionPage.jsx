@@ -1,11 +1,13 @@
-import { AlertTriangle, Factory, Search } from 'lucide-react'
+import { AlertTriangle, Download, Factory, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import Skeleton from '../../components/Skeleton'
+import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
+import { useProveedores } from '../compras/useProveedores'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { actualizarAvance, completarYFacturar, iniciarProduccion } from './ofActions'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
@@ -131,13 +133,30 @@ function OrdenFabricacionCard({ of }) {
 
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
+  const proveedores = useProveedores()
   const [search, setSearch] = useState('')
+
+  const nombreProveedor = useMemo(() => {
+    const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
+    return (id) => map.get(id) ?? ''
+  }, [proveedores])
 
   const ordenesFiltradas = useMemo(
     () =>
       ordenes.filter((of) => of.cliente?.toLowerCase().includes(search.toLowerCase().trim())),
     [ordenes, search],
   )
+
+  const exportar = () => {
+    exportCsv(`ordenes_fabricacion_${new Date().toISOString().slice(0, 10)}.csv`, ordenesFiltradas, [
+      { label: 'Número de serie', value: (of) => of.numeroSerie },
+      { label: 'Cliente', value: (of) => of.cliente },
+      { label: 'Proveedor', value: (of) => nombreProveedor(of.proveedorId) },
+      { label: 'Plazo (días)', value: (of) => of.plazoEntregaDias },
+      { label: 'Estado', value: (of) => of.estado },
+      { label: 'Avance %', value: (of) => of.avance ?? 0 },
+    ])
+  }
 
   const metrics = useMemo(() => {
     const enProduccion = ordenes.filter((of) => of.estado === 'En producción')
@@ -153,7 +172,13 @@ export default function ProduccionPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-800">Órdenes de fabricación</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-slate-800">Órdenes de fabricación</h1>
+        <Button variant="secondary" onClick={exportar} className="inline-flex items-center gap-1.5">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
 
       <MetricsRow>
         <MetricCard label="Abiertas" value={metrics.abiertas} />

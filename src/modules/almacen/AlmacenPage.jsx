@@ -1,11 +1,12 @@
-import { doc, updateDoc } from 'firebase/firestore'
-import { AlertTriangle, Boxes, Check, Clock, Pencil, Plus, ShoppingCart, Search } from 'lucide-react'
+import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { AlertTriangle, Boxes, Check, Clock, Download, Pencil, Plus, ShoppingCart, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
+import { exportCsv } from '../../lib/exportCsv'
 import { useToast } from '../../lib/ToastContext'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
 import HistorialMaterialModal from './HistorialMaterialModal'
@@ -90,6 +91,22 @@ export default function AlmacenPage() {
   const [search, setSearch] = useState('')
   const [historialMaterial, setHistorialMaterial] = useState(null)
   const [ocSugerida, setOcSugerida] = useState(null)
+  const toast = useToast()
+
+  const eliminarMaterial = async (material) => {
+    if (
+      !window.confirm(
+        `¿Eliminar "${material.nombre}"? Solo hazlo si ya no se usa en ninguna O.C. ni OF.`,
+      )
+    )
+      return
+    try {
+      await deleteDoc(doc(db, 'materiales', material.id))
+      toast(`${material.nombre} eliminado`)
+    } catch {
+      toast('No se pudo eliminar el material.', 'error')
+    }
+  }
 
   const metrics = useMemo(() => {
     const critico = materiales.filter((m) => (m.stock ?? 0) <= 0).length
@@ -103,6 +120,14 @@ export default function AlmacenPage() {
     [materiales, search],
   )
 
+  const exportar = () => {
+    exportCsv(`materiales_${new Date().toISOString().slice(0, 10)}.csv`, materialesFiltrados, [
+      { label: 'Material', value: (m) => m.nombre },
+      { label: 'Stock actual', value: (m) => m.stock ?? 0 },
+      { label: 'Mínimo', value: (m) => m.minimo ?? 0 },
+    ])
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -110,10 +135,20 @@ export default function AlmacenPage() {
           <h1 className="text-xl font-semibold text-slate-800">Materiales</h1>
           <p className="text-sm text-slate-500">{materiales.length} en catálogo</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-1.5">
-          <Plus className="h-4 w-4" />
-          Movimiento
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={exportar}
+            className="inline-flex items-center gap-1.5"
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-1.5">
+            <Plus className="h-4 w-4" />
+            Movimiento
+          </Button>
+        </div>
       </div>
 
       <MetricsRow>
@@ -201,6 +236,13 @@ export default function AlmacenPage() {
                         title="Ver historial"
                       >
                         <Clock className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => eliminarMaterial(material)}
+                        className="text-slate-400 transition-colors hover:text-red-600"
+                        title="Eliminar material"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>

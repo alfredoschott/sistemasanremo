@@ -1,5 +1,5 @@
-import { doc, updateDoc } from 'firebase/firestore'
-import { Check, Pencil, Truck } from 'lucide-react'
+import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { Check, Pencil, Trash2, Truck } from 'lucide-react'
 import { useState } from 'react'
 import EmptyState from '../../components/EmptyState'
 import { db } from '../../lib/firebase'
@@ -53,6 +53,22 @@ function NombreEditable({ proveedor }) {
 
 export default function ProveedoresPanel() {
   const proveedores = useProveedores()
+  const toast = useToast()
+
+  const eliminarProveedor = async (proveedor) => {
+    if (
+      !window.confirm(
+        `¿Eliminar "${proveedor.nombre}"? Solo hazlo si ya no se usa en ninguna O.C. ni OF.`,
+      )
+    )
+      return
+    try {
+      await deleteDoc(doc(db, 'proveedores', proveedor.id))
+      toast(`${proveedor.nombre} eliminado`)
+    } catch {
+      toast('No se pudo eliminar el proveedor.', 'error')
+    }
+  }
 
   return (
     <section>
@@ -67,8 +83,18 @@ export default function ProveedoresPanel() {
         ) : (
           <ul className="divide-y divide-slate-100">
             {proveedores.map((p) => (
-              <li key={p.id} className="px-4 py-3 text-sm transition-colors hover:bg-brand-50/40">
+              <li
+                key={p.id}
+                className="flex items-center justify-between px-4 py-3 text-sm transition-colors hover:bg-brand-50/40"
+              >
                 <NombreEditable proveedor={p} />
+                <button
+                  onClick={() => eliminarProveedor(p)}
+                  className="text-slate-400 transition-colors hover:text-red-600"
+                  title="Eliminar proveedor"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </li>
             ))}
           </ul>

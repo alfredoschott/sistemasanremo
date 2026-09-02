@@ -13,6 +13,7 @@ export async function cancelarCotizacion(cotizacion) {
   await crearNotificacion({
     mensaje: `Cotización de ${cotizacion.cliente} cancelada`,
     tipo: 'warning',
+    link: `/ventas/${cotizacion.id}`,
   })
 }
 

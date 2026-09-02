@@ -9,6 +9,7 @@ import Timeline from '../../components/Timeline'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
 import { cancelarCotizacion, duplicarCotizacion } from './cotizacionActions'
+import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
 
@@ -149,6 +150,7 @@ export default function VentasDetalle() {
             adjuntos={cotizacion.adjuntos}
           />
         </div>
+        <NotasInternas cotizacionId={cotizacion.id} />
         <div className="no-print">
           <Auditoria cotizacionId={cotizacion.id} />
         </div>

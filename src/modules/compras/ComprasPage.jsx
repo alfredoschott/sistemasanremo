@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardList, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
+import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
@@ -8,6 +8,8 @@ import Modal from '../../components/Modal'
 import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra } from '../almacen/stockActions'
+import { useMateriales } from '../almacen/useMateriales'
+import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import AbrirOFModal from './AbrirOFModal'
@@ -37,6 +39,7 @@ export default function ComprasPage() {
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
   const proveedores = useProveedores()
+  const { materiales } = useMateriales()
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
   const [ocParaEditar, setOcParaEditar] = useState(null)
@@ -50,6 +53,11 @@ export default function ComprasPage() {
     const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
     return (id) => map.get(id) ?? ''
   }, [proveedores])
+
+  const nombreMaterial = useMemo(() => {
+    const map = new Map(materiales.map((m) => [m.id, m.nombre]))
+    return (id) => map.get(id) ?? ''
+  }, [materiales])
 
   const ordenesFiltradas = useMemo(
     () =>
@@ -70,6 +78,21 @@ export default function ComprasPage() {
     ).size
     return { pendientes, recibidasEsteMes, proveedoresActivos, materialesDistintos }
   }, [ordenes])
+
+  const exportarOc = () => {
+    exportCsv(`ordenes_compra_${new Date().toISOString().slice(0, 10)}.csv`, ordenesFiltradas, [
+      { label: 'Proveedor', value: (oc) => nombreProveedor(oc.proveedorId) },
+      {
+        label: 'Materiales',
+        value: (oc) =>
+          (oc.materiales ?? [])
+            .map((l) => `${l.cantidad}x ${nombreMaterial(l.materialId)}`)
+            .join('; '),
+      },
+      { label: 'Plazo (días)', value: (oc) => oc.plazoEntregaDias },
+      { label: 'Estado', value: (oc) => oc.estado },
+    ])
+  }
 
   const marcarRecibida = async (oc) => {
     setRecibiendoId(oc.id)
@@ -137,13 +160,23 @@ export default function ComprasPage() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-800">Órdenes de compra</h2>
-          <Button
-            onClick={() => setOcModalOpen(true)}
-            className="inline-flex items-center gap-1.5"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva O.C.
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={exportarOc}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Download className="h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Button
+              onClick={() => setOcModalOpen(true)}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva O.C.
+            </Button>
+          </div>
         </div>
         <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
           <Search className="h-4 w-4 text-slate-400" />

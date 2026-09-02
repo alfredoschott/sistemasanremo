@@ -8,7 +8,11 @@ export async function iniciarProduccion(of) {
   batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'En producción', avance: 0 })
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'Producción' })
   await batch.commit()
-  crearNotificacion({ mensaje: `${of.numeroSerie} entró a producción`, tipo: 'info' })
+  crearNotificacion({
+    mensaje: `${of.numeroSerie} entró a producción`,
+    tipo: 'info',
+    link: `/ventas/${of.cotizacionId}`,
+  })
   registrarAuditoria({
     entidad: 'cotizacion',
     entidadId: of.cotizacionId,
@@ -26,7 +30,11 @@ export async function completarYFacturar(of) {
   batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'Completada', avance: 100 })
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'Facturado' })
   await batch.commit()
-  crearNotificacion({ mensaje: `${of.numeroSerie} completada y facturada`, tipo: 'success' })
+  crearNotificacion({
+    mensaje: `${of.numeroSerie} completada y facturada`,
+    tipo: 'success',
+    link: `/ventas/${of.cotizacionId}`,
+  })
   registrarAuditoria({
     entidad: 'cotizacion',
     entidadId: of.cotizacionId,

@@ -61,7 +61,11 @@ function CotizacionForm({ onClose, cotizacion }) {
           fecha: serverTimestamp(),
         })
         toast(`Cotización creada para ${form.cliente}`)
-        crearNotificacion({ mensaje: `Nueva cotización: ${form.cliente}`, tipo: 'success' })
+        crearNotificacion({
+          mensaje: `Nueva cotización: ${form.cliente}`,
+          tipo: 'success',
+          link: `/ventas/${ref.id}`,
+        })
         registrarAuditoria({ entidad: 'cotizacion', entidadId: ref.id, accion: 'Creada' })
       }
 

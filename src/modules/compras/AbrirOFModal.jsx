@@ -49,6 +49,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
       crearNotificacion({
         mensaje: `OF ${numeroSerie} abierta para ${cotizacion.cliente}`,
         tipo: 'success',
+        link: `/ventas/${cotizacion.id}`,
       })
       registrarAuditoria({
         entidad: 'cotizacion',
