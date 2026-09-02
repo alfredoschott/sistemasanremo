@@ -1,8 +1,17 @@
-import { Check } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { ESTADOS_COTIZACION } from '../lib/estados'
 
 export default function Timeline({ estadoActual }) {
   const currentIndex = ESTADOS_COTIZACION.indexOf(estadoActual)
+
+  if (estadoActual === 'Cancelado') {
+    return (
+      <div className="flex items-center gap-2 rounded-md bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <X className="h-4 w-4" />
+        Cotización cancelada
+      </div>
+    )
+  }
 
   return (
     <ol className="flex items-center">

@@ -2,6 +2,7 @@ import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore
 import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
+import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { useToast } from '../../lib/ToastContext'
@@ -48,6 +49,12 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
       crearNotificacion({
         mensaje: `OF ${numeroSerie} abierta para ${cotizacion.cliente}`,
         tipo: 'success',
+      })
+      registrarAuditoria({
+        entidad: 'cotizacion',
+        entidadId: cotizacion.id,
+        accion: 'OF abierta',
+        detalle: numeroSerie,
       })
     } finally {
       setSaving(false)

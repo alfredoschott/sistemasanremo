@@ -1,4 +1,4 @@
-import { ClipboardList, PackageCheck, Pencil, Plus } from 'lucide-react'
+import { ClipboardList, PackageCheck, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -9,9 +9,11 @@ import { recibirOrdenCompra } from '../almacen/stockActions'
 import { useToast } from '../../lib/ToastContext'
 import AbrirOFModal from './AbrirOFModal'
 import NuevaOrdenCompraModal from './NuevaOrdenCompraModal'
+import ProveedoresPanel from './ProveedoresPanel'
 import ProveedorNombre from './ProveedorNombre'
 import { useCotizacionesCotizadas } from './useCotizacionesCotizadas'
 import { useOrdenesCompra } from './useOrdenesCompra'
+import { useProveedores } from './useProveedores'
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
@@ -31,11 +33,26 @@ function esEsteMes(fecha) {
 export default function ComprasPage() {
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
+  const proveedores = useProveedores()
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
   const [ocParaEditar, setOcParaEditar] = useState(null)
   const [recibiendoId, setRecibiendoId] = useState(null)
+  const [search, setSearch] = useState('')
   const toast = useToast()
+
+  const nombreProveedor = useMemo(() => {
+    const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
+    return (id) => map.get(id) ?? ''
+  }, [proveedores])
+
+  const ordenesFiltradas = useMemo(
+    () =>
+      ordenes.filter((oc) =>
+        nombreProveedor(oc.proveedorId).toLowerCase().includes(search.toLowerCase().trim()),
+      ),
+    [ordenes, search, nombreProveedor],
+  )
 
   const metrics = useMemo(() => {
     const pendientes = ordenes.filter((o) => o.estado === 'pendiente').length
@@ -121,6 +138,15 @@ export default function ComprasPage() {
             Nueva O.C.
           </Button>
         </div>
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
+          <Search className="h-4 w-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por proveedor…"
+            className="w-full text-sm outline-none"
+          />
+        </div>
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -134,18 +160,18 @@ export default function ComprasPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loadingOrdenes && <TableSkeleton rows={2} cols={5} />}
-              {!loadingOrdenes && ordenes.length === 0 && (
+              {!loadingOrdenes && ordenesFiltradas.length === 0 && (
                 <tr>
                   <td colSpan={5}>
                     <EmptyState
                       icon={PackageCheck}
-                      title="Sin órdenes de compra todavía"
-                      subtitle='Crea la primera con "Nueva O.C."'
+                      title={search ? 'Sin resultados' : 'Sin órdenes de compra todavía'}
+                      subtitle={search ? 'Prueba con otro proveedor' : 'Crea la primera con "Nueva O.C."'}
                     />
                   </td>
                 </tr>
               )}
-              {ordenes.map((oc) => (
+              {ordenesFiltradas.map((oc) => (
                 <tr key={oc.id} className="transition-colors hover:bg-brand-50/40">
                   <td className="px-4 py-3 font-medium text-slate-700">
                     <ProveedorNombre proveedorId={oc.proveedorId} />
@@ -194,6 +220,8 @@ export default function ComprasPage() {
           </table>
         </div>
       </section>
+
+      <ProveedoresPanel />
 
       <AbrirOFModal cotizacion={cotizacionParaOF} onClose={() => setCotizacionParaOF(null)} />
       <NuevaOrdenCompraModal open={ocModalOpen} onClose={() => setOcModalOpen(false)} />

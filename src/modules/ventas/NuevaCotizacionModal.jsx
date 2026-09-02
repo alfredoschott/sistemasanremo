@@ -2,6 +2,7 @@ import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/fi
 import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
+import { registrarAuditoria } from '../../lib/audit'
 import { CONDICION_PAGO } from '../../lib/estados'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -52,14 +53,16 @@ function CotizacionForm({ onClose, cotizacion }) {
       if (isEdit) {
         await updateDoc(doc(db, 'cotizaciones', cotizacion.id), data)
         toast(`Cotización de ${form.cliente} actualizada`)
+        registrarAuditoria({ entidad: 'cotizacion', entidadId: cotizacion.id, accion: 'Editada' })
       } else {
-        await addDoc(collection(db, 'cotizaciones'), {
+        const ref = await addDoc(collection(db, 'cotizaciones'), {
           ...data,
           estado: 'Cotizado',
           fecha: serverTimestamp(),
         })
         toast(`Cotización creada para ${form.cliente}`)
         crearNotificacion({ mensaje: `Nueva cotización: ${form.cliente}`, tipo: 'success' })
+        registrarAuditoria({ entidad: 'cotizacion', entidadId: ref.id, accion: 'Creada' })
       }
 
       onClose()

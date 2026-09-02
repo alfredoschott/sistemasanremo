@@ -1,4 +1,4 @@
-import { Factory } from 'lucide-react'
+import { Factory, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -113,6 +113,13 @@ function OrdenFabricacionCard({ of }) {
 
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
+  const [search, setSearch] = useState('')
+
+  const ordenesFiltradas = useMemo(
+    () =>
+      ordenes.filter((of) => of.cliente?.toLowerCase().includes(search.toLowerCase().trim())),
+    [ordenes, search],
+  )
 
   const metrics = useMemo(() => {
     const enProduccion = ordenes.filter((of) => of.estado === 'En producción')
@@ -137,6 +144,16 @@ export default function ProduccionPage() {
         <MetricCard label="Completadas" value={metrics.completadas} variant="accent" />
       </MetricsRow>
 
+      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
+        <Search className="h-4 w-4 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por cliente…"
+          className="w-full text-sm outline-none"
+        />
+      </div>
+
       {loading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -145,16 +162,16 @@ export default function ProduccionPage() {
         </div>
       )}
 
-      {!loading && ordenes.length === 0 && (
+      {!loading && ordenesFiltradas.length === 0 && (
         <EmptyState
           icon={Factory}
-          title="No hay órdenes de fabricación todavía"
-          subtitle="Se crean desde Compras al abrir una OF"
+          title={search ? 'Sin resultados' : 'No hay órdenes de fabricación todavía'}
+          subtitle={search ? 'Prueba con otro cliente' : 'Se crean desde Compras al abrir una OF'}
         />
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ordenes.map((of) => (
+        {ordenesFiltradas.map((of) => (
           <OrdenFabricacionCard key={of.id} of={of} />
         ))}
       </div>

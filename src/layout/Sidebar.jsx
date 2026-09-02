@@ -1,7 +1,8 @@
-import { Boxes, Factory, ShoppingCart, TrendingUp } from 'lucide-react'
+import { Boxes, Factory, LayoutGrid, ShoppingCart, TrendingUp } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const links = [
+  { to: '/', label: 'Inicio', icon: LayoutGrid, end: true },
   { to: '/ventas', label: 'Ventas', icon: TrendingUp },
   { to: '/compras', label: 'Compras', icon: ShoppingCart },
   { to: '/produccion', label: 'Producción', icon: Factory },
@@ -12,10 +13,11 @@ export default function Sidebar() {
   return (
     <aside className="w-56 shrink-0 border-r border-slate-200 bg-white">
       <nav className="flex flex-col gap-1 p-3">
-        {links.map(({ to, label, icon: Icon }) => (
+        {links.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
+            end={end}
             className={({ isActive }) =>
               `group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                 isActive

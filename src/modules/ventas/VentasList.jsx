@@ -1,4 +1,4 @@
-import { FileText, Plus, Search } from 'lucide-react'
+import { Download, FileText, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
@@ -6,6 +6,7 @@ import EmptyState from '../../components/EmptyState'
 import EstadoBadge from '../../components/EstadoBadge'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
+import { exportCsv } from '../../lib/exportCsv'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
 
@@ -37,6 +38,21 @@ export default function VentasList() {
     [cotizaciones, search],
   )
 
+  const exportar = () => {
+    exportCsv(
+      `cotizaciones_${new Date().toISOString().slice(0, 10)}.csv`,
+      filtradas,
+      [
+        { label: 'Cliente', value: (c) => c.cliente },
+        { label: 'Monto', value: (c) => c.monto },
+        { label: 'Condición de pago', value: (c) => c.condicionPago },
+        { label: 'Entrega (semanas)', value: (c) => c.entregaSemanas },
+        { label: 'Estado', value: (c) => c.estado },
+        { label: 'Número de serie', value: (c) => c.numeroSerie ?? '' },
+      ],
+    )
+  }
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -44,10 +60,20 @@ export default function VentasList() {
           <h1 className="text-xl font-semibold text-slate-800">Cotizaciones</h1>
           <p className="text-sm text-slate-500">{cotizaciones.length} en total</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} className="gap-1.5 inline-flex items-center">
-          <Plus className="h-4 w-4" />
-          Nueva cotización
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={exportar}
+            className="gap-1.5 inline-flex items-center"
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setModalOpen(true)} className="gap-1.5 inline-flex items-center">
+            <Plus className="h-4 w-4" />
+            Nueva cotización
+          </Button>
+        </div>
       </div>
 
       <MetricsRow>

@@ -1,5 +1,5 @@
 import { doc, updateDoc } from 'firebase/firestore'
-import { AlertTriangle, Boxes, Check, Pencil, Plus } from 'lucide-react'
+import { AlertTriangle, Boxes, Check, Pencil, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -78,12 +78,19 @@ export default function AlmacenPage() {
   const { materiales, loading } = useMateriales()
   const movimientosHoy = useMovimientosHoy()
   const [modalOpen, setModalOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
   const metrics = useMemo(() => {
     const critico = materiales.filter((m) => (m.stock ?? 0) <= 0).length
     const bajo = materiales.filter((m) => (m.stock ?? 0) > 0 && (m.stock ?? 0) < (m.minimo ?? 0)).length
     return { critico, bajo, total: materiales.length }
   }, [materiales])
+
+  const materialesFiltrados = useMemo(
+    () =>
+      materiales.filter((m) => m.nombre?.toLowerCase().includes(search.toLowerCase().trim())),
+    [materiales, search],
+  )
 
   return (
     <div>
@@ -105,6 +112,16 @@ export default function AlmacenPage() {
         <MetricCard label="Movimientos hoy" value={movimientosHoy} variant="accent" />
       </MetricsRow>
 
+      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
+        <Search className="h-4 w-4 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar material…"
+          className="w-full text-sm outline-none"
+        />
+      </div>
+
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
@@ -117,18 +134,18 @@ export default function AlmacenPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && <TableSkeleton rows={3} cols={4} />}
-            {!loading && materiales.length === 0 && (
+            {!loading && materialesFiltrados.length === 0 && (
               <tr>
                 <td colSpan={4}>
                   <EmptyState
                     icon={Boxes}
-                    title="Sin materiales todavía"
-                    subtitle="Se crean aquí o al armar una O.C."
+                    title={search ? 'Sin resultados' : 'Sin materiales todavía'}
+                    subtitle={search ? 'Prueba con otro nombre' : 'Se crean aquí o al armar una O.C.'}
                   />
                 </td>
               </tr>
             )}
-            {materiales.map((material) => {
+            {materialesFiltrados.map((material) => {
               const bajoMinimo = (material.stock ?? 0) < (material.minimo ?? 0)
               return (
                 <tr key={material.id} className="transition-colors hover:bg-brand-50/40">

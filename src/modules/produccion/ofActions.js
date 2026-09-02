@@ -1,4 +1,5 @@
 import { doc, updateDoc, writeBatch } from 'firebase/firestore'
+import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 
@@ -8,6 +9,12 @@ export async function iniciarProduccion(of) {
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'Producción' })
   await batch.commit()
   crearNotificacion({ mensaje: `${of.numeroSerie} entró a producción`, tipo: 'info' })
+  registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: of.cotizacionId,
+    accion: 'En producción',
+    detalle: of.numeroSerie,
+  })
 }
 
 export async function actualizarAvance(ofId, avance) {
@@ -20,4 +27,10 @@ export async function completarYFacturar(of) {
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'Facturado' })
   await batch.commit()
   crearNotificacion({ mensaje: `${of.numeroSerie} completada y facturada`, tipo: 'success' })
+  registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: of.cotizacionId,
+    accion: 'Completada y facturada',
+    detalle: of.numeroSerie,
+  })
 }

@@ -5,6 +5,7 @@ export const ESTADO_BADGE = {
   'OF abierta': 'bg-amber-100 text-amber-700',
   Producción: 'bg-blue-100 text-blue-700',
   Facturado: 'bg-brand-50 text-brand-800',
+  Cancelado: 'bg-red-100 text-red-700',
 }
 
 export const ESTADO_DOT = {
@@ -12,6 +13,7 @@ export const ESTADO_DOT = {
   'OF abierta': 'bg-amber-500',
   Producción: 'bg-blue-500',
   Facturado: 'bg-brand-600',
+  Cancelado: 'bg-red-500',
 }
 
 export const CONDICION_PAGO = {
