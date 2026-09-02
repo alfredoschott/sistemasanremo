@@ -93,6 +93,15 @@ documento original del proyecto.
     nombre editable inline.
   - Dashboard de inicio (ruta `/`, primer ítem del sidebar): KPIs
     combinados de los 4 módulos + feed de actividad reciente.
+- **Robustez**: persistencia offline de Firestore (sigue funcionando si
+  se cae el wifi en planta, sincroniza sola al reconectar) + indicador
+  "Sin conexión" en el topbar. Toda escritura a Firestore/Storage que
+  antes fallaba en silencio ahora muestra un toast de error. Validación
+  de stock (una salida no puede dejar stock negativo). Sidebar
+  responsive tipo cajón con hamburguesa para celular/tablet. Botón
+  "Imprimir" en cotizaciones (estilos `.no-print`/`@media print`).
+  "Duplicar cotización" para clientes recurrentes. Confirmación antes de
+  borrar un adjunto. Página 404 para rutas inexistentes.
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
