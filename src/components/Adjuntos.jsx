@@ -7,6 +7,8 @@ import { useToast } from '../lib/ToastContext'
 import Button from './Button'
 import IconButton from './IconButton'
 
+const MAX_SIZE = 20 * 1024 * 1024
+
 function formatSize(bytes) {
   if (!bytes) return ''
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
@@ -23,6 +25,11 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
   const toast = useToast()
 
   const subirArchivo = async (file) => {
+    if (file.size > MAX_SIZE) {
+      toast('El archivo pesa más de 20 MB. Sube uno más ligero.', 'error')
+      if (inputRef.current) inputRef.current.value = ''
+      return
+    }
     setUploading(true)
     try {
       const path = `${coleccion}/${docId}/${Date.now()}_${file.name}`
