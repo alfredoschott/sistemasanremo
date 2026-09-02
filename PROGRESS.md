@@ -31,33 +31,47 @@ documento original del proyecto.
   estado pendiente/recibida). `ProveedorPicker`/`useProveedores` maneja
   la colección `/proveedores` compartida (permite crear proveedor inline
   al vuelo desde cualquiera de los dos formularios).
-- **Placeholders**: Producción, Almacén (solo mensaje "próxima fase", sin
-  lógica).
+- **Módulo Producción** (completo): tarjetas por OF (número de serie,
+  cliente, proveedor, plazo, estado). "Iniciar producción" (Abierta → En
+  producción, sincroniza cotización a "Producción"), slider de avance %,
+  "Completar y facturar" (cierra el ciclo: OF → Completada, cotización →
+  Facturado).
+- **Módulo Almacén** (completo): catálogo `/materiales` (nombre, stock,
+  mínimo editable inline, badge "Bajo mínimo"). `MaterialPicker` mismo
+  patrón que `ProveedorPicker` (crear material inline). Todo lo que
+  suma/resta stock pasa por `runTransaction` en `stockActions.js`:
+  `recibirOrdenCompra` (botón "Marcar recibida" en Compras, suma stock
+  de todas las líneas y registra `/movimientosAlmacen`) y
+  `registrarMovimientoManual` (ajustes manuales entrada/salida).
+- Con esto el flujo de negocio completo funciona de punta a punta:
+  cotización → abrir OF con proveedor → O.C. a proveedor → recibir O.C.
+  (suma stock) → iniciar producción → avance → completar y facturar.
 - Datos de prueba ya sembrados en Firestore real (`npm run seed` corrido
   con éxito: 3 clientes, 3 cotizaciones).
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
 
-1. **Módulo Producción** (OF — orden de fabricación): mostrar avance de
-   las OF abiertas (ya se crean desde Compras), consumo de BOM, timeline
-   de estados propio.
-2. **Recepción de O.C.**: falta el botón "Marcar recibida" en Compras —
-   se dejó pendiente a propósito porque sumar stock en `/materiales`
-   pertenece al módulo Almacén (usar `runTransaction`, no `update`
-   simple, por la condición de carrera real entre módulos).
-3. **Módulo Almacén**: catálogo de materiales + stock, movimientos de
-   entrada/salida. Riesgo a mitigar activamente: toda operación que
-   sume/reste stock debe usar `runTransaction` de Firestore (condición de
-   carrera real con 4 módulos conectados), nunca un `update` simple.
-4. **Cloud Functions** (automatizaciones): OC recibida → suma stock; OF
-   abierta → resta stock o marca "en espera de material"; stock bajo
-   mínimo → sugiere/genera borrador de O.C.
-5. **Roles por área** — sin definir con Sanremo todavía. Hoy cualquier
+1. **Cloud Functions** (automatizaciones del lado servidor): hoy la
+   suma/resta de stock corre client-side vía `runTransaction`, lo cual
+   funciona pero no es a prueba de un cliente malicioso o con Firestore
+   rules más laxas. Migrar a Cloud Functions da más control (ej. trigger
+   al marcar O.C. recibida, resta automática al consumir BOM en
+   Producción, sugerencia de O.C. cuando stock < mínimo).
+2. **Consumo de BOM en Producción**: hoy Producción no resta stock del
+   material — falta enlazar el catálogo de materiales de este sistema
+   con el proyecto de tornillería/BOM que Yamil está armando por
+   separado (ver contexto del proyecto), y que Producción reste stock al
+   avanzar.
+3. **Roles por área** — sin definir con Sanremo todavía. Hoy cualquier
    usuario autenticado puede escribir en cualquier colección.
-6. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
+4. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
    monto y referencia a la OF; integración a un PAC (Facturama, SW Sapien)
    es fase futura.
+5. **Deploy**: reglas de Firestore ya publicadas manualmente desde la
+   consola; falta hacer `firebase deploy --only hosting` (o similar) para
+   tener una URL real que el equipo de Sanremo pueda usar, hoy solo
+   corre en `localhost`.
 
 ## Decisiones tomadas en esta fase
 
