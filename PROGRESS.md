@@ -119,16 +119,55 @@ documento original del proyecto.
   nuevos: `diasCredito`/`fechaFacturado`/`cobrado` en cotización,
   `plazoPagoDias` en proveedor (editable, `ProveedoresPanel` ahora es
   tabla), `montoTotal`/`fechaRecibida`/`pagado` en O.C.
+- **Pulido visual + robustez de UX**: componentes compartidos nuevos
+  (`Button` con spinner de carga, `IconButton`, `SearchInput`, `Modal`
+  con botón de cerrar/Escape/blur). Órdenes de compra ya recibidas:
+  proveedor/plazo/monto siguen editables, materiales quedan bloqueados
+  (de lectura) para no descuadrar el stock — con botón "Revertir" que
+  regresa la O.C. a pendiente restando el stock y borrando los
+  movimientos generados (`stockActions.revertirRecepcion`).
+- **Patrón de deshacer**: `ToastContext` soporta
+  `toast(mensaje, tipo, { onUndo })` — botón "Deshacer" ~6s en: marcar
+  recibida una O.C., movimiento manual de almacén, cancelar cotización,
+  cobrado/pagado en Finanzas, iniciar producción/completar y facturar.
+- **Revisión de seguridad completa**:
+  - Corregido: inyección de fórmulas CSV (`exportCsv.js` neutraliza
+    celdas que empiezan con `= + - @`), límite de 20 MB por adjunto
+    (cliente + `storage.rules`), headers de seguridad en Hosting
+    (X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+    Permissions-Policy).
+  - **Hallazgo crítico corregido**: `firestore.rules`/`storage.rules`
+    solo exigían "¿inició sesión?" — cualquier persona con cuenta de
+    Google tenía acceso completo. Ahora exigen pertenecer a
+    `/usuariosAutorizados` (doc id = email). Ya están autorizados
+    `schottalfredo@gmail.com` y `sistemasanremo@gmail.com`. Agregar más
+    gente: `node scripts/agregarUsuario.mjs correo@ejemplo.com`
+    (requiere `scripts/serviceAccountKey.json`). `SinAccesoPage.jsx`
+    muestra un mensaje claro si alguien inicia sesión pero no está en
+    la lista, en vez de que la app se vea rota.
+  - Verificado limpio: sin `dangerouslySetInnerHTML`/`eval`, sin
+    secretos en git (ni en el historial), `npm audit --omit=dev` sin
+    vulnerabilidades (las moderadas restantes son de firebase-tools/
+    firebase-admin, herramientas de desarrollo, no se empacan al
+    cliente).
 - Repo git local inicializado con commits por feature.
 
 **Nota para la próxima sesión**: el sistema ya cubre el flujo completo
-de negocio + bastantes extras. Antes de seguir agregando funciones, lo
-que más aporta ahora es que alguien de Sanremo lo pruebe de verdad —
-ahí van a salir los pendientes reales.
+de negocio + bastantes extras, y ya pasó una revisión de seguridad.
+Antes de seguir agregando funciones, lo que más aporta ahora es que
+alguien de Sanremo lo pruebe de verdad — ahí van a salir los
+pendientes reales.
 
 ## Pendiente / próximos pasos
 
-0. **Finanzas — alcance a propósito recortado**: "por cobrar" solo
+1. **Publicar firestore.rules actualizado** (urgente): el archivo local
+   ya tiene la restricción a `/usuariosAutorizados`, pero falta pegarlo
+   en Firebase Console → Firestore → Reglas (igual que las veces
+   anteriores) para que tome efecto — mientras no se publique, sigue
+   abierto a cualquier cuenta de Google. `storage.rules` también está
+   actualizado localmente pero Storage sigue sin activarse (ver
+   Decisiones).
+2. **Finanzas — alcance a propósito recortado**: "por cobrar" solo
    cubre crédito Fudeco. El resto del anticipo (cuando la condición es
    "anticipo") no se rastrea como cuenta por cobrar porque no hay una
    regla de negocio clara sobre cuándo se cobra ese resto — preguntar a
