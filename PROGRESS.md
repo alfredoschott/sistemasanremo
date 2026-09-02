@@ -59,6 +59,17 @@ documento original del proyecto.
   pastilla activa animada, transición de fade entre páginas, login
   rediseñado con fondo con textura. `EstadoBadge`/`Timeline` con más
   jerarquía visual (checkmarks, línea de progreso animada).
+- **Edición y notificaciones**: cotizaciones editables mientras están
+  "Cotizado", O.C. editables mientras están "pendiente" (mismos modales
+  de creación, generalizados). Centro de notificaciones persistente
+  (`/notificaciones` + `NotificationBell.jsx` en el topbar) que registra
+  los eventos clave del sistema (nueva cotización, OF abierta, O.C.
+  creada, avances de producción, avisos de stock bajo mínimo).
+- **Métricas por módulo**: tarjetas KPI en Ventas/Compras/Producción/
+  Almacén con datos reales (montos, conteos, promedios), inspiradas en
+  el mockup HTML que el usuario ya tenía (`sistema_sanremo_demo.html`).
+  Buscador por cliente en Ventas. Nombre de material editable inline en
+  Almacén.
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
