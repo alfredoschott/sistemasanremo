@@ -71,8 +71,17 @@ documento original del proyecto.
   Buscador por cliente en Ventas. Nombre de material editable inline en
   Almacén.
 - **Adjuntos, cancelación, auditoría, export y más**:
-  - Adjuntos por cotización vía Firebase Storage (`Adjuntos.jsx`,
-    `storage.rules` — falta publicar las reglas, ver Pendiente).
+  - Adjuntos genéricos vía Firebase Storage (`components/Adjuntos.jsx`,
+    recibe `coleccion`+`docId`), usados en cotizaciones (Ventas) y
+    órdenes de compra (Compras, para facturas) — `storage.rules` cubre
+    ambas rutas, falta publicarlas (ver Pendiente).
+  - Historial de movimientos por material en Almacén
+    (`HistorialMaterialModal`, ícono de reloj por fila).
+  - "Generar O.C. sugerida" desde un material bajo mínimo (precarga el
+    modal de nueva O.C. con `lineaInicial`).
+  - Alertas de "Vencida" en O.C. y OF cuyo plazo de proveedor ya pasó
+    (`lib/plazos.js`).
+  - Avatar real de Google en el topbar.
   - Cancelar cotización (nuevo estado "Cancelado", con confirmación).
   - Auditoría (`/auditoria`, visible en el detalle de cada cotización):
     creación, edición, cancelación, OF abierta, entrada a producción,
