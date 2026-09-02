@@ -1,6 +1,10 @@
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { useState } from 'react'
+import Button from '../../components/Button'
+import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
+import { useToast } from '../../lib/ToastContext'
+import { inputClass } from '../../lib/ui'
 import ProveedorPicker from './ProveedorPicker'
 
 function generarNumeroSerie() {
@@ -13,6 +17,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
   const [proveedorId, setProveedorId] = useState('')
   const [plazoEntregaDias, setPlazoEntregaDias] = useState('20')
   const [saving, setSaving] = useState(false)
+  const toast = useToast()
 
   if (!cotizacion) return null
 
@@ -38,54 +43,42 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
       await batch.commit()
 
       onClose()
+      toast(`OF ${numeroSerie} abierta para ${cotizacion.cliente}`)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-1 text-lg font-semibold text-slate-800">Abrir orden de fabricación</h2>
-        <p className="mb-4 text-sm text-slate-500">{cotizacion.cliente}</p>
+    <Modal open title="Abrir orden de fabricación" subtitle={cotizacion.cliente} onClose={onClose}>
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <label className="text-sm font-medium text-slate-600">
+          Proveedor de materiales
+          <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
+        </label>
 
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <label className="text-sm font-medium text-slate-600">
-            Proveedor de materiales
-            <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
-          </label>
+        <label className="text-sm font-medium text-slate-600">
+          Plazo de entrega del proveedor (días)
+          <input
+            required
+            type="number"
+            min="15"
+            max="30"
+            value={plazoEntregaDias}
+            onChange={(e) => setPlazoEntregaDias(e.target.value)}
+            className={inputClass}
+          />
+        </label>
 
-          <label className="text-sm font-medium text-slate-600">
-            Plazo de entrega del proveedor (días)
-            <input
-              required
-              type="number"
-              min="15"
-              max="30"
-              value={plazoEntregaDias}
-              onChange={(e) => setPlazoEntregaDias(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
-
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !proveedorId}
-              className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
-            >
-              {saving ? 'Abriendo…' : 'Abrir OF'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="mt-2 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={saving || !proveedorId}>
+            {saving ? 'Abriendo…' : 'Abrir OF'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   )
 }

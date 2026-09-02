@@ -7,6 +7,13 @@ export const ESTADO_BADGE = {
   Facturado: 'bg-brand-50 text-brand-800',
 }
 
+export const ESTADO_DOT = {
+  Cotizado: 'bg-slate-400',
+  'OF abierta': 'bg-amber-500',
+  Producción: 'bg-blue-500',
+  Facturado: 'bg-brand-600',
+}
+
 export const CONDICION_PAGO = {
   ANTICIPO: 'anticipo',
   FUDECO: 'fudeco',

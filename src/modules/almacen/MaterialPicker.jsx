@@ -1,6 +1,7 @@
 import { addDoc, collection } from 'firebase/firestore'
 import { useState } from 'react'
 import { db } from '../../lib/firebase'
+import { inputClass } from '../../lib/ui'
 import { useMateriales } from './useMateriales'
 
 const NUEVO = '__nuevo__'
@@ -36,12 +37,12 @@ export default function MaterialPicker({ value, onChange }) {
           value={creatingName}
           onChange={(e) => setCreatingName(e.target.value)}
           placeholder="Nombre del material"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className={`flex-1 ${inputClass} mt-0`}
         />
         <button
           type="button"
           onClick={confirmNuevo}
-          className="rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white hover:bg-brand-800"
+          className="rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-800"
         >
           Guardar
         </button>
@@ -50,12 +51,7 @@ export default function MaterialPicker({ value, onChange }) {
   }
 
   return (
-    <select
-      required
-      value={value}
-      onChange={handleSelect}
-      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-    >
+    <select required value={value} onChange={handleSelect} className={inputClass}>
       <option value="" disabled>
         Selecciona un material
       </option>

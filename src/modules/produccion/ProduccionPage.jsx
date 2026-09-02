@@ -1,4 +1,9 @@
+import { Factory } from 'lucide-react'
 import { useState } from 'react'
+import Button from '../../components/Button'
+import EmptyState from '../../components/EmptyState'
+import Skeleton from '../../components/Skeleton'
+import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { actualizarAvance, completarYFacturar, iniciarProduccion } from './ofActions'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
@@ -11,18 +16,20 @@ const ESTADO_OF_BADGE = {
 
 function OrdenFabricacionCard({ of }) {
   const [busy, setBusy] = useState(false)
+  const toast = useToast()
 
-  const runAction = async (action) => {
+  const runAction = async (action, message) => {
     setBusy(true)
     try {
       await action()
+      if (message) toast(message)
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
+    <div className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="mb-3 flex items-start justify-between">
         <div>
           <p className="text-sm text-slate-400">{of.numeroSerie}</p>
@@ -51,13 +58,15 @@ function OrdenFabricacionCard({ of }) {
       </dl>
 
       {of.estado === 'Abierta' && (
-        <button
+        <Button
+          className="w-full"
           disabled={busy}
-          onClick={() => runAction(() => iniciarProduccion(of))}
-          className="w-full rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
+          onClick={() =>
+            runAction(() => iniciarProduccion(of), `${of.numeroSerie} en producción`)
+          }
         >
           Iniciar producción
-        </button>
+        </Button>
       )}
 
       {of.estado === 'En producción' && (
@@ -65,6 +74,12 @@ function OrdenFabricacionCard({ of }) {
           <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
             <span>Avance</span>
             <span>{of.avance ?? 0}%</span>
+          </div>
+          <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full bg-brand-600 transition-all duration-300 ease-out"
+              style={{ width: `${of.avance ?? 0}%` }}
+            />
           </div>
           <input
             type="range"
@@ -76,13 +91,15 @@ function OrdenFabricacionCard({ of }) {
             onChange={(e) => actualizarAvance(of.id, Number(e.target.value))}
             className="mb-3 w-full accent-brand-700"
           />
-          <button
+          <Button
+            className="w-full"
             disabled={busy}
-            onClick={() => runAction(() => completarYFacturar(of))}
-            className="w-full rounded-md bg-brand-700 px-3 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
+            onClick={() =>
+              runAction(() => completarYFacturar(of), `${of.numeroSerie} completada y facturada`)
+            }
           >
             Completar y facturar
-          </button>
+          </Button>
         </div>
       )}
 
@@ -100,11 +117,20 @@ export default function ProduccionPage() {
     <div>
       <h1 className="mb-4 text-xl font-semibold text-slate-800">Órdenes de fabricación</h1>
 
-      {loading && <p className="text-slate-400">Cargando…</p>}
+      {loading && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      )}
+
       {!loading && ordenes.length === 0 && (
-        <p className="text-slate-400">
-          No hay órdenes de fabricación todavía. Se crean desde Compras al abrir una OF.
-        </p>
+        <EmptyState
+          icon={Factory}
+          title="No hay órdenes de fabricación todavía"
+          subtitle="Se crean desde Compras al abrir una OF"
+        />
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,7 +1,12 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { X } from 'lucide-react'
 import { useState } from 'react'
 import MaterialPicker from '../almacen/MaterialPicker'
+import Button from '../../components/Button'
+import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
+import { useToast } from '../../lib/ToastContext'
+import { inputClass } from '../../lib/ui'
 import ProveedorPicker from './ProveedorPicker'
 
 const lineaVacia = { materialId: '', cantidad: '1' }
@@ -11,8 +16,7 @@ export default function NuevaOrdenCompraModal({ open, onClose }) {
   const [plazoEntregaDias, setPlazoEntregaDias] = useState('20')
   const [materiales, setMateriales] = useState([{ ...lineaVacia }])
   const [saving, setSaving] = useState(false)
-
-  if (!open) return null
+  const toast = useToast()
 
   const updateLinea = (index, field) => (value) => {
     setMateriales((prev) =>
@@ -40,90 +44,80 @@ export default function NuevaOrdenCompraModal({ open, onClose }) {
       setProveedorId('')
       setMateriales([{ ...lineaVacia }])
       onClose()
+      toast('Orden de compra creada')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">Nueva orden de compra</h2>
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <label className="text-sm font-medium text-slate-600">
-            Proveedor
-            <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
-          </label>
+    <Modal open={open} onClose={onClose} title="Nueva orden de compra" maxWidth="max-w-lg">
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <label className="text-sm font-medium text-slate-600">
+          Proveedor
+          <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
+        </label>
 
-          <label className="text-sm font-medium text-slate-600">
-            Plazo de entrega (días)
-            <input
-              required
-              type="number"
-              min="1"
-              value={plazoEntregaDias}
-              onChange={(e) => setPlazoEntregaDias(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </label>
+        <label className="text-sm font-medium text-slate-600">
+          Plazo de entrega (días)
+          <input
+            required
+            type="number"
+            min="1"
+            value={plazoEntregaDias}
+            onChange={(e) => setPlazoEntregaDias(e.target.value)}
+            className={inputClass}
+          />
+        </label>
 
-          <div>
-            <span className="text-sm font-medium text-slate-600">Materiales</span>
-            <div className="mt-1 flex flex-col gap-2">
-              {materiales.map((linea, index) => (
-                <div key={index} className="flex gap-2">
-                  <div className="flex-1">
-                    <MaterialPicker
-                      value={linea.materialId}
-                      onChange={updateLinea(index, 'materialId')}
-                    />
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    value={linea.cantidad}
-                    onChange={(e) => updateLinea(index, 'cantidad')(e.target.value)}
-                    className="w-20 rounded-md border border-slate-300 px-3 py-2 text-sm"
+        <div>
+          <span className="text-sm font-medium text-slate-600">Materiales</span>
+          <div className="mt-1 flex flex-col gap-2">
+            {materiales.map((linea, index) => (
+              <div key={index} className="flex gap-2">
+                <div className="flex-1">
+                  <MaterialPicker
+                    value={linea.materialId}
+                    onChange={updateLinea(index, 'materialId')}
                   />
-                  {materiales.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeLinea(index)}
-                      className="px-2 text-slate-400 hover:text-red-600"
-                    >
-                      ✕
-                    </button>
-                  )}
                 </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={addLinea}
-              className="mt-2 text-sm font-medium text-brand-700 hover:underline"
-            >
-              + Agregar material
-            </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={linea.cantidad}
+                  onChange={(e) => updateLinea(index, 'cantidad')(e.target.value)}
+                  className={`w-20 ${inputClass} mt-0`}
+                />
+                {materiales.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeLinea(index)}
+                    className="px-2 text-slate-400 transition-colors hover:text-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={addLinea}
+            className="mt-2 text-sm font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+          >
+            + Agregar material
+          </button>
+        </div>
 
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !proveedorId}
-              className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
-            >
-              {saving ? 'Guardando…' : 'Crear O.C.'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="mt-2 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={saving || !proveedorId}>
+            {saving ? 'Guardando…' : 'Crear O.C.'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   )
 }

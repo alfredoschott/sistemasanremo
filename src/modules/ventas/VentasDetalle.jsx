@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import EstadoBadge from '../../components/EstadoBadge'
 import Timeline from '../../components/Timeline'
@@ -14,11 +15,15 @@ export default function VentasDetalle() {
 
   return (
     <div>
-      <Link to="/ventas" className="text-sm text-brand-700 hover:underline">
-        ← Volver a cotizaciones
+      <Link
+        to="/ventas"
+        className="inline-flex items-center gap-1 text-sm text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Volver a cotizaciones
       </Link>
 
-      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-6">
+      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-800">{cotizacion.cliente}</h1>

@@ -1,16 +1,87 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-900: #16332c;
-  --color-brand-800: #1f5e50;
-  --color-brand-700: #276e5e;
-  --color-brand-600: #2f8570;
-  --color-brand-50: #eef5f3;
-  --color-slate-bg: #f4f5f6;
+  --color-brand-950: #0b2f1e;
+  --color-brand-900: #0f3d27;
+  --color-brand-800: #145233;
+  --color-brand-700: #19663f;
+  --color-brand-600: #217d4d;
+  --color-brand-500: #2c9760;
+  --color-brand-400: #4db27c;
+  --color-brand-100: #d9f0e2;
+  --color-brand-50: #eff9f3;
+
+  --animate-fade-in: fade-in 0.18s ease-out;
+  --animate-scale-in: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-bolt: bolt-flicker 3.2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes bolt-flicker {
+    0%,
+    92%,
+    100% {
+      opacity: 1;
+    }
+    94% {
+      opacity: 0.55;
+    }
+    96% {
+      opacity: 1;
+    }
+  }
 }
 
 body {
   margin: 0;
-  background: var(--color-slate-bg);
+  background: linear-gradient(180deg, #f7f8f7 0%, #f1f3f2 100%);
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e7e9ea 25%, #f2f3f4 37%, #e7e9ea 63%);
+  background-size: 400% 100%;
+  animation: var(--animate-shimmer);
+}
+
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-brand-900);
 }

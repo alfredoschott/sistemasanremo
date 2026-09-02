@@ -1,6 +1,11 @@
+import { ClipboardList, PackageCheck, Plus } from 'lucide-react'
 import { useState } from 'react'
+import Button from '../../components/Button'
+import EmptyState from '../../components/EmptyState'
+import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra } from '../almacen/stockActions'
+import { useToast } from '../../lib/ToastContext'
 import AbrirOFModal from './AbrirOFModal'
 import NuevaOrdenCompraModal from './NuevaOrdenCompraModal'
 import ProveedorNombre from './ProveedorNombre'
@@ -20,11 +25,13 @@ export default function ComprasPage() {
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
   const [recibiendoId, setRecibiendoId] = useState(null)
+  const toast = useToast()
 
   const marcarRecibida = async (oc) => {
     setRecibiendoId(oc.id)
     try {
       await recibirOrdenCompra(oc)
+      toast('O.C. recibida — stock actualizado')
     } finally {
       setRecibiendoId(null)
     }
@@ -33,10 +40,8 @@ export default function ComprasPage() {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h1 className="mb-3 text-xl font-semibold text-slate-800">
-          Cotizaciones por abrir OF
-        </h1>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <h1 className="mb-3 text-xl font-semibold text-slate-800">Cotizaciones por abrir OF</h1>
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -47,32 +52,27 @@ export default function ComprasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loadingCotizaciones && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
-                    Cargando…
-                  </td>
-                </tr>
-              )}
+              {loadingCotizaciones && <TableSkeleton rows={2} cols={4} />}
               {!loadingCotizaciones && cotizaciones.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
-                    No hay cotizaciones esperando OF.
+                  <td colSpan={4}>
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="No hay cotizaciones esperando OF"
+                      subtitle="Aparecerán aquí cuando Ventas cotice a un cliente"
+                    />
                   </td>
                 </tr>
               )}
               {cotizaciones.map((cot) => (
-                <tr key={cot.id}>
+                <tr key={cot.id} className="transition-colors hover:bg-brand-50/40">
                   <td className="px-4 py-3 font-medium text-slate-700">{cot.cliente}</td>
                   <td className="px-4 py-3 text-slate-600">{currency.format(cot.monto ?? 0)}</td>
                   <td className="px-4 py-3 text-slate-600">{cot.entregaSemanas} sem.</td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => setCotizacionParaOF(cot)}
-                      className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800"
-                    >
+                    <Button size="sm" onClick={() => setCotizacionParaOF(cot)}>
                       Abrir OF
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -84,14 +84,15 @@ export default function ComprasPage() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-800">Órdenes de compra</h2>
-          <button
+          <Button
             onClick={() => setOcModalOpen(true)}
-            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+            className="inline-flex items-center gap-1.5"
           >
-            + Nueva O.C.
-          </button>
+            <Plus className="h-4 w-4" />
+            Nueva O.C.
+          </Button>
         </div>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -103,22 +104,20 @@ export default function ComprasPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loadingOrdenes && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
-                    Cargando…
-                  </td>
-                </tr>
-              )}
+              {loadingOrdenes && <TableSkeleton rows={2} cols={5} />}
               {!loadingOrdenes && ordenes.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
-                    Sin órdenes de compra todavía.
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={PackageCheck}
+                      title="Sin órdenes de compra todavía"
+                      subtitle='Crea la primera con "Nueva O.C."'
+                    />
                   </td>
                 </tr>
               )}
               {ordenes.map((oc) => (
-                <tr key={oc.id}>
+                <tr key={oc.id} className="transition-colors hover:bg-brand-50/40">
                   <td className="px-4 py-3 font-medium text-slate-700">
                     <ProveedorNombre proveedorId={oc.proveedorId} />
                   </td>
@@ -141,13 +140,14 @@ export default function ComprasPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {oc.estado === 'pendiente' && (
-                      <button
+                      <Button
+                        size="sm"
+                        variant="outline"
                         disabled={recibiendoId === oc.id}
                         onClick={() => marcarRecibida(oc)}
-                        className="rounded-md border border-brand-700 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-60"
                       >
                         {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>

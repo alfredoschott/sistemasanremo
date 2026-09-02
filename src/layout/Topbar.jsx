@@ -1,19 +1,44 @@
+import { LogOut } from 'lucide-react'
+import { useState } from 'react'
+import BrandMark from '../components/BrandMark'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Topbar() {
   const { user, logout } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-brand-800 px-4 text-white">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-brand-900/40 bg-gradient-to-r from-brand-900 to-brand-800 px-4 text-white shadow-sm">
       <div className="flex items-center gap-2">
-        <span className="text-lg font-semibold tracking-tight">SRM Telsa</span>
-        <span className="text-sm text-brand-50/80">Transformadores</span>
+        <BrandMark compact className="h-8 w-24 text-white" />
+        <span className="hidden text-xs tracking-wide text-brand-100/70 sm:inline">
+          Sanremo de México
+        </span>
       </div>
-      <div className="flex items-center gap-3 text-sm text-brand-50/80">
-        <span>{user?.email}</span>
-        <button onClick={logout} className="rounded-md px-2 py-1 hover:bg-white/10">
-          Cerrar sesión
+
+      <div className="relative">
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          onBlur={() => setTimeout(() => setMenuOpen(false), 120)}
+          className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-sm text-brand-50/90 transition-colors hover:bg-white/10"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15 text-xs font-semibold">
+            {user?.email?.[0]?.toUpperCase()}
+          </span>
+          <span className="hidden max-w-40 truncate sm:inline">{user?.email}</span>
         </button>
+
+        {menuOpen && (
+          <div className="animate-scale-in absolute right-0 top-11 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-700 shadow-xl">
+            <button
+              onClick={logout}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm hover:bg-slate-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )

@@ -1,6 +1,10 @@
+import { FileText, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Button from '../../components/Button'
+import EmptyState from '../../components/EmptyState'
 import EstadoBadge from '../../components/EstadoBadge'
+import { TableSkeleton } from '../../components/Skeleton'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
 
@@ -14,16 +18,17 @@ export default function VentasList() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-800">Cotizaciones</h1>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
-        >
-          + Nueva cotización
-        </button>
+        <div>
+          <h1 className="text-xl font-semibold text-slate-800">Cotizaciones</h1>
+          <p className="text-sm text-slate-500">{cotizaciones.length} en total</p>
+        </div>
+        <Button onClick={() => setModalOpen(true)} className="gap-1.5 inline-flex items-center">
+          <Plus className="h-4 w-4" />
+          Nueva cotización
+        </Button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
@@ -35,17 +40,15 @@ export default function VentasList() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
-                  Cargando…
-                </td>
-              </tr>
-            )}
+            {loading && <TableSkeleton rows={3} cols={5} />}
             {!loading && cotizaciones.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
-                  Sin cotizaciones todavía.
+                <td colSpan={5}>
+                  <EmptyState
+                    icon={FileText}
+                    title="Sin cotizaciones todavía"
+                    subtitle='Crea la primera con "Nueva cotización"'
+                  />
                 </td>
               </tr>
             )}
@@ -53,7 +56,7 @@ export default function VentasList() {
               <tr
                 key={cot.id}
                 onClick={() => navigate(`/ventas/${cot.id}`)}
-                className="cursor-pointer hover:bg-slate-50"
+                className="cursor-pointer transition-colors hover:bg-brand-50/40"
               >
                 <td className="px-4 py-3 font-medium text-slate-700">{cot.cliente}</td>
                 <td className="px-4 py-3 text-slate-600">{currency.format(cot.monto ?? 0)}</td>
