@@ -136,7 +136,7 @@ export default function ComprasPage() {
       <section>
         <h1 className="mb-3 text-xl font-semibold text-slate-800">Cotizaciones por abrir OF</h1>
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+          <table className="hidden w-full text-left text-sm md:table">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Cliente</th>
@@ -172,13 +172,42 @@ export default function ComprasPage() {
               ))}
             </tbody>
           </table>
+
+          <div className="divide-y divide-slate-100 md:hidden">
+            {loadingCotizaciones && (
+              <div className="flex flex-col gap-2.5 p-4">
+                <div className="skeleton h-4 w-2/3 rounded-md" />
+                <div className="skeleton h-4 w-1/3 rounded-md" />
+              </div>
+            )}
+            {!loadingCotizaciones && cotizaciones.length === 0 && (
+              <EmptyState
+                icon={ClipboardList}
+                title="No hay cotizaciones esperando OF"
+                subtitle="Aparecerán aquí cuando Ventas cotice a un cliente"
+              />
+            )}
+            {cotizaciones.map((cot) => (
+              <div key={cot.id} className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-700">{cot.cliente}</p>
+                  <p className="text-sm text-slate-500">
+                    {currency.format(cot.monto ?? 0)} · {cot.entregaSemanas} sem.
+                  </p>
+                </div>
+                <Button size="sm" className="shrink-0" onClick={() => setCotizacionParaOF(cot)}>
+                  Abrir OF
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-semibold text-slate-800">Órdenes de compra</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
               onClick={exportarOc}
@@ -198,7 +227,7 @@ export default function ComprasPage() {
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por proveedor…" />
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+          <table className="hidden w-full text-left text-sm md:table">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Proveedor</th>
@@ -304,6 +333,99 @@ export default function ComprasPage() {
               ))}
             </tbody>
           </table>
+
+          <div className="divide-y divide-slate-100 md:hidden">
+            {loadingOrdenes && (
+              <div className="flex flex-col gap-2.5 p-4">
+                <div className="skeleton h-4 w-2/3 rounded-md" />
+                <div className="skeleton h-4 w-1/3 rounded-md" />
+              </div>
+            )}
+            {!loadingOrdenes && ordenesFiltradas.length === 0 && (
+              <EmptyState
+                icon={PackageCheck}
+                title={search ? 'Sin resultados' : 'Sin órdenes de compra todavía'}
+                subtitle={search ? 'Prueba con otro proveedor' : 'Crea la primera con "Nueva O.C."'}
+              />
+            )}
+            {ordenesFiltradas.map((oc) => (
+              <div key={oc.id} className="flex flex-col gap-2.5 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-700">
+                      <ProveedorNombre proveedorId={oc.proveedorId} />
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {oc.plazoEntregaDias} días
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <IconButton
+                      icon={Paperclip}
+                      badge={oc.adjuntos?.length ?? 0}
+                      onClick={() => setOcDocumentosId(oc.id)}
+                      title="Documentos"
+                    />
+                    <IconButton icon={Pencil} onClick={() => setOcParaEditar(oc)} title="Editar" />
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  {(oc.materiales ?? []).map((linea, i) => (
+                    <span key={i} className="mr-2">
+                      {linea.cantidad}× <MaterialNombre materialId={linea.materialId} />
+                    </span>
+                  ))}
+                </p>
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                        OC_BADGE[oc.estado] ?? 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {oc.estado}
+                    </span>
+                    {oc.estado === 'pendiente' && estaVencido(oc.fecha, oc.plazoEntregaDias) && (
+                      <span
+                        title="Plazo vencido"
+                        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                        Vencida
+                      </span>
+                    )}
+                  </div>
+                  {oc.estado === 'pendiente' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      loading={recibiendoId === oc.id}
+                      onClick={() => marcarRecibida(oc)}
+                    >
+                      {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                    </Button>
+                  )}
+                  {oc.estado === 'recibida' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      loading={revirtiendoId === oc.id}
+                      onClick={() => {
+                        if (window.confirm('¿Regresar esta O.C. a pendiente? Se restará el stock que sumó.')) {
+                          revertir(oc)
+                        }
+                      }}
+                      title="Revertir a pendiente"
+                    >
+                      {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

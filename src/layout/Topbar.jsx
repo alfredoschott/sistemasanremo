@@ -1,24 +1,19 @@
-import { LogOut, Menu, WifiOff } from 'lucide-react'
+import { LogOut, WifiOff } from 'lucide-react'
 import { useState } from 'react'
 import BrandMark from '../components/BrandMark'
 import NotificationBell from '../components/NotificationBell'
 import { useAuth } from '../lib/AuthContext'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 
-export default function Topbar({ onMenuClick }) {
+export default function Topbar() {
   const { user, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const online = useOnlineStatus()
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-brand-900/40 bg-gradient-to-r from-brand-900 to-brand-800 px-4 text-white shadow-sm">
+    <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-brand-900/40 bg-gradient-to-r from-brand-900 via-brand-800 to-brand-900 px-4 text-white shadow-sm">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-400/60 to-transparent" />
       <div className="flex items-center gap-3">
-        <button
-          onClick={onMenuClick}
-          className="rounded-md p-1.5 text-brand-50/90 transition-colors hover:bg-white/10 sm:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
         <div className="rounded-md bg-white/95 px-2.5 py-1 shadow-sm">
           <BrandMark compact className="h-7 w-auto" />
         </div>

@@ -187,7 +187,7 @@ export default function ProduccionPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-slate-800">Órdenes de fabricación</h1>
         <Button variant="secondary" onClick={exportar} className="inline-flex items-center gap-1.5">
           <Download className="h-4 w-4" />

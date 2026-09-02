@@ -1,4 +1,4 @@
-import { AlertTriangle, Download, FileText, Plus } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Download, FileText, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
@@ -57,12 +57,12 @@ export default function VentasList() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">Cotizaciones</h1>
           <p className="text-sm text-slate-500">{cotizaciones.length} en total</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"
             onClick={exportar}
@@ -88,7 +88,7 @@ export default function VentasList() {
       <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
+        <table className="hidden w-full text-left text-sm md:table">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-4 py-3">Cliente</th>
@@ -143,6 +143,49 @@ export default function VentasList() {
             ))}
           </tbody>
         </table>
+
+        <div className="divide-y divide-slate-100 md:hidden">
+          {loading && (
+            <div className="flex flex-col gap-2.5 p-4">
+              <div className="skeleton h-4 w-2/3 rounded-md" />
+              <div className="skeleton h-4 w-1/3 rounded-md" />
+            </div>
+          )}
+          {!loading && filtradas.length === 0 && (
+            <EmptyState
+              icon={FileText}
+              title={search ? 'Sin resultados' : 'Sin cotizaciones todavía'}
+              subtitle={search ? 'Prueba con otro nombre' : 'Crea la primera con "Nueva cotización"'}
+            />
+          )}
+          {filtradas.map((cot) => (
+            <button
+              key={cot.id}
+              onClick={() => navigate(`/ventas/${cot.id}`)}
+              className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors active:bg-brand-50/40"
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium text-slate-700">{cot.cliente}</p>
+                <p className="text-sm text-slate-500">{currency.format(cot.monto ?? 0)}</p>
+                <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                  {cot.condicionPago === 'anticipo'
+                    ? `Anticipo ${cot.porcentajeAnticipo ?? ''}%`
+                    : 'Crédito Fudeco'}
+                  {' · '}
+                  {cot.entregaSemanas} sem.
+                  {!['Facturado', 'Cancelado'].includes(cot.estado) &&
+                    estaVencido(cot.fecha, (cot.entregaSemanas ?? 0) * 7) && (
+                      <AlertTriangle className="h-3 w-3 shrink-0 text-red-500" title="Entrega vencida" />
+                    )}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <EstadoBadge estado={cot.estado} />
+                <ChevronRight className="h-4 w-4 text-slate-300" />
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       <NuevaCotizacionModal open={modalOpen} onClose={() => setModalOpen(false)} />
