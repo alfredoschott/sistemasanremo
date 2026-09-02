@@ -48,6 +48,17 @@ documento original del proyecto.
   (suma stock) → iniciar producción → avance → completar y facturar.
 - Datos de prueba ya sembrados en Firestore real (`npm run seed` corrido
   con éxito: 3 clientes, 3 cotizaciones).
+- **Renovación de interfaz** (completa): logo real del cliente en
+  `src/assets/logo.png` (`BrandMark.jsx` lo muestra, versión compacta con
+  chip blanco en el topbar por contraste sobre el verde oscuro). Paleta
+  de verde ajustada al logo real. Componentes compartidos nuevos en
+  `src/components/`: `Modal`, `Button`, `Skeleton`/`TableSkeleton`,
+  `EmptyState` — los 5 modales y las 4 páginas de lista ya los usan en
+  vez de markup duplicado. Sistema de toasts (`lib/ToastContext.jsx`)
+  conectado a las acciones clave. Sidebar con íconos (`lucide-react`) y
+  pastilla activa animada, transición de fade entre páginas, login
+  rediseñado con fondo con textura. `EstadoBadge`/`Timeline` con más
+  jerarquía visual (checkmarks, línea de progreso animada).
 - Repo git local inicializado con commits por feature.
 
 ## Pendiente / próximos pasos
