@@ -9,8 +9,10 @@ export default function Topbar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-brand-900/40 bg-gradient-to-r from-brand-900 to-brand-800 px-4 text-white shadow-sm">
-      <div className="flex items-center gap-2">
-        <BrandMark compact className="h-8 w-24 text-white" />
+      <div className="flex items-center gap-3">
+        <div className="rounded-md bg-white/95 px-2.5 py-1 shadow-sm">
+          <BrandMark compact className="h-7 w-auto" />
+        </div>
         <span className="hidden text-xs tracking-wide text-brand-100/70 sm:inline">
           Sanremo de México
         </span>

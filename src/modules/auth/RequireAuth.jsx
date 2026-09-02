@@ -8,7 +8,9 @@ export default function RequireAuth({ children }) {
   if (loading) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-3 bg-brand-950">
-        <BrandMark compact className="h-8 w-24 animate-pulse text-white/70" />
+        <div className="animate-pulse rounded-md bg-white/95 px-4 py-2 shadow-sm">
+          <BrandMark compact className="h-9 w-auto" />
+        </div>
       </div>
     )
   }

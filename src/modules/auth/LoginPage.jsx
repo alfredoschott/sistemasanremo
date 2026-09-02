@@ -32,7 +32,7 @@ export default function LoginPage() {
       <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-brand-500 opacity-20 blur-3xl" />
 
       <div className="animate-scale-in relative w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
-        <BrandMark className="mx-auto mb-2 h-28 w-40 text-brand-800" />
+        <BrandMark className="mx-auto mb-2 w-48" />
         <p className="mb-6 text-sm text-slate-500">Sanremo de México</p>
 
         <div className="flex flex-col gap-2">
