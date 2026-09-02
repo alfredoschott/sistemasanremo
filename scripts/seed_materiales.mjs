@@ -172,6 +172,41 @@ const materiales = [
   ['BODY SEAL', 'pza'],
 ]
 
+function categorizar(nombre) {
+  const n = nombre.toUpperCase()
+  if (
+    n.includes('BOQUILLA') || n.includes('BRIDA') || n.includes('CAMBIADOR') ||
+    n.includes('SECCIONADOR') || n.includes('VALVULA') || n.includes('NIVEL DE ACEITE') ||
+    n.includes('TERMOMETRO') || n.includes('TIERRA ') || n.includes('BAYONETA') ||
+    n.includes('TAPON DE MUESTREO')
+  ) return 'Boquillas y bridas'
+  if (
+    n.includes('TORNILLO') || n.includes('TUERCA') || n.includes('RONDANA') ||
+    n.includes('VARILLA ROSCADA') || n.includes('BARRA DE SOLERA')
+  ) return 'Tornillería'
+  if (
+    n.includes('CONECTOR') || n.includes('ZAPATA') || n.includes('COPLE') ||
+    n === 'NIPLE' || n.includes('TAPON DE 1')
+  ) return 'Conectores y zapatas'
+  if (
+    n.includes('ELECTRODO') || n.includes('DISCO DE') || n.includes('CONO DE DESBASTE') ||
+    n.includes('CEPILLO DE ALAMBRE') || n.includes('ENCENDEDOR') || n.includes('SEGUETAS')
+  ) return 'Soldadura'
+  if (n.includes('GUANTES') || n.includes('LENTES') || n.includes('PETOS') || n.includes('MANGAS DE CARNAZA')) {
+    return 'Seguridad (EPP)'
+  }
+  if (
+    n.includes('PAPEL') || n.includes('CINTA') || n.includes('VITRODIEL') ||
+    n.includes('SHELLAC') || n.includes('CARTON') || n.includes('ACRILICO') || n.includes('CRISTAL')
+  ) return 'Aislamiento'
+  if (
+    n.includes('KOLA LOCA') || n.includes('MASKING') || n.includes('LIJAS') ||
+    n.includes('CUBETA') || n.includes('GIS ') || n.includes('AERO COMEX') ||
+    n.includes('FLEXOMETRO') || n.includes('PUNZON') || n.includes('CARRETE')
+  ) return 'Consumibles'
+  return 'Otros'
+}
+
 async function seed() {
   const existentesSnap = await db.collection('materiales').get()
   const nombresExistentes = new Set(existentesSnap.docs.map((d) => d.data().nombre))
@@ -179,7 +214,13 @@ async function seed() {
   let creados = 0
   for (const [nombre, unidad] of materiales) {
     if (nombresExistentes.has(nombre)) continue
-    await db.collection('materiales').add({ nombre, unidad, stock: 0, minimo: 0 })
+    await db.collection('materiales').add({
+      nombre,
+      unidad,
+      categoria: categorizar(nombre),
+      stock: 0,
+      minimo: 0,
+    })
     creados++
   }
 
