@@ -15,7 +15,8 @@ const DIA_MS = 24 * 60 * 60 * 1000
 
 function fechaVencimiento(base, dias) {
   const ms = base?.toMillis?.()
-  if (!ms || !dias) return null
+  // dias puede ser 0 (pago/cobro de contado) — es un valor válido, no "sin dato".
+  if (!ms || dias == null) return null
   return ms + dias * DIA_MS
 }
 

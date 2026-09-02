@@ -127,7 +127,7 @@ documento original del proyecto.
   regresa la O.C. a pendiente restando el stock y borrando los
   movimientos generados (`stockActions.revertirRecepcion`).
 - **Patrón de deshacer**: `ToastContext` soporta
-  `toast(mensaje, tipo, { onUndo })` — botón "Deshacer" ~6s en: marcar
+  `toast(mensaje, tipo, { onUndo })` — botón "Deshacer" ~10s en: marcar
   recibida una O.C., movimiento manual de almacén, cancelar cotización,
   cobrado/pagado en Finanzas, iniciar producción/completar y facturar.
 - **Revisión de seguridad completa**:

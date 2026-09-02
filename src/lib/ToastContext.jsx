@@ -14,7 +14,7 @@ export function ToastProvider({ children }) {
     (message, type = 'success', { onUndo } = {}) => {
       const id = crypto.randomUUID()
       setToasts((prev) => [...prev, { id, message, type, onUndo }])
-      setTimeout(() => dismiss(id), onUndo ? 6000 : 3200)
+      setTimeout(() => dismiss(id), onUndo ? 10000 : 3200)
     },
     [dismiss],
   )
