@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import MaterialNombre from '../almacen/MaterialNombre'
+import { recibirOrdenCompra } from '../almacen/stockActions'
 import AbrirOFModal from './AbrirOFModal'
 import NuevaOrdenCompraModal from './NuevaOrdenCompraModal'
 import ProveedorNombre from './ProveedorNombre'
@@ -17,6 +19,16 @@ export default function ComprasPage() {
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
+  const [recibiendoId, setRecibiendoId] = useState(null)
+
+  const marcarRecibida = async (oc) => {
+    setRecibiendoId(oc.id)
+    try {
+      await recibirOrdenCompra(oc)
+    } finally {
+      setRecibiendoId(null)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -87,6 +99,7 @@ export default function ComprasPage() {
                 <th className="px-4 py-3">Materiales</th>
                 <th className="px-4 py-3">Plazo</th>
                 <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -110,7 +123,11 @@ export default function ComprasPage() {
                     <ProveedorNombre proveedorId={oc.proveedorId} />
                   </td>
                   <td className="px-4 py-3 text-slate-600">
-                    {(oc.materiales ?? []).map((m) => `${m.nombre} (${m.cantidad})`).join(', ')}
+                    {(oc.materiales ?? []).map((linea, i) => (
+                      <span key={i} className="mr-2">
+                        {linea.cantidad}× <MaterialNombre materialId={linea.materialId} />
+                      </span>
+                    ))}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{oc.plazoEntregaDias} días</td>
                   <td className="px-4 py-3">
@@ -121,6 +138,17 @@ export default function ComprasPage() {
                     >
                       {oc.estado}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {oc.estado === 'pendiente' && (
+                      <button
+                        disabled={recibiendoId === oc.id}
+                        onClick={() => marcarRecibida(oc)}
+                        className="rounded-md border border-brand-700 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-60"
+                      >
+                        {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

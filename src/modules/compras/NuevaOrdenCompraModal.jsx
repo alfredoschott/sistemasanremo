@@ -1,9 +1,10 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { useState } from 'react'
+import MaterialPicker from '../almacen/MaterialPicker'
 import { db } from '../../lib/firebase'
 import ProveedorPicker from './ProveedorPicker'
 
-const lineaVacia = { nombre: '', cantidad: '1' }
+const lineaVacia = { materialId: '', cantidad: '1' }
 
 export default function NuevaOrdenCompraModal({ open, onClose }) {
   const [proveedorId, setProveedorId] = useState('')
@@ -13,9 +14,9 @@ export default function NuevaOrdenCompraModal({ open, onClose }) {
 
   if (!open) return null
 
-  const updateLinea = (index, field) => (e) => {
+  const updateLinea = (index, field) => (value) => {
     setMateriales((prev) =>
-      prev.map((linea, i) => (i === index ? { ...linea, [field]: e.target.value } : linea)),
+      prev.map((linea, i) => (i === index ? { ...linea, [field]: value } : linea)),
     )
   }
 
@@ -31,8 +32,8 @@ export default function NuevaOrdenCompraModal({ open, onClose }) {
         proveedorId,
         plazoEntregaDias: Number(plazoEntregaDias),
         materiales: materiales
-          .filter((l) => l.nombre.trim())
-          .map((l) => ({ nombre: l.nombre.trim(), cantidad: Number(l.cantidad) || 1 })),
+          .filter((l) => l.materialId)
+          .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad) || 1 })),
         estado: 'pendiente',
         fecha: serverTimestamp(),
       })
@@ -71,17 +72,17 @@ export default function NuevaOrdenCompraModal({ open, onClose }) {
             <div className="mt-1 flex flex-col gap-2">
               {materiales.map((linea, index) => (
                 <div key={index} className="flex gap-2">
-                  <input
-                    value={linea.nombre}
-                    onChange={updateLinea(index, 'nombre')}
-                    placeholder="Material"
-                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-                  />
+                  <div className="flex-1">
+                    <MaterialPicker
+                      value={linea.materialId}
+                      onChange={updateLinea(index, 'materialId')}
+                    />
+                  </div>
                   <input
                     type="number"
                     min="1"
                     value={linea.cantidad}
-                    onChange={updateLinea(index, 'cantidad')}
+                    onChange={(e) => updateLinea(index, 'cantidad')(e.target.value)}
                     className="w-20 rounded-md border border-slate-300 px-3 py-2 text-sm"
                   />
                   {materiales.length > 1 && (
