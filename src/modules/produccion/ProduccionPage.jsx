@@ -1,7 +1,8 @@
 import { Factory } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
+import { MetricCard, MetricsRow } from '../../components/Metric'
 import Skeleton from '../../components/Skeleton'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
@@ -113,9 +114,28 @@ function OrdenFabricacionCard({ of }) {
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
 
+  const metrics = useMemo(() => {
+    const enProduccion = ordenes.filter((of) => of.estado === 'En producción')
+    const abiertas = ordenes.filter((of) => of.estado === 'Abierta').length
+    const completadas = ordenes.filter((of) => of.estado === 'Completada').length
+    const avancePromedio = enProduccion.length
+      ? Math.round(
+          enProduccion.reduce((sum, of) => sum + (of.avance ?? 0), 0) / enProduccion.length,
+        )
+      : 0
+    return { enProduccion: enProduccion.length, abiertas, completadas, avancePromedio }
+  }, [ordenes])
+
   return (
     <div>
       <h1 className="mb-4 text-xl font-semibold text-slate-800">Órdenes de fabricación</h1>
+
+      <MetricsRow>
+        <MetricCard label="Abiertas" value={metrics.abiertas} />
+        <MetricCard label="En producción" value={metrics.enProduccion} variant="warn" />
+        <MetricCard label="Avance promedio" value={`${metrics.avancePromedio}%`} />
+        <MetricCard label="Completadas" value={metrics.completadas} variant="accent" />
+      </MetricsRow>
 
       {loading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

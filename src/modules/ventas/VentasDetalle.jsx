@@ -1,7 +1,10 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import Button from '../../components/Button'
 import EstadoBadge from '../../components/EstadoBadge'
 import Timeline from '../../components/Timeline'
+import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
@@ -9,9 +12,12 @@ const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: '
 export default function VentasDetalle() {
   const { id } = useParams()
   const { cotizacion, loading } = useCotizacion(id)
+  const [editOpen, setEditOpen] = useState(false)
 
   if (loading) return <p className="text-slate-400">Cargando…</p>
   if (!cotizacion) return <p className="text-slate-400">Cotización no encontrada.</p>
+
+  const puedeEditar = cotizacion.estado === 'Cotizado'
 
   return (
     <div>
@@ -29,7 +35,20 @@ export default function VentasDetalle() {
             <h1 className="text-xl font-semibold text-slate-800">{cotizacion.cliente}</h1>
             <p className="text-sm text-slate-500">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
-          <EstadoBadge estado={cotizacion.estado} />
+          <div className="flex items-center gap-2">
+            <EstadoBadge estado={cotizacion.estado} />
+            {puedeEditar && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="inline-flex items-center gap-1"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="mb-8">
@@ -57,6 +76,12 @@ export default function VentasDetalle() {
           )}
         </dl>
       </div>
+
+      <NuevaCotizacionModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        cotizacion={cotizacion}
+      />
     </div>
   )
 }

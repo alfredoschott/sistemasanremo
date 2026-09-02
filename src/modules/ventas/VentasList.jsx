@@ -1,9 +1,10 @@
-import { FileText, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { FileText, Plus, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import EstadoBadge from '../../components/EstadoBadge'
+import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
@@ -13,7 +14,28 @@ const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: '
 export default function VentasList() {
   const { cotizaciones, loading } = useCotizaciones()
   const [modalOpen, setModalOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const navigate = useNavigate()
+
+  const metrics = useMemo(() => {
+    const cotizado = cotizaciones
+      .filter((c) => c.estado === 'Cotizado')
+      .reduce((sum, c) => sum + (c.monto ?? 0), 0)
+    const enProduccion = cotizaciones.filter((c) => c.estado === 'Producción').length
+    const facturado = cotizaciones
+      .filter((c) => c.estado === 'Facturado')
+      .reduce((sum, c) => sum + (c.monto ?? 0), 0)
+    const anticipos = cotizaciones
+      .filter((c) => c.condicionPago === 'anticipo' && c.estado !== 'Facturado')
+      .reduce((sum, c) => sum + ((c.monto ?? 0) * (c.porcentajeAnticipo ?? 0)) / 100, 0)
+    return { cotizado, enProduccion, facturado, anticipos }
+  }, [cotizaciones])
+
+  const filtradas = useMemo(
+    () =>
+      cotizaciones.filter((c) => c.cliente?.toLowerCase().includes(search.toLowerCase().trim())),
+    [cotizaciones, search],
+  )
 
   return (
     <div>
@@ -26,6 +48,23 @@ export default function VentasList() {
           <Plus className="h-4 w-4" />
           Nueva cotización
         </Button>
+      </div>
+
+      <MetricsRow>
+        <MetricCard label="Cotizado" value={currency.format(metrics.cotizado)} />
+        <MetricCard label="En producción" value={`${metrics.enProduccion} OF`} variant="warn" />
+        <MetricCard label="Facturado" value={currency.format(metrics.facturado)} variant="accent" />
+        <MetricCard label="Anticipos pendientes" value={currency.format(metrics.anticipos)} />
+      </MetricsRow>
+
+      <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 sm:max-w-xs">
+        <Search className="h-4 w-4 text-slate-400" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por cliente…"
+          className="w-full text-sm outline-none"
+        />
       </div>
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -41,18 +80,18 @@ export default function VentasList() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && <TableSkeleton rows={3} cols={5} />}
-            {!loading && cotizaciones.length === 0 && (
+            {!loading && filtradas.length === 0 && (
               <tr>
                 <td colSpan={5}>
                   <EmptyState
                     icon={FileText}
-                    title="Sin cotizaciones todavía"
-                    subtitle='Crea la primera con "Nueva cotización"'
+                    title={search ? 'Sin resultados' : 'Sin cotizaciones todavía'}
+                    subtitle={search ? 'Prueba con otro nombre' : 'Crea la primera con "Nueva cotización"'}
                   />
                 </td>
               </tr>
             )}
-            {cotizaciones.map((cot) => (
+            {filtradas.map((cot) => (
               <tr
                 key={cot.id}
                 onClick={() => navigate(`/ventas/${cot.id}`)}

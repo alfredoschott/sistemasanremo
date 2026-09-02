@@ -1,7 +1,8 @@
-import { ClipboardList, PackageCheck, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { ClipboardList, PackageCheck, Pencil, Plus } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
+import { MetricCard, MetricsRow } from '../../components/Metric'
 import { TableSkeleton } from '../../components/Skeleton'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra } from '../almacen/stockActions'
@@ -19,13 +20,34 @@ const OC_BADGE = {
   recibida: 'bg-brand-50 text-brand-800',
 }
 
+function esEsteMes(fecha) {
+  const ms = fecha?.toMillis?.()
+  if (!ms) return false
+  const d = new Date(ms)
+  const now = new Date()
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+}
+
 export default function ComprasPage() {
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
   const [ocModalOpen, setOcModalOpen] = useState(false)
+  const [ocParaEditar, setOcParaEditar] = useState(null)
   const [recibiendoId, setRecibiendoId] = useState(null)
   const toast = useToast()
+
+  const metrics = useMemo(() => {
+    const pendientes = ordenes.filter((o) => o.estado === 'pendiente').length
+    const recibidasEsteMes = ordenes.filter(
+      (o) => o.estado === 'recibida' && esEsteMes(o.fecha),
+    ).length
+    const proveedoresActivos = new Set(ordenes.map((o) => o.proveedorId)).size
+    const materialesDistintos = new Set(
+      ordenes.flatMap((o) => (o.materiales ?? []).map((l) => l.materialId)),
+    ).size
+    return { pendientes, recibidasEsteMes, proveedoresActivos, materialesDistintos }
+  }, [ordenes])
 
   const marcarRecibida = async (oc) => {
     setRecibiendoId(oc.id)
@@ -39,6 +61,13 @@ export default function ComprasPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <MetricsRow>
+        <MetricCard label="O.C. pendientes" value={metrics.pendientes} variant="warn" />
+        <MetricCard label="Recibidas este mes" value={metrics.recibidasEsteMes} variant="accent" />
+        <MetricCard label="Proveedores activos" value={metrics.proveedoresActivos} />
+        <MetricCard label="Materiales distintos" value={metrics.materialesDistintos} />
+      </MetricsRow>
+
       <section>
         <h1 className="mb-3 text-xl font-semibold text-slate-800">Cotizaciones por abrir OF</h1>
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -140,14 +169,23 @@ export default function ComprasPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     {oc.estado === 'pendiente' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={recibiendoId === oc.id}
-                        onClick={() => marcarRecibida(oc)}
-                      >
-                        {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setOcParaEditar(oc)}
+                          className="text-slate-400 transition-colors hover:text-brand-700"
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={recibiendoId === oc.id}
+                          onClick={() => marcarRecibida(oc)}
+                        >
+                          {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -159,6 +197,11 @@ export default function ComprasPage() {
 
       <AbrirOFModal cotizacion={cotizacionParaOF} onClose={() => setCotizacionParaOF(null)} />
       <NuevaOrdenCompraModal open={ocModalOpen} onClose={() => setOcModalOpen(false)} />
+      <NuevaOrdenCompraModal
+        open={Boolean(ocParaEditar)}
+        onClose={() => setOcParaEditar(null)}
+        oc={ocParaEditar}
+      />
     </div>
   )
 }

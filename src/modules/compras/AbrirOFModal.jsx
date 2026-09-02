@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
+import { crearNotificacion } from '../../lib/notify'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import ProveedorPicker from './ProveedorPicker'
@@ -44,6 +45,10 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
 
       onClose()
       toast(`OF ${numeroSerie} abierta para ${cotizacion.cliente}`)
+      crearNotificacion({
+        mensaje: `OF ${numeroSerie} abierta para ${cotizacion.cliente}`,
+        tipo: 'success',
+      })
     } finally {
       setSaving(false)
     }

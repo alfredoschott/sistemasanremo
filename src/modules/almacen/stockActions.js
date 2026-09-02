@@ -1,18 +1,22 @@
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
+import { crearNotificacion } from '../../lib/notify'
 
 // Todo lo que suma/resta stock pasa por runTransaction: varias áreas
 // (Compras al recibir una O.C., Almacén con ajustes manuales, Producción
 // en el futuro) pueden tocar el mismo material al mismo tiempo.
 
 export async function recibirOrdenCompra(oc) {
-  await runTransaction(db, async (tx) => {
+  const bajoMinimo = await runTransaction(db, async (tx) => {
     const materialRefs = oc.materiales.map((linea) => doc(db, 'materiales', linea.materialId))
     const snaps = await Promise.all(materialRefs.map((ref) => tx.get(ref)))
+    const avisos = []
 
     snaps.forEach((snap, i) => {
-      const stockActual = snap.data()?.stock ?? 0
-      tx.update(materialRefs[i], { stock: stockActual + oc.materiales[i].cantidad })
+      const data = snap.data() ?? {}
+      const nuevoStock = (data.stock ?? 0) + oc.materiales[i].cantidad
+      tx.update(materialRefs[i], { stock: nuevoStock })
+      if (nuevoStock < (data.minimo ?? 0)) avisos.push(data.nombre)
     })
 
     oc.materiales.forEach((linea) => {
@@ -26,17 +30,23 @@ export async function recibirOrdenCompra(oc) {
     })
 
     tx.update(doc(db, 'ordenesCompra', oc.id), { estado: 'recibida' })
+    return avisos
   })
+
+  for (const nombre of bajoMinimo) {
+    await crearNotificacion({ mensaje: `${nombre} sigue bajo el mínimo`, tipo: 'warning' })
+  }
 }
 
 export async function registrarMovimientoManual({ materialId, tipo, cantidad }) {
-  await runTransaction(db, async (tx) => {
+  const aviso = await runTransaction(db, async (tx) => {
     const materialRef = doc(db, 'materiales', materialId)
     const snap = await tx.get(materialRef)
-    const stockActual = snap.data()?.stock ?? 0
+    const data = snap.data() ?? {}
     const delta = tipo === 'entrada' ? cantidad : -cantidad
+    const nuevoStock = (data.stock ?? 0) + delta
 
-    tx.update(materialRef, { stock: stockActual + delta })
+    tx.update(materialRef, { stock: nuevoStock })
     tx.set(doc(collection(db, 'movimientosAlmacen')), {
       materialId,
       tipo,
@@ -44,5 +54,11 @@ export async function registrarMovimientoManual({ materialId, tipo, cantidad }) 
       referencia: null,
       fecha: serverTimestamp(),
     })
+
+    return nuevoStock < (data.minimo ?? 0) ? data.nombre : null
   })
+
+  if (aviso) {
+    await crearNotificacion({ mensaje: `${aviso} quedó bajo el mínimo`, tipo: 'warning' })
+  }
 }
