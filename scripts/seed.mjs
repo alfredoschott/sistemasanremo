@@ -1,24 +1,18 @@
 // Carga datos de prueba en Firestore (clientes y cotizaciones semilla).
-// Requiere .env.local con las credenciales del proyecto Firebase y el
-// proveedor "Anonymous" habilitado en Firebase Auth (Authentication > Sign-in method).
+// Requiere una service account key del proyecto Firebase (Configuración del
+// proyecto > Cuentas de servicio > Generar nueva clave privada), guardada como
+// scripts/serviceAccountKey.json (ignorado por git).
 // Uso: node scripts/seed.mjs
-import 'dotenv/config'
-import { initializeApp } from 'firebase/app'
-import { getAuth, signInAnonymously } from 'firebase/auth'
-import { addDoc, collection, getFirestore, serverTimestamp } from 'firebase/firestore'
+import { readFileSync } from 'node:fs'
+import { cert, initializeApp } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
 
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-}
+const serviceAccount = JSON.parse(
+  readFileSync(new URL('./serviceAccountKey.json', import.meta.url)),
+)
 
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const db = getFirestore(app)
+initializeApp({ credential: cert(serviceAccount) })
+const db = getFirestore()
 
 const clientes = ['Industrias Reyna', 'Transformadores del Bajío', 'Eléctrica del Centro']
 
@@ -50,21 +44,20 @@ const cotizaciones = [
 ]
 
 async function seed() {
-  await signInAnonymously(auth)
-
   for (const nombre of clientes) {
-    await addDoc(collection(db, 'clientes'), { nombre })
+    await db.collection('clientes').add({ nombre })
   }
 
   for (const cot of cotizaciones) {
-    await addDoc(collection(db, 'cotizaciones'), { ...cot, fecha: serverTimestamp() })
+    await db.collection('cotizaciones').add({ ...cot, fecha: new Date() })
   }
 
   console.log(`Sembrado: ${clientes.length} clientes, ${cotizaciones.length} cotizaciones.`)
-  process.exit(0)
 }
 
-seed().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+seed()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
