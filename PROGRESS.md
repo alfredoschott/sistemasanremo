@@ -102,7 +102,18 @@ documento original del proyecto.
   "Imprimir" en cotizaciones (estilos `.no-print`/`@media print`).
   "Duplicar cotización" para clientes recurrentes. Confirmación antes de
   borrar un adjunto. Página 404 para rutas inexistentes.
+- **Cierre de funciones** (última tanda antes de probar todo junto):
+  notificaciones clickeables con link a la cotización/módulo relacionado
+  (antes el campo `link` no se usaba), alerta de entrega vencida en
+  Ventas, exportar CSV en Compras/Producción/Almacén (antes solo en
+  Ventas), eliminar material/proveedor con confirmación, notas internas
+  por cotización (`/notas`, separado de documentos adjuntos).
 - Repo git local inicializado con commits por feature.
+
+**Nota para la próxima sesión**: el sistema ya cubre el flujo completo
+de negocio + bastantes extras. Antes de seguir agregando funciones, lo
+que más aporta ahora es que alguien de Sanremo lo pruebe de verdad —
+ahí van a salir los pendientes reales.
 
 ## Pendiente / próximos pasos
 
