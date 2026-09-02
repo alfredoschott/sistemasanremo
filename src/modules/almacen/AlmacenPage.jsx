@@ -84,29 +84,66 @@ function MinimoInput({ material }) {
 }
 
 const UNIDADES_SUGERIDAS = ['pza', 'caja', 'rollo', 'par', 'kg', 'litro', 'metro', 'hoja', 'juego', 'cubeta', 'lata']
+const OTRA_UNIDAD = '__otra__'
 
 function UnidadInput({ material }) {
-  const [value, setValue] = useState(material.unidad ?? 'pza')
+  const unidadActual = material.unidad ?? 'pza'
+  const [personalizando, setPersonalizando] = useState(false)
+  const [value, setValue] = useState(unidadActual)
   const toast = useToast()
 
-  const commit = () => {
-    const unidad = value.trim() || 'pza'
-    setValue(unidad)
-    if (unidad !== (material.unidad ?? 'pza')) {
+  const guardar = (unidad) => {
+    if (unidad !== unidadActual) {
       updateDoc(doc(db, 'materiales', material.id), { unidad }).catch(() =>
         toast('No se pudo actualizar la unidad.', 'error'),
       )
     }
   }
 
+  const commitPersonalizada = () => {
+    const unidad = value.trim() || 'pza'
+    setPersonalizando(false)
+    setValue(unidad)
+    guardar(unidad)
+  }
+
+  if (personalizando) {
+    return (
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && commitPersonalizada()}
+        onBlur={commitPersonalizada}
+        className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+      />
+    )
+  }
+
+  const opciones = UNIDADES_SUGERIDAS.includes(unidadActual)
+    ? UNIDADES_SUGERIDAS
+    : [unidadActual, ...UNIDADES_SUGERIDAS]
+
   return (
-    <input
-      list="unidades-sugeridas"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={commit}
-      className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
-    />
+    <select
+      value={unidadActual}
+      onChange={(e) => {
+        if (e.target.value === OTRA_UNIDAD) {
+          setValue(unidadActual)
+          setPersonalizando(true)
+          return
+        }
+        guardar(e.target.value)
+      }}
+      className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+    >
+      {opciones.map((u) => (
+        <option key={u} value={u}>
+          {u}
+        </option>
+      ))}
+      <option value={OTRA_UNIDAD}>Otra…</option>
+    </select>
   )
 }
 
@@ -280,12 +317,6 @@ export default function AlmacenPage() {
 
   return (
     <div>
-      <datalist id="unidades-sugeridas">
-        {UNIDADES_SUGERIDAS.map((u) => (
-          <option key={u} value={u} />
-        ))}
-      </datalist>
-
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">Materiales</h1>
