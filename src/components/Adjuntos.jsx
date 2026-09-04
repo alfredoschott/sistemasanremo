@@ -72,7 +72,7 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
           <Paperclip className="h-4 w-4" />
           Documentos ({adjuntos.length})
         </h2>
@@ -95,23 +95,23 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
       </div>
 
       {adjuntos.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin documentos adjuntos.</p>
+        <p className="text-sm text-ink-faint">Sin documentos adjuntos.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {adjuntos.map((a) => (
             <li
               key={a.path}
-              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm transition-colors hover:bg-slate-50"
+              className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm transition-colors hover:bg-surface-2"
             >
               <a
                 href={a.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex min-w-0 items-center gap-2 text-slate-700 hover:text-brand-700"
+                className="flex min-w-0 items-center gap-2 text-ink hover:text-brand-700"
               >
-                <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                <FileText className="h-4 w-4 shrink-0 text-ink-faint" />
                 <span className="truncate">{a.nombre}</span>
-                <span className="shrink-0 text-xs text-slate-400">{formatSize(a.tamano)}</span>
+                <span className="shrink-0 text-xs text-ink-faint">{formatSize(a.tamano)}</span>
               </a>
               <IconButton
                 icon={Trash2}

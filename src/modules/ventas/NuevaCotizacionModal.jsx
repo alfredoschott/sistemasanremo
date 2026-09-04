@@ -83,7 +83,7 @@ function CotizacionForm({ onClose, cotizacion }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Cliente
         <input
           required
@@ -94,7 +94,7 @@ function CotizacionForm({ onClose, cotizacion }) {
         />
       </label>
 
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Monto (MXN)
         <input
           required
@@ -106,7 +106,7 @@ function CotizacionForm({ onClose, cotizacion }) {
         />
       </label>
 
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Entrega comprometida (semanas)
         <input
           required
@@ -118,7 +118,7 @@ function CotizacionForm({ onClose, cotizacion }) {
         />
       </label>
 
-      <fieldset className="text-sm font-medium text-slate-600">
+      <fieldset className="text-sm font-medium text-ink-dim">
         Condición de pago
         <div className="mt-1 flex gap-4">
           <label className="flex items-center gap-1.5 font-normal">
@@ -145,7 +145,7 @@ function CotizacionForm({ onClose, cotizacion }) {
       </fieldset>
 
       {form.condicionPago === CONDICION_PAGO.ANTICIPO && (
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           % de anticipo
           <input
             type="number"
@@ -159,7 +159,7 @@ function CotizacionForm({ onClose, cotizacion }) {
       )}
 
       {form.condicionPago === CONDICION_PAGO.FUDECO && (
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           Días de crédito
           <input
             type="number"

@@ -98,8 +98,8 @@ export default function FinanzasPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-800">Finanzas</h1>
-      <p className="mb-4 text-sm text-slate-500">
+      <h1 className="mb-1 text-xl font-semibold text-ink">Finanzas</h1>
+      <p className="mb-4 text-sm text-ink-faint">
         Cuentas por cobrar y por pagar, para ver qué entra y qué sale antes de que llegue la fecha.
       </p>
 
@@ -115,28 +115,28 @@ export default function FinanzasPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section>
-          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <ArrowDownCircle className="h-4 w-4 text-brand-600" />
             Por cobrar (crédito Fudeco)
           </h2>
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto border border-line-strong bg-surface">
             {porCobrar.length === 0 ? (
               <EmptyState icon={Wallet} title="Nada pendiente de cobro" />
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="stagger divide-y divide-line">
                 {porCobrar.map((c) => {
                   const vencida = c.vencimiento && c.vencimiento < Date.now()
                   return (
                     <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-700">{c.cliente}</p>
-                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-slate-400'}`}>
+                        <p className="font-medium text-ink">{c.cliente}</p>
+                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
                           {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
                           Vence {formatFecha(c.vencimiento)}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-ink">
                           {currency.format(c.monto ?? 0)}
                         </span>
                         <Button
@@ -159,30 +159,30 @@ export default function FinanzasPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <ArrowUpCircle className="h-4 w-4 text-amber-600" />
             Por pagar (proveedores)
           </h2>
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto border border-line-strong bg-surface">
             {porPagar.length === 0 ? (
               <EmptyState icon={Wallet} title="Nada pendiente de pago" />
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="stagger divide-y divide-line">
                 {porPagar.map((o) => {
                   const vencida = o.vencimiento && o.vencimiento < Date.now()
                   return (
                     <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-700">
+                        <p className="font-medium text-ink">
                           <ProveedorNombre proveedorId={o.proveedorId} />
                         </p>
-                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-slate-400'}`}>
+                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
                           {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
                           Vence {formatFecha(o.vencimiento)}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-ink">
                           {currency.format(o.montoTotal ?? 0)}
                         </span>
                         <Button

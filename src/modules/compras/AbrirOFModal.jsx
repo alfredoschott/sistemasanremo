@@ -67,12 +67,12 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
   return (
     <Modal open title="Abrir orden de fabricación" subtitle={cotizacion.cliente} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           Proveedor de materiales
           <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
         </label>
 
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           Plazo de entrega del proveedor (días)
           <input
             required

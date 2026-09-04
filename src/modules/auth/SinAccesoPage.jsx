@@ -6,11 +6,11 @@ export default function SinAccesoPage() {
   const { user, logout } = useAuth()
 
   return (
-    <div className="flex h-screen items-center justify-center bg-brand-950">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
-        <ShieldOff className="mx-auto mb-3 h-10 w-10 text-slate-300" strokeWidth={1.5} />
-        <h1 className="mb-1 text-lg font-semibold text-slate-800">Sin acceso</h1>
-        <p className="mb-6 text-sm text-slate-500">
+    <div className="flex min-h-screen items-center justify-center overflow-y-auto bg-brand-950 py-8">
+      <div className="w-full max-w-sm rounded-2xl bg-surface p-8 text-center shadow-2xl">
+        <ShieldOff className="mx-auto mb-3 h-10 w-10 text-line-strong" strokeWidth={1.5} />
+        <h1 className="mb-1 text-lg font-semibold text-ink">Sin acceso</h1>
+        <p className="mb-6 text-sm text-ink-faint">
           {user?.email} inició sesión correctamente, pero no está en la lista de personas
           autorizadas para usar este sistema. Pide que te agreguen.
         </p>

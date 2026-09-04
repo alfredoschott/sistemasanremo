@@ -7,6 +7,7 @@ import DashboardPage from './modules/dashboard/DashboardPage'
 import FinanzasPage from './modules/finanzas/FinanzasPage'
 import NotFoundPage from './modules/NotFoundPage'
 import ProduccionPage from './modules/produccion/ProduccionPage'
+import TransformadoresPage from './modules/transformadores/TransformadoresPage'
 import VentasDetalle from './modules/ventas/VentasDetalle'
 import VentasList from './modules/ventas/VentasList'
 
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="compras" element={<ComprasPage />} />
           <Route path="produccion" element={<ProduccionPage />} />
           <Route path="almacen" element={<AlmacenPage />} />
+          <Route path="transformadores" element={<TransformadoresPage />} />
           <Route path="finanzas" element={<FinanzasPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

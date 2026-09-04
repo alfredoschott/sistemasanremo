@@ -1,38 +1,40 @@
-import { Boxes, Factory, LayoutGrid, ShoppingCart, TrendingUp, Wallet } from 'lucide-react'
+import { Boxes, Container, Factory, LayoutGrid, ShoppingCart, TrendingUp, Wallet } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 const links = [
-  { to: '/', label: 'Inicio', icon: LayoutGrid, end: true },
-  { to: '/ventas', label: 'Ventas', icon: TrendingUp },
-  { to: '/compras', label: 'Compras', icon: ShoppingCart },
-  { to: '/produccion', label: 'Producción', icon: Factory },
-  { to: '/almacen', label: 'Almacén', icon: Boxes },
-  { to: '/finanzas', label: 'Finanzas', icon: Wallet },
+  { to: '/', label: 'Inicio', icon: LayoutGrid, end: true, n: '01' },
+  { to: '/ventas', label: 'Ventas', icon: TrendingUp, n: '02' },
+  { to: '/compras', label: 'Compras', icon: ShoppingCart, n: '03' },
+  { to: '/produccion', label: 'Producción', icon: Factory, n: '04' },
+  { to: '/almacen', label: 'Almacén', icon: Boxes, n: '05' },
+  { to: '/transformadores', label: 'Transformadores', icon: Container, n: '06' },
+  { to: '/finanzas', label: 'Finanzas', icon: Wallet, n: '07' },
 ]
 
 export default function Sidebar() {
   return (
-    <aside className="hidden w-56 shrink-0 border-r border-slate-200 bg-white sm:block">
-      <nav className="flex flex-col gap-1 p-3">
-        {links.map(({ to, label, icon: Icon, end }) => (
+    <nav className="hidden shrink-0 border-b border-line bg-surface sm:block">
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-1 overflow-x-auto px-6">
+        {links.map(({ to, label, icon: Icon, end, n }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `group relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+              `group flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-[0.8125rem] font-medium transition-colors duration-150 ${
                 isActive
-                  ? 'bg-gradient-to-r from-brand-700 to-brand-600 text-white shadow-sm shadow-brand-900/20'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'border-brand-600 text-brand-800'
+                  : 'border-transparent text-ink-dim hover:border-line-strong hover:text-ink'
               }`
             }
           >
             {({ isActive }) => (
               <>
+                <span className={`font-mono text-[0.625rem] ${isActive ? 'text-brand-600' : 'text-ink-faint'}`}>
+                  {n}
+                </span>
                 <Icon
-                  className={`h-4 w-4 shrink-0 transition-transform duration-150 group-hover:scale-110 ${
-                    isActive ? 'text-white' : 'text-slate-400'
-                  }`}
+                  className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-700' : 'text-ink-faint'}`}
                   strokeWidth={2}
                 />
                 {label}
@@ -40,7 +42,7 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
-      </nav>
-    </aside>
+      </div>
+    </nav>
   )
 }

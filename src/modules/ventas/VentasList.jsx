@@ -59,8 +59,8 @@ export default function VentasList() {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">Cotizaciones</h1>
-          <p className="text-sm text-slate-500">{cotizaciones.length} en total</p>
+          <h1 className="text-xl font-semibold text-ink">Cotizaciones</h1>
+          <p className="text-sm text-ink-faint">{cotizaciones.length} en total</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -87,9 +87,9 @@ export default function VentasList() {
 
       <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto border border-line-strong bg-surface">
         <table className="hidden w-full text-left text-sm md:table">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
             <tr>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Monto</th>
@@ -98,7 +98,7 @@ export default function VentasList() {
               <th className="px-4 py-3">Estado</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="stagger divide-y divide-line">
             {loading && <TableSkeleton rows={3} cols={5} />}
             {!loading && filtradas.length === 0 && (
               <tr>
@@ -115,16 +115,16 @@ export default function VentasList() {
               <tr
                 key={cot.id}
                 onClick={() => navigate(`/ventas/${cot.id}`)}
-                className="cursor-pointer transition-colors hover:bg-brand-50/40"
+                className="cursor-pointer transition-colors hover:bg-surface-2"
               >
-                <td className="px-4 py-3 font-medium text-slate-700">{cot.cliente}</td>
-                <td className="px-4 py-3 text-slate-600">{currency.format(cot.monto ?? 0)}</td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 font-medium text-ink">{cot.cliente}</td>
+                <td className="px-4 py-3 text-ink-dim">{currency.format(cot.monto ?? 0)}</td>
+                <td className="px-4 py-3 text-ink-dim">
                   {cot.condicionPago === 'anticipo'
                     ? `Anticipo ${cot.porcentajeAnticipo ?? ''}%`
                     : 'Crédito Fudeco'}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-ink-dim">
                   <span className="inline-flex items-center gap-1">
                     {cot.entregaSemanas} sem.
                     {!['Facturado', 'Cancelado'].includes(cot.estado) &&
@@ -144,7 +144,7 @@ export default function VentasList() {
           </tbody>
         </table>
 
-        <div className="divide-y divide-slate-100 md:hidden">
+        <div className="divide-y divide-line md:hidden">
           {loading && (
             <div className="flex flex-col gap-2.5 p-4">
               <div className="skeleton h-4 w-2/3 rounded-md" />
@@ -165,9 +165,9 @@ export default function VentasList() {
               className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors active:bg-brand-50/40"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium text-slate-700">{cot.cliente}</p>
-                <p className="text-sm text-slate-500">{currency.format(cot.monto ?? 0)}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                <p className="truncate font-medium text-ink">{cot.cliente}</p>
+                <p className="text-sm text-ink-faint">{currency.format(cot.monto ?? 0)}</p>
+                <p className="mt-1 flex items-center gap-1 text-xs text-ink-faint">
                   {cot.condicionPago === 'anticipo'
                     ? `Anticipo ${cot.porcentajeAnticipo ?? ''}%`
                     : 'Crédito Fudeco'}
@@ -181,7 +181,7 @@ export default function VentasList() {
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1.5">
                 <EstadoBadge estado={cot.estado} />
-                <ChevronRight className="h-4 w-4 text-slate-300" />
+                <ChevronRight className="h-4 w-4 text-line-strong" />
               </div>
             </button>
           ))}

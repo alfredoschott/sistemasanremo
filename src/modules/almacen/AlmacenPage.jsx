@@ -35,16 +35,16 @@ import { useMateriales } from './useMateriales'
 import { useMovimientosHoy } from './useMovimientosHoy'
 
 const ESTADO_BADGE = {
-  sinCapturar: { label: 'Sin capturar', classes: 'bg-slate-100 text-slate-500' },
+  sinCapturar: { label: 'Sin capturar', classes: 'bg-surface-2 text-ink-faint' },
   critico: { label: 'Sin stock', classes: 'bg-red-100 text-red-700' },
   bajo: { label: 'Bajo mínimo', classes: 'bg-amber-100 text-amber-700' },
 }
 
 const ESTADO_STOCK_COLOR = {
-  sinCapturar: 'text-slate-400',
+  sinCapturar: 'text-ink-faint',
   critico: 'text-red-600',
   bajo: 'text-amber-600',
-  ok: 'text-slate-600',
+  ok: 'text-ink-dim',
 }
 
 function EstadoBadge({ estado }) {
@@ -78,7 +78,7 @@ function MinimoInput({ material }) {
       value={value}
       onChange={(e) => setValue(e.target.value)}
       onBlur={commit}
-      className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+      className="w-20 rounded-md border border-line-strong px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
     />
   )
 }
@@ -115,7 +115,7 @@ function UnidadInput({ material }) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && commitPersonalizada()}
         onBlur={commitPersonalizada}
-        className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+        className="w-24 rounded-md border border-line-strong px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
       />
     )
   }
@@ -135,7 +135,7 @@ function UnidadInput({ material }) {
         }
         guardar(e.target.value)
       }}
-      className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+      className="rounded-md border border-line-strong px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
     >
       {opciones.map((u) => (
         <option key={u} value={u}>
@@ -160,7 +160,7 @@ function CategoriaSelect({ material }) {
     <select
       value={material.categoria ?? 'Otros'}
       onChange={onChange}
-      className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+      className="rounded-md border border-line-strong px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
     >
       {CATEGORIAS.map((c) => (
         <option key={c} value={c}>
@@ -196,7 +196,7 @@ function NombreEditable({ material }) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && commit()}
-          className="rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+          className="rounded-md border border-line-strong px-2 py-1 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
         />
         <button onClick={commit} className="text-brand-700 hover:text-brand-800">
           <Check className="h-4 w-4" />
@@ -208,16 +208,16 @@ function NombreEditable({ material }) {
   return (
     <button
       onClick={() => setEditing(true)}
-      className="group inline-flex items-center gap-1.5 text-left font-medium text-slate-700"
+      className="group inline-flex items-center gap-1.5 text-left font-medium text-ink"
     >
       {material.nombre}
-      <Pencil className="h-3 w-3 shrink-0 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
+      <Pencil className="h-3 w-3 shrink-0 text-line-strong opacity-0 transition-opacity group-hover:opacity-100" />
     </button>
   )
 }
 
 function SortIcon({ activo, dir }) {
-  if (!activo) return <ChevronsUpDown className="h-3 w-3 text-slate-300" />
+  if (!activo) return <ChevronsUpDown className="h-3 w-3 text-line-strong" />
   return dir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
 }
 
@@ -312,15 +312,15 @@ export default function AlmacenPage() {
 
   const pillClass = (activo) =>
     `shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-      activo ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      activo ? 'bg-brand-700 text-white' : 'bg-surface-2 text-ink-dim hover:bg-line'
     }`
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">Materiales</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-ink">Materiales</h1>
+          <p className="text-sm text-ink-faint">
             {materiales.length} en catálogo · {movimientosHoy} movimiento{movimientosHoy === 1 ? '' : 's'} hoy
           </p>
         </div>
@@ -368,12 +368,12 @@ export default function AlmacenPage() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto border border-line-strong bg-surface">
         <table className="hidden w-full text-left text-sm md:table">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
             <tr>
               <th className="px-4 py-3">
-                <button onClick={() => ordenarPor('nombre')} className="inline-flex items-center gap-1 hover:text-slate-700">
+                <button onClick={() => ordenarPor('nombre')} className="inline-flex items-center gap-1 uppercase hover:text-ink">
                   Material
                   <SortIcon activo={sort.field === 'nombre'} dir={sort.dir} />
                 </button>
@@ -381,7 +381,7 @@ export default function AlmacenPage() {
               <th className="px-4 py-3">Categoría</th>
               <th className="px-4 py-3">Unidad</th>
               <th className="px-4 py-3">
-                <button onClick={() => ordenarPor('stock')} className="inline-flex items-center gap-1 hover:text-slate-700">
+                <button onClick={() => ordenarPor('stock')} className="inline-flex items-center gap-1 uppercase hover:text-ink">
                   Stock actual
                   <SortIcon activo={sort.field === 'stock'} dir={sort.dir} />
                 </button>
@@ -390,7 +390,7 @@ export default function AlmacenPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="stagger divide-y divide-line">
             {loading && <TableSkeleton rows={3} cols={6} />}
             {!loading && materialesOrdenados.length === 0 && (
               <tr>
@@ -406,7 +406,7 @@ export default function AlmacenPage() {
             {materialesPagina.map((material) => {
               const estado = estadoMaterial(material)
               return (
-                <tr key={material.id} className="transition-colors hover:bg-brand-50/40">
+                <tr key={material.id} className="transition-colors hover:bg-surface-2">
                   <td className="px-4 py-3">
                     <NombreEditable material={material} />
                   </td>
@@ -458,7 +458,7 @@ export default function AlmacenPage() {
           </tbody>
         </table>
 
-        <div className="divide-y divide-slate-100 md:hidden">
+        <div className="divide-y divide-line md:hidden">
           {loading &&
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-2.5 p-4">
@@ -491,7 +491,7 @@ export default function AlmacenPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-ink-faint">
                   <label className="flex items-center gap-1.5">
                     Categoría
                     <CategoriaSelect material={material} />

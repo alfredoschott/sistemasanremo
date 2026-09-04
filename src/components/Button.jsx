@@ -1,14 +1,12 @@
 import Spinner from './Spinner'
 
-// Botones "3D": borde sólido abajo que simula relieve, y al hacer clic
-// el botón baja y pierde ese borde (efecto de "presionado" real).
 const VARIANTS = {
   primary:
-    'bg-gradient-to-b from-brand-600 to-brand-700 text-white border border-brand-800 shadow-[0_3px_0_0_var(--color-brand-900)] hover:from-brand-500 hover:to-brand-600 active:translate-y-[3px] active:shadow-[0_0_0_0_var(--color-brand-900)] disabled:active:translate-y-0 disabled:active:shadow-[0_3px_0_0_var(--color-brand-900)]',
+    'bg-brand-700 text-white border border-brand-800 hover:bg-brand-800 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-none',
   outline:
-    'bg-white text-slate-700 border border-slate-300 shadow-[0_2px_0_0_theme(colors.slate.300)] hover:border-brand-500 hover:text-brand-800 active:translate-y-[2px] active:shadow-[0_0_0_0_theme(colors.slate.300)] disabled:active:translate-y-0 disabled:active:shadow-[0_2px_0_0_theme(colors.slate.300)]',
-  secondary: 'text-slate-600 hover:bg-slate-100 border border-transparent active:scale-[0.98]',
-  ghost: 'text-slate-400 hover:text-red-600 hover:bg-red-50 active:scale-[0.98]',
+    'bg-surface text-ink border border-line-strong hover:border-brand-600 hover:text-brand-800 hover:-translate-y-px active:translate-y-0 active:scale-[0.98]',
+  secondary: 'text-ink-dim hover:bg-surface-2 border border-transparent active:scale-[0.98]',
+  ghost: 'text-ink-faint hover:text-red-600 hover:bg-red-50 active:scale-[0.98]',
 }
 
 const SIZES = {

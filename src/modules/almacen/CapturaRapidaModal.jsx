@@ -86,7 +86,7 @@ export default function CapturaRapidaModal({ open, onClose, materiales }) {
         <select
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+          className="rounded-md border border-line-strong px-3 py-2 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
         >
           <option value="todas">Todas las categorías</option>
           {CATEGORIAS.map((c) => (
@@ -97,23 +97,23 @@ export default function CapturaRapidaModal({ open, onClose, materiales }) {
         </select>
       </div>
 
-      <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-slate-200">
+      <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-line">
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+          <thead className="sticky top-0 bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
             <tr>
               <th className="px-3 py-2">Material</th>
               <th className="px-3 py-2">Actual</th>
               <th className="px-3 py-2">Cantidad real</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="stagger divide-y divide-line">
             {filtrados.map((m) => (
               <tr key={m.id}>
                 <td className="px-3 py-2">
                   {m.nombre}
-                  <span className="ml-1 text-xs text-slate-400">({m.unidad ?? 'pza'})</span>
+                  <span className="ml-1 text-xs text-ink-faint">({m.unidad ?? 'pza'})</span>
                 </td>
-                <td className="px-3 py-2 text-slate-500">{m.stock ?? 0}</td>
+                <td className="px-3 py-2 text-ink-faint">{m.stock ?? 0}</td>
                 <td className="px-3 py-2">
                   <input
                     type="number"
@@ -128,14 +128,14 @@ export default function CapturaRapidaModal({ open, onClose, materiales }) {
                         return next
                       })
                     }
-                    className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+                    className="w-24 rounded-md border border-line-strong px-2 py-1 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
                   />
                 </td>
               </tr>
             ))}
             {filtrados.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-3 py-6 text-center text-sm text-slate-400">
+                <td colSpan={3} className="px-3 py-6 text-center text-sm text-ink-faint">
                   Sin materiales que coincidan.
                 </td>
               </tr>
@@ -145,7 +145,7 @@ export default function CapturaRapidaModal({ open, onClose, materiales }) {
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-faint">
           {cambiosPendientes} cambio{cambiosPendientes === 1 ? '' : 's'} pendiente
           {cambiosPendientes === 1 ? '' : 's'}
         </p>

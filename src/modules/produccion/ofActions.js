@@ -1,4 +1,4 @@
-import { deleteField, doc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { deleteDoc, deleteField, doc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -64,4 +64,25 @@ export async function deshacerCompletarYFacturar(of) {
     fechaFacturado: deleteField(),
   })
   await batch.commit()
+}
+
+// Archivar solo oculta la OF completada de la vista principal (para no
+// amontonar la lista con pedidos viejos) — el registro y su auditoría
+// se conservan, a diferencia de eliminar.
+export async function archivarOF(ofId) {
+  await updateDoc(doc(db, 'ordenesFabricacion', ofId), {
+    archivada: true,
+    archivadaEn: serverTimestamp(),
+  })
+}
+
+export async function desarchivarOF(ofId) {
+  await updateDoc(doc(db, 'ordenesFabricacion', ofId), {
+    archivada: false,
+    archivadaEn: deleteField(),
+  })
+}
+
+export async function eliminarOF(ofId) {
+  await deleteDoc(doc(db, 'ordenesFabricacion', ofId))
 }

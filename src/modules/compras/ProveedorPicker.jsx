@@ -1,7 +1,7 @@
 import { addDoc, collection } from 'firebase/firestore'
 import { useState } from 'react'
 import { db } from '../../lib/firebase'
-import { inputClass } from '../../lib/ui'
+import { inputClass, inputClassInline } from '../../lib/ui'
 import { useProveedores } from './useProveedores'
 
 const NUEVO = '__nuevo__'
@@ -37,7 +37,7 @@ export default function ProveedorPicker({ value, onChange }) {
           value={creatingName}
           onChange={(e) => setCreatingName(e.target.value)}
           placeholder="Nombre del proveedor"
-          className={`flex-1 ${inputClass} mt-0`}
+          className={`flex-1 ${inputClassInline}`}
         />
         <button
           type="button"

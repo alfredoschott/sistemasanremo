@@ -26,8 +26,8 @@ export default function VentasDetalle() {
   const toast = useToast()
   const navigate = useNavigate()
 
-  if (loading) return <p className="text-slate-400">Cargando…</p>
-  if (!cotizacion) return <p className="text-slate-400">Cotización no encontrada.</p>
+  if (loading) return <p className="text-ink-faint">Cargando…</p>
+  if (!cotizacion) return <p className="text-ink-faint">Cotización no encontrada.</p>
 
   const puedeEditar = cotizacion.estado === 'Cotizado'
   const puedeCancelar = !['Facturado', 'Cancelado'].includes(cotizacion.estado)
@@ -70,15 +70,15 @@ export default function VentasDetalle() {
         Volver a cotizaciones
       </Link>
 
-      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mt-3 rounded-lg border border-line bg-surface p-6 shadow-sm">
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-800">{cotizacion.cliente}</h1>
-            <p className="text-sm text-slate-500">{currency.format(cotizacion.monto ?? 0)}</p>
+            <h1 className="text-xl font-semibold text-ink">{cotizacion.cliente}</h1>
+            <p className="text-sm text-ink-faint">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
           <div className="no-print flex items-center gap-3">
             <EstadoBadge estado={cotizacion.estado} />
-            <div className="flex items-center gap-1 border-r border-slate-200 pr-2">
+            <div className="flex items-center gap-1 border-r border-line pr-2">
               <IconButton icon={Printer} onClick={() => window.print()} title="Imprimir" />
               <IconButton
                 icon={Copy}
@@ -120,26 +120,26 @@ export default function VentasDetalle() {
 
         <dl className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <dt className="text-slate-400">Condición de pago</dt>
-            <dd className="text-slate-700">
+            <dt className="text-ink-faint">Condición de pago</dt>
+            <dd className="text-ink">
               {cotizacion.condicionPago === 'anticipo'
                 ? `Anticipo ${cotizacion.porcentajeAnticipo ?? ''}%`
                 : `Crédito Fudeco (${cotizacion.diasCredito ?? '60'} días)`}
             </dd>
           </div>
           <div>
-            <dt className="text-slate-400">Entrega comprometida</dt>
-            <dd className="text-slate-700">{cotizacion.entregaSemanas} semanas</dd>
+            <dt className="text-ink-faint">Entrega comprometida</dt>
+            <dd className="text-ink">{cotizacion.entregaSemanas} semanas</dd>
           </div>
           {cotizacion.numeroSerie && (
             <div>
-              <dt className="text-slate-400">Orden de fabricación</dt>
-              <dd className="text-slate-700">{cotizacion.numeroSerie}</dd>
+              <dt className="text-ink-faint">Orden de fabricación</dt>
+              <dd className="text-ink">{cotizacion.numeroSerie}</dd>
             </div>
           )}
         </dl>
 
-        <div className="no-print mt-6 border-t border-slate-100 pt-6">
+        <div className="no-print mt-6 border-t border-line pt-6">
           <Adjuntos
             coleccion="cotizaciones"
             docId={cotizacion.id}

@@ -134,10 +134,10 @@ export default function ComprasPage() {
       </MetricsRow>
 
       <section>
-        <h1 className="mb-3 text-xl font-semibold text-slate-800">Cotizaciones por abrir OF</h1>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <h1 className="mb-3 text-xl font-semibold text-ink">Cotizaciones por abrir OF</h1>
+        <div className="overflow-x-auto border border-line-strong bg-surface">
           <table className="hidden w-full text-left text-sm md:table">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
               <tr>
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Monto</th>
@@ -145,7 +145,7 @@ export default function ComprasPage() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="stagger divide-y divide-line">
               {loadingCotizaciones && <TableSkeleton rows={2} cols={4} />}
               {!loadingCotizaciones && cotizaciones.length === 0 && (
                 <tr>
@@ -159,10 +159,10 @@ export default function ComprasPage() {
                 </tr>
               )}
               {cotizaciones.map((cot) => (
-                <tr key={cot.id} className="transition-colors hover:bg-brand-50/40">
-                  <td className="px-4 py-3 font-medium text-slate-700">{cot.cliente}</td>
-                  <td className="px-4 py-3 text-slate-600">{currency.format(cot.monto ?? 0)}</td>
-                  <td className="px-4 py-3 text-slate-600">{cot.entregaSemanas} sem.</td>
+                <tr key={cot.id} className="transition-colors hover:bg-surface-2">
+                  <td className="px-4 py-3 font-medium text-ink">{cot.cliente}</td>
+                  <td className="px-4 py-3 text-ink-dim">{currency.format(cot.monto ?? 0)}</td>
+                  <td className="px-4 py-3 text-ink-dim">{cot.entregaSemanas} sem.</td>
                   <td className="px-4 py-3 text-right">
                     <Button size="sm" onClick={() => setCotizacionParaOF(cot)}>
                       Abrir OF
@@ -173,7 +173,7 @@ export default function ComprasPage() {
             </tbody>
           </table>
 
-          <div className="divide-y divide-slate-100 md:hidden">
+          <div className="divide-y divide-line md:hidden">
             {loadingCotizaciones && (
               <div className="flex flex-col gap-2.5 p-4">
                 <div className="skeleton h-4 w-2/3 rounded-md" />
@@ -190,8 +190,8 @@ export default function ComprasPage() {
             {cotizaciones.map((cot) => (
               <div key={cot.id} className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-700">{cot.cliente}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="truncate font-medium text-ink">{cot.cliente}</p>
+                  <p className="text-sm text-ink-faint">
                     {currency.format(cot.monto ?? 0)} · {cot.entregaSemanas} sem.
                   </p>
                 </div>
@@ -206,7 +206,7 @@ export default function ComprasPage() {
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-xl font-semibold text-slate-800">Órdenes de compra</h2>
+          <h2 className="text-xl font-semibold text-ink">Órdenes de compra</h2>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
@@ -226,9 +226,9 @@ export default function ComprasPage() {
           </div>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por proveedor…" />
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto border border-line-strong bg-surface">
           <table className="hidden w-full text-left text-sm md:table">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
               <tr>
                 <th className="px-4 py-3">Proveedor</th>
                 <th className="px-4 py-3">Materiales</th>
@@ -238,7 +238,7 @@ export default function ComprasPage() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="stagger divide-y divide-line">
               {loadingOrdenes && <TableSkeleton rows={2} cols={6} />}
               {!loadingOrdenes && ordenesFiltradas.length === 0 && (
                 <tr>
@@ -252,26 +252,29 @@ export default function ComprasPage() {
                 </tr>
               )}
               {ordenesFiltradas.map((oc) => (
-                <tr key={oc.id} className="transition-colors hover:bg-brand-50/40">
-                  <td className="px-4 py-3 font-medium text-slate-700">
+                <tr key={oc.id} className="transition-colors hover:bg-surface-2">
+                  <td className="px-4 py-3 font-medium text-ink">
                     <ProveedorNombre proveedorId={oc.proveedorId} />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {(oc.materiales ?? []).map((linea, i) => (
-                      <span key={i} className="mr-2">
-                        {linea.cantidad}× <MaterialNombre materialId={linea.materialId} />
-                      </span>
-                    ))}
+                  <td className="px-4 py-3 text-ink-dim">
+                    <ul className="flex flex-col gap-0.5">
+                      {(oc.materiales ?? []).map((linea, i) => (
+                        <li key={i} className="whitespace-nowrap">
+                          <span className="font-medium text-ink">{linea.cantidad}×</span>{' '}
+                          <MaterialNombre materialId={linea.materialId} />
+                        </li>
+                      ))}
+                    </ul>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{oc.plazoEntregaDias} días</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-ink-dim">{oc.plazoEntregaDias} días</td>
+                  <td className="px-4 py-3 text-ink-dim">
                     {oc.montoTotal ? currency.format(oc.montoTotal) : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                          OC_BADGE[oc.estado] ?? 'bg-slate-100 text-slate-700'
+                          OC_BADGE[oc.estado] ?? 'bg-surface-2 text-ink'
                         }`}
                       >
                         {oc.estado}
@@ -334,7 +337,7 @@ export default function ComprasPage() {
             </tbody>
           </table>
 
-          <div className="divide-y divide-slate-100 md:hidden">
+          <div className="divide-y divide-line md:hidden">
             {loadingOrdenes && (
               <div className="flex flex-col gap-2.5 p-4">
                 <div className="skeleton h-4 w-2/3 rounded-md" />
@@ -352,10 +355,10 @@ export default function ComprasPage() {
               <div key={oc.id} className="flex flex-col gap-2.5 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-700">
+                    <p className="truncate font-medium text-ink">
                       <ProveedorNombre proveedorId={oc.proveedorId} />
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-ink-faint">
                       {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {oc.plazoEntregaDias} días
                     </p>
                   </div>
@@ -370,19 +373,20 @@ export default function ComprasPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-500">
+                <ul className="flex flex-col gap-0.5 text-xs text-ink-faint">
                   {(oc.materiales ?? []).map((linea, i) => (
-                    <span key={i} className="mr-2">
-                      {linea.cantidad}× <MaterialNombre materialId={linea.materialId} />
-                    </span>
+                    <li key={i}>
+                      <span className="font-medium text-ink-dim">{linea.cantidad}×</span>{' '}
+                      <MaterialNombre materialId={linea.materialId} />
+                    </li>
                   ))}
-                </p>
+                </ul>
 
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                        OC_BADGE[oc.estado] ?? 'bg-slate-100 text-slate-700'
+                        OC_BADGE[oc.estado] ?? 'bg-surface-2 text-ink'
                       }`}
                     >
                       {oc.estado}

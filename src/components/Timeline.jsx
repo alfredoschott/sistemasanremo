@@ -28,21 +28,21 @@ export default function Timeline({ estadoActual }) {
                     ? 'bg-brand-700 text-white'
                     : active
                       ? 'bg-brand-700 text-white shadow-[0_0_0_4px] shadow-brand-100'
-                      : 'bg-slate-200 text-slate-500'
+                      : 'bg-line text-ink-faint'
                 }`}
               >
                 {done ? <Check className="h-4 w-4" strokeWidth={3} /> : index + 1}
               </div>
               <span
                 className={`text-xs whitespace-nowrap transition-colors ${
-                  done || active ? 'font-medium text-brand-800' : 'text-slate-400'
+                  done || active ? 'font-medium text-brand-800' : 'text-ink-faint'
                 }`}
               >
                 {estado}
               </span>
             </div>
             {!isLast && (
-              <div className="mx-2 h-0.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+              <div className="mx-2 h-0.5 flex-1 overflow-hidden rounded-full bg-line">
                 <div
                   className="h-full bg-brand-700 transition-all duration-500 ease-out"
                   style={{ width: done ? '100%' : '0%' }}

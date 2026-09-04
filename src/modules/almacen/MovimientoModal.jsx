@@ -51,14 +51,14 @@ export default function MovimientoModal({ open, onClose }) {
   return (
     <Modal open={open} onClose={onClose} title="Movimiento de almacén" maxWidth="max-w-sm">
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           Material
           <div className="mt-1">
             <MaterialPicker value={materialId} onChange={setMaterialId} />
           </div>
         </label>
 
-        <fieldset className="text-sm font-medium text-slate-600">
+        <fieldset className="text-sm font-medium text-ink-dim">
           Tipo
           <div className="mt-1 flex gap-4">
             <label className="flex items-center gap-1.5 font-normal">
@@ -84,7 +84,7 @@ export default function MovimientoModal({ open, onClose }) {
           </div>
         </fieldset>
 
-        <label className="text-sm font-medium text-slate-600">
+        <label className="text-sm font-medium text-ink-dim">
           Cantidad
           <input
             required

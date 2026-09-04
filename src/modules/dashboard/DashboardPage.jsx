@@ -49,8 +49,8 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold text-slate-800">Panorama general</h1>
-      <p className="mb-4 text-sm text-slate-500">SRM Telsa Transformadores — Sanremo de México</p>
+      <h1 className="mb-1 text-xl font-semibold text-ink">Panorama general</h1>
+      <p className="mb-4 text-sm text-ink-faint">SRM Telsa Transformadores — Sanremo de México</p>
 
       <MetricsRow>
         <MetricCard label="Cotizado sin OF" value={currency.format(resumen.cotizado)} />
@@ -63,46 +63,46 @@ export default function DashboardPage() {
         />
       </MetricsRow>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="stagger grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Link
           to="/ventas"
-          className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-lg border border-line bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
         >
-          <p className="text-sm text-slate-400">Ventas</p>
-          <p className="text-2xl font-semibold text-slate-800">{cotizaciones.length}</p>
-          <p className="text-xs text-slate-400">cotizaciones totales</p>
+          <p className="text-sm text-ink-faint">Ventas</p>
+          <p className="text-2xl font-semibold text-ink">{cotizaciones.length}</p>
+          <p className="text-xs text-ink-faint">cotizaciones totales</p>
         </Link>
         <Link
           to="/compras"
-          className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-lg border border-line bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
         >
-          <p className="text-sm text-slate-400">Compras</p>
-          <p className="text-2xl font-semibold text-slate-800">{resumen.ocPendientes}</p>
-          <p className="text-xs text-slate-400">O.C. pendientes</p>
+          <p className="text-sm text-ink-faint">Compras</p>
+          <p className="text-2xl font-semibold text-ink">{resumen.ocPendientes}</p>
+          <p className="text-xs text-ink-faint">O.C. pendientes</p>
         </Link>
         <Link
           to="/almacen"
-          className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          className="rounded-lg border border-line bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
         >
-          <p className="text-sm text-slate-400">Almacén</p>
-          <p className="text-2xl font-semibold text-slate-800">{materiales.length}</p>
-          <p className="text-xs text-slate-400">materiales en catálogo</p>
+          <p className="text-sm text-ink-faint">Almacén</p>
+          <p className="text-2xl font-semibold text-ink">{materiales.length}</p>
+          <p className="text-xs text-ink-faint">materiales en catálogo</p>
         </Link>
       </div>
 
-      <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-slate-700">Actividad reciente</h2>
+      <div className="mt-6 rounded-lg border border-line bg-surface p-5 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold text-ink">Actividad reciente</h2>
         {notificaciones.length === 0 ? (
-          <p className="text-sm text-slate-400">Sin actividad todavía.</p>
+          <p className="text-sm text-ink-faint">Sin actividad todavía.</p>
         ) : (
-          <ul className="flex flex-col gap-2.5">
+          <ul className="stagger flex flex-col gap-2.5">
             {notificaciones.slice(0, 8).map((n) => {
               const Icon = ICONS[n.tipo] ?? Info
               return (
                 <li key={n.id} className="flex items-start gap-2.5 text-sm">
-                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-                  <span className="flex-1 text-slate-600">{n.mensaje}</span>
-                  <span className="shrink-0 text-xs text-slate-400">{timeAgo(n.fecha)}</span>
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
+                  <span className="flex-1 text-ink-dim">{n.mensaje}</span>
+                  <span className="shrink-0 text-xs text-ink-faint">{timeAgo(n.fecha)}</span>
                 </li>
               )
             })}

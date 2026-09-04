@@ -26,10 +26,14 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`animate-slide-up pointer-events-auto flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
+            className={`animate-slide-up pointer-events-auto relative overflow-hidden flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
               t.type === 'error' ? 'bg-red-600 text-white' : 'bg-brand-800 text-white'
             }`}
           >
+            <span
+              className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-white/40"
+              style={{ animation: `shrink-w ${t.onUndo ? 10 : 3.2}s linear forwards` }}
+            />
             {t.type === 'error' ? (
               <XCircle className="h-4 w-4 shrink-0" />
             ) : (
@@ -42,7 +46,7 @@ export function ToastProvider({ children }) {
                   t.onUndo()
                   dismiss(t.id)
                 }}
-                className="ml-1 inline-flex shrink-0 items-center gap-1 rounded-md bg-white/15 px-2 py-1 text-xs font-semibold transition-colors hover:bg-white/25"
+                className="ml-1 inline-flex shrink-0 items-center gap-1 rounded-md bg-surface/15 px-2 py-1 text-xs font-semibold transition-colors hover:bg-surface/25"
               >
                 <Undo2 className="h-3 w-3" />
                 Deshacer

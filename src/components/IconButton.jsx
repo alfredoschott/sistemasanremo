@@ -1,6 +1,6 @@
 const VARIANTS = {
-  default: 'text-slate-400 hover:bg-slate-100 hover:text-brand-700',
-  danger: 'text-slate-400 hover:bg-red-50 hover:text-red-600',
+  default: 'text-ink-faint hover:bg-surface-2 hover:text-brand-700',
+  danger: 'text-ink-faint hover:bg-red-50 hover:text-red-600',
 }
 
 export default function IconButton({
@@ -17,7 +17,7 @@ export default function IconButton({
     >
       <Icon className="h-4 w-4" />
       {badge > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[9px] font-semibold text-white">
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-700 px-0.5 text-[0.5625rem] font-semibold text-white">
           {badge}
         </span>
       )}

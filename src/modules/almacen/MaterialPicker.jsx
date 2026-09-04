@@ -1,12 +1,13 @@
 import { addDoc, collection } from 'firebase/firestore'
 import { useState } from 'react'
 import { db } from '../../lib/firebase'
-import { inputClass } from '../../lib/ui'
+import { inputClass, inputClassInline } from '../../lib/ui'
 import { useMateriales } from './useMateriales'
 
 const NUEVO = '__nuevo__'
 
-export default function MaterialPicker({ value, onChange }) {
+export default function MaterialPicker({ value, onChange, inline = false }) {
+  const selectClass = inline ? `w-full ${inputClassInline}` : inputClass
   const { materiales } = useMateriales()
   const [creatingName, setCreatingName] = useState(null)
 
@@ -43,7 +44,7 @@ export default function MaterialPicker({ value, onChange }) {
           value={creatingName}
           onChange={(e) => setCreatingName(e.target.value)}
           placeholder="Nombre del material"
-          className={`flex-1 ${inputClass} mt-0`}
+          className={`flex-1 ${inputClassInline}`}
         />
         <button
           type="button"
@@ -57,7 +58,7 @@ export default function MaterialPicker({ value, onChange }) {
   }
 
   return (
-    <select required value={value} onChange={handleSelect} className={inputClass}>
+    <select required value={value} onChange={handleSelect} className={selectClass}>
       <option value="" disabled>
         Selecciona un material
       </option>

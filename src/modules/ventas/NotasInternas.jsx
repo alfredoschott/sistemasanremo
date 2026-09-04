@@ -43,8 +43,8 @@ export default function NotasInternas({ cotizacionId }) {
   }
 
   return (
-    <div className="no-print mt-6 border-t border-slate-100 pt-6">
-      <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+    <div className="no-print mt-6 border-t border-line pt-6">
+      <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
         <MessageSquare className="h-4 w-4" />
         Notas internas
       </h2>
@@ -52,9 +52,9 @@ export default function NotasInternas({ cotizacionId }) {
       {notas.length > 0 && (
         <ul className="mb-3 flex flex-col gap-2">
           {notas.map((n) => (
-            <li key={n.id} className="rounded-md bg-slate-50 px-3 py-2 text-sm">
-              <p className="text-slate-700">{n.texto}</p>
-              <p className="mt-1 text-xs text-slate-400">
+            <li key={n.id} className="rounded-md bg-surface-2 px-3 py-2 text-sm">
+              <p className="text-ink">{n.texto}</p>
+              <p className="mt-1 text-xs text-ink-faint">
                 {n.usuario} · {formatFecha(n.fecha)}
               </p>
             </li>
@@ -67,7 +67,7 @@ export default function NotasInternas({ cotizacionId }) {
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Agregar una nota…"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
+          className="flex-1 rounded-md border border-line-strong px-3 py-2 text-sm outline-none transition-colors focus:border-brand-600 focus:ring-2 focus:ring-brand-100"
         />
         <button
           type="submit"

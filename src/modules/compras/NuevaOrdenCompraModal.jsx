@@ -9,7 +9,7 @@ import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { useToast } from '../../lib/ToastContext'
-import { inputClass } from '../../lib/ui'
+import { inputClass, inputClassInline } from '../../lib/ui'
 import ProveedorPicker from './ProveedorPicker'
 
 const lineaVacia = { materialId: '', cantidad: '1' }
@@ -84,12 +84,12 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Proveedor
         <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
       </label>
 
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Plazo de entrega (días)
         <input
           required
@@ -101,7 +101,7 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
         />
       </label>
 
-      <label className="text-sm font-medium text-slate-600">
+      <label className="text-sm font-medium text-ink-dim">
         Monto total (MXN) — opcional, para el flujo de caja
         <input
           type="number"
@@ -114,18 +114,18 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
       </label>
 
       <div>
-        <span className="text-sm font-medium text-slate-600">Materiales</span>
+        <span className="text-sm font-medium text-ink-dim">Materiales</span>
 
         {materialesBloqueados ? (
-          <div className="mt-1 rounded-md bg-slate-50 p-3">
-            <ul className="flex flex-col gap-1 text-sm text-slate-600">
+          <div className="mt-1 rounded-md bg-surface-2 p-3">
+            <ul className="flex flex-col gap-1 text-sm text-ink-dim">
               {oc.materiales.map((linea, i) => (
                 <li key={i}>
                   {linea.cantidad}× <MaterialNombre materialId={linea.materialId} />
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-ink-faint">
               No editable: esta O.C. ya fue recibida y el stock se ajustó con estas cantidades.
             </p>
           </div>
@@ -133,9 +133,10 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
           <>
             <div className="mt-1 flex flex-col gap-2">
               {materiales.map((linea, index) => (
-                <div key={index} className="flex gap-2">
+                <div key={index} className="flex items-center gap-2">
                   <div className="flex-1">
                     <MaterialPicker
+                      inline
                       value={linea.materialId}
                       onChange={updateLinea(index, 'materialId')}
                     />
@@ -145,7 +146,7 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
                     min="1"
                     value={linea.cantidad}
                     onChange={(e) => updateLinea(index, 'cantidad')(e.target.value)}
-                    className={`w-20 ${inputClass} mt-0`}
+                    className={`w-20 ${inputClassInline}`}
                   />
                   {materiales.length > 1 && (
                     <IconButton

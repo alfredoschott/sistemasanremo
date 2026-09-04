@@ -21,7 +21,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex h-screen items-center justify-center overflow-hidden bg-brand-950">
+    <div className="relative flex min-h-screen items-center justify-center overflow-x-hidden overflow-y-auto bg-brand-950 py-8">
       <div
         className="absolute inset-0 opacity-[0.07]"
         style={{
@@ -32,9 +32,9 @@ export default function LoginPage() {
       <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-brand-600 opacity-20 blur-3xl" />
       <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-brand-500 opacity-20 blur-3xl" />
 
-      <div className="animate-scale-in relative w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
+      <div className="animate-scale-in relative w-full max-w-sm rounded-2xl bg-surface p-8 text-center shadow-2xl">
         <BrandMark className="mx-auto mb-2 w-48" />
-        <p className="mb-6 text-sm text-slate-500">Sanremo de México</p>
+        <p className="mb-6 text-sm text-ink-faint">Sanremo de México</p>
 
         <div className="flex flex-col gap-2">
           {authProviders.map((provider) => (

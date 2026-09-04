@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -11,18 +12,41 @@
   --color-brand-100: #d9f0e2;
   --color-brand-50: #eff9f3;
 
-  --animate-fade-in: fade-in 0.18s ease-out;
+  /* Paleta "panel de planta": neutrales con sesgo verde (no gris genérico)
+     + cobre como acento secundario (bobinados de cobre reales). */
+  --color-ink: #14201a;
+  --color-ink-dim: #3f4c44;
+  --color-ink-faint: #5c6b62;
+  --color-paper: #eef1ee;
+  --color-surface: #f8faf8;
+  --color-surface-2: #eef3ee;
+  --color-line: #c3cdc5;
+  --color-line-strong: #9fad9f;
+  --color-copper: #a8672a;
+  --color-copper-ink: #7a4a1e;
+  --color-copper-soft: #f3e6d5;
+
+  --font-display: 'Big Shoulders Display', system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --animate-fade-in: fade-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-scale-in: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
   --animate-bolt: bolt-flicker 3.2s ease-in-out infinite;
+  --animate-rise-in: rise-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-grow-x: grow-x 0.5s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-ring: pulse-ring 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @keyframes fade-in {
     from {
       opacity: 0;
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
+      transform: translateY(0);
     }
   }
   @keyframes scale-in {
@@ -66,17 +90,67 @@
       opacity: 1;
     }
   }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes grow-x {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);
+    }
+    100% {
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+  }
+  @keyframes shrink-w {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
 }
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #f7f8f7 0%, #f1f3f2 100%);
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-paper);
+  background-image:
+    linear-gradient(rgba(20, 32, 26, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 32, 26, 0.045) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
+h1, h2, h3 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+
+.font-mono, .mono {
+  font-variant-numeric: tabular-nums;
+}
+
 .skeleton {
-  background: linear-gradient(90deg, #e7e9ea 25%, #f2f3f4 37%, #e7e9ea 63%);
+  background: linear-gradient(90deg, var(--color-surface-2) 25%, var(--color-surface) 37%, var(--color-surface-2) 63%);
   background-size: 400% 100%;
   animation: var(--animate-shimmer);
 }
@@ -84,6 +158,34 @@ body {
 ::selection {
   background: var(--color-brand-100);
   color: var(--color-brand-900);
+}
+
+/* Entrada escalonada para filas de tabla, tarjetas de métricas, grids de
+   tarjetas: cada hijo directo entra con un pequeño retraso incremental. */
+.stagger > * {
+  animation: var(--animate-rise-in);
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 35ms; }
+.stagger > *:nth-child(3) { animation-delay: 70ms; }
+.stagger > *:nth-child(4) { animation-delay: 105ms; }
+.stagger > *:nth-child(5) { animation-delay: 140ms; }
+.stagger > *:nth-child(6) { animation-delay: 175ms; }
+.stagger > *:nth-child(7) { animation-delay: 210ms; }
+.stagger > *:nth-child(8) { animation-delay: 245ms; }
+.stagger > *:nth-child(9) { animation-delay: 280ms; }
+.stagger > *:nth-child(n + 10) { animation-delay: 300ms; }
+
+.origin-left {
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media print {
