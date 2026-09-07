@@ -1,4 +1,5 @@
-import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus } from 'lucide-react'
+import { deleteDoc, doc } from 'firebase/firestore'
+import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
@@ -8,6 +9,7 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import Modal from '../../components/Modal'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
+import { db } from '../../lib/firebase'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
@@ -48,6 +50,7 @@ export default function ComprasPage() {
   const [ocDocumentosId, setOcDocumentosId] = useState(null)
   const [recibiendoId, setRecibiendoId] = useState(null)
   const [revirtiendoId, setRevirtiendoId] = useState(null)
+  const [eliminandoId, setEliminandoId] = useState(null)
   const [search, setSearch] = useState('')
   const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
@@ -107,6 +110,26 @@ export default function ComprasPage() {
       toast('No se pudo revertir. Intenta de nuevo.', 'error')
     } finally {
       setRevirtiendoId(null)
+    }
+  }
+
+  const eliminarOC = async (oc) => {
+    const advertencia =
+      oc.estado === 'recibida'
+        ? '¿Eliminar esta O.C.? Se restará el stock que sumó y no se puede deshacer.'
+        : '¿Eliminar esta O.C.? No se puede deshacer.'
+    if (!window.confirm(advertencia)) return
+    setEliminandoId(oc.id)
+    try {
+      if (oc.estado === 'recibida') {
+        await revertirRecepcion(oc)
+      }
+      await deleteDoc(doc(db, 'ordenesCompra', oc.id))
+      toast('O.C. eliminada')
+    } catch {
+      toast('No se pudo eliminar. Intenta de nuevo.', 'error')
+    } finally {
+      setEliminandoId(null)
     }
   }
 
@@ -330,6 +353,13 @@ export default function ComprasPage() {
                           {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
                         </Button>
                       )}
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        disabled={eliminandoId === oc.id}
+                        onClick={() => eliminarOC(oc)}
+                        title="Eliminar O.C."
+                      />
                     </div>
                   </td>
                 </tr>
@@ -426,6 +456,13 @@ export default function ComprasPage() {
                       {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
                     </Button>
                   )}
+                  <IconButton
+                    icon={Trash2}
+                    variant="danger"
+                    disabled={eliminandoId === oc.id}
+                    onClick={() => eliminarOC(oc)}
+                    title="Eliminar O.C."
+                  />
                 </div>
               </div>
             ))}

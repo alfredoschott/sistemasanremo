@@ -1,6 +1,7 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { MessageSquare } from 'lucide-react'
+import { addDoc, collection, deleteDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { MessageSquare, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import IconButton from '../../components/IconButton'
 import { auth, db } from '../../lib/firebase'
 import { useToast } from '../../lib/ToastContext'
 import { useNotas } from '../../lib/useNotas'
@@ -21,6 +22,15 @@ export default function NotasInternas({ cotizacionId }) {
   const [texto, setTexto] = useState('')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
+
+  const eliminarNota = async (nota) => {
+    if (!window.confirm('¿Eliminar esta nota?')) return
+    try {
+      await deleteDoc(doc(db, 'notas', nota.id))
+    } catch {
+      toast('No se pudo eliminar la nota. Intenta de nuevo.', 'error')
+    }
+  }
 
   const agregarNota = async (e) => {
     e.preventDefault()
@@ -52,11 +62,23 @@ export default function NotasInternas({ cotizacionId }) {
       {notas.length > 0 && (
         <ul className="mb-3 flex flex-col gap-2">
           {notas.map((n) => (
-            <li key={n.id} className="rounded-md bg-surface-2 px-3 py-2 text-sm">
-              <p className="text-ink">{n.texto}</p>
-              <p className="mt-1 text-xs text-ink-faint">
-                {n.usuario} · {formatFecha(n.fecha)}
-              </p>
+            <li
+              key={n.id}
+              className="group flex items-start justify-between gap-2 rounded-md bg-surface-2 px-3 py-2 text-sm"
+            >
+              <div>
+                <p className="text-ink">{n.texto}</p>
+                <p className="mt-1 text-xs text-ink-faint">
+                  {n.usuario} · {formatFecha(n.fecha)}
+                </p>
+              </div>
+              <IconButton
+                icon={Trash2}
+                variant="danger"
+                onClick={() => eliminarNota(n)}
+                title="Eliminar nota"
+                className="opacity-0 transition-opacity group-hover:opacity-100"
+              />
             </li>
           ))}
         </ul>

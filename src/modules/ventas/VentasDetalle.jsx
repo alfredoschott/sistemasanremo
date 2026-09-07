@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, Copy, Pencil, Printer } from 'lucide-react'
+import { ArrowLeft, Ban, Copy, Pencil, Printer, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
@@ -9,7 +9,12 @@ import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
-import { cancelarCotizacion, deshacerCancelacion, duplicarCotizacion } from './cotizacionActions'
+import {
+  cancelarCotizacion,
+  deshacerCancelacion,
+  duplicarCotizacion,
+  eliminarCotizacion,
+} from './cotizacionActions'
 import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
@@ -23,6 +28,7 @@ export default function VentasDetalle() {
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
   const [cancelando, setCancelando] = useState(false)
   const [duplicando, setDuplicando] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
   const toast = useToast()
   const navigate = useNavigate()
 
@@ -31,6 +37,7 @@ export default function VentasDetalle() {
 
   const puedeEditar = cotizacion.estado === 'Cotizado'
   const puedeCancelar = !['Facturado', 'Cancelado'].includes(cotizacion.estado)
+  const puedeEliminar = ['Cotizado', 'Cancelado'].includes(cotizacion.estado)
 
   const confirmarCancelacion = async () => {
     setCancelando(true)
@@ -44,6 +51,22 @@ export default function VentasDetalle() {
       toast('No se pudo cancelar. Intenta de nuevo.', 'error')
     } finally {
       setCancelando(false)
+    }
+  }
+
+  const eliminar = async () => {
+    if (
+      !window.confirm(`¿Eliminar definitivamente la cotización de ${cotizacion.cliente}? Esto no se puede deshacer.`)
+    )
+      return
+    setEliminando(true)
+    try {
+      await eliminarCotizacion(cotizacion)
+      toast(`Cotización de ${cotizacion.cliente} eliminada`)
+      navigate('/ventas')
+    } catch {
+      toast('No se pudo eliminar. Intenta de nuevo.', 'error')
+      setEliminando(false)
     }
   }
 
@@ -109,6 +132,15 @@ export default function VentasDetalle() {
                   <Ban className="h-3.5 w-3.5" />
                   Cancelar
                 </Button>
+              )}
+              {puedeEliminar && (
+                <IconButton
+                  icon={Trash2}
+                  variant="danger"
+                  onClick={eliminar}
+                  disabled={eliminando}
+                  title="Eliminar cotización"
+                />
               )}
             </div>
           </div>

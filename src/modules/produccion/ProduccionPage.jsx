@@ -1,4 +1,4 @@
-import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Trash2 } from 'lucide-react'
+import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Trash2, Undo2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -55,9 +55,37 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
   const desarchivar = () => runAction(() => desarchivarOF(of.id), `${of.numeroSerie} restaurada`)
 
   const eliminar = () => {
-    if (!window.confirm(`¿Eliminar definitivamente la OF ${of.numeroSerie}? Esto no se puede deshacer.`))
+    if (
+      !window.confirm(
+        `¿Eliminar definitivamente la OF ${of.numeroSerie}? La cotización de ${of.cliente} regresará a "Cotizado". Esto no se puede deshacer.`,
+      )
+    )
       return
-    runAction(() => eliminarOF(of.id), `${of.numeroSerie} eliminada`)
+    runAction(() => eliminarOF(of), `${of.numeroSerie} eliminada`)
+  }
+
+  const regresarAAbierta = () => {
+    if (!window.confirm(`¿Regresar ${of.numeroSerie} a "Abierta"? Se perderá el avance registrado.`))
+      return
+    runAction(() => deshacerIniciarProduccion(of), `${of.numeroSerie} regresada a "Abierta"`)
+  }
+
+  const regresarAProduccion = async () => {
+    if (!window.confirm(`¿Regresar ${of.numeroSerie} a "En producción"? Deshace la facturación.`))
+      return
+    setBusy(true)
+    try {
+      await deshacerCompletarYFacturar(of)
+      toast(`${of.numeroSerie} regresada a "En producción"`)
+    } catch (err) {
+      if (err.message === 'ya-cobrada') {
+        toast('Primero deshaz el cobro de esta cotización en Finanzas.', 'error')
+      } else {
+        toast('No se pudo completar la acción. Intenta de nuevo.', 'error')
+      }
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -68,13 +96,24 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
           <h3 className="text-lg font-semibold text-ink">{of.cliente}</h3>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span
-            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-              ESTADO_OF_BADGE[of.estado] ?? 'bg-surface-2 text-ink'
-            }`}
-          >
-            {of.estado}
-          </span>
+          <div className="flex items-center gap-1">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                ESTADO_OF_BADGE[of.estado] ?? 'bg-surface-2 text-ink'
+              }`}
+            >
+              {of.estado}
+            </span>
+            {of.estado !== 'Completada' && (
+              <IconButton
+                icon={Trash2}
+                variant="danger"
+                onClick={eliminar}
+                disabled={busy}
+                title="Eliminar OF"
+              />
+            )}
+          </div>
           {of.estado !== 'Completada' && estaVencido(of.fecha, of.plazoEntregaDias) && (
             <span
               title="Plazo del proveedor vencido"
@@ -120,7 +159,16 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
         <div>
           <div className="mb-1 flex items-center justify-between text-xs text-ink-faint">
             <span>Avance</span>
-            <span>{of.avance ?? 0}%</span>
+            <div className="flex items-center gap-1">
+              <span>{of.avance ?? 0}%</span>
+              <IconButton
+                icon={Undo2}
+                disabled={busy}
+                onClick={regresarAAbierta}
+                title='Regresar a "Abierta"'
+                className="h-5 w-5 p-0.5"
+              />
+            </div>
           </div>
           <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-line">
             <div
@@ -162,6 +210,12 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
         <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
           <p className="text-sm text-ink-faint">Facturada — proceso completo.</p>
           <div className="flex items-center gap-1">
+            <IconButton
+              icon={Undo2}
+              disabled={busy}
+              onClick={regresarAProduccion}
+              title='Regresar a "En producción"'
+            />
             {viendoArchivadas ? (
               <IconButton
                 icon={ArchiveRestore}

@@ -259,7 +259,10 @@ export default function AlmacenPage() {
       })
     } catch (err) {
       if (err.message === 'material-en-uso') {
-        toast(`No se puede eliminar: "${material.nombre}" está en una O.C. pendiente.`, 'error')
+        toast(
+          `No se puede eliminar: "${material.nombre}" tiene movimientos u órdenes de compra en su historial.`,
+          'error',
+        )
       } else {
         toast('No se pudo eliminar el material.', 'error')
       }

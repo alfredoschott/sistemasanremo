@@ -133,17 +133,21 @@ export async function revertirMovimientoManual({ movimientoId, materialId, tipo,
   })
 }
 
-// Borra un material solo si no está referenciado en una O.C. que todavía no
-// se recibe: si esa O.C. se recibiera después, recibirOrdenCompra() fallaría
-// al no encontrar el documento del material. Devuelve los datos borrados
-// para poder restaurarlo desde el "Deshacer" del toast.
+// Borra un material solo si nunca se ha usado: ni en ninguna O.C. (pendiente
+// o ya recibida) ni en ningún movimiento de almacén. Si se permitiera borrar
+// un material con historial, esas O.C./movimientos quedarían con un
+// materialId que ya no resuelve a nada. Devuelve los datos borrados para
+// poder restaurarlo desde el "Deshacer" del toast.
 export async function eliminarMaterial(material) {
-  const pendientesSnap = await getDocs(
-    query(collection(db, 'ordenesCompra'), where('estado', '==', 'pendiente')),
-  )
-  const enUso = pendientesSnap.docs.some((d) =>
-    (d.data().materiales ?? []).some((linea) => linea.materialId === material.id),
-  )
+  const [ordenesSnap, movimientosSnap] = await Promise.all([
+    getDocs(collection(db, 'ordenesCompra')),
+    getDocs(query(collection(db, 'movimientosAlmacen'), where('materialId', '==', material.id))),
+  ])
+  const enUso =
+    !movimientosSnap.empty ||
+    ordenesSnap.docs.some((d) =>
+      (d.data().materiales ?? []).some((linea) => linea.materialId === material.id),
+    )
   if (enUso) {
     throw new Error('material-en-uso')
   }

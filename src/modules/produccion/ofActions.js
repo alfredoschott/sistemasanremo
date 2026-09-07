@@ -1,4 +1,4 @@
-import { deleteDoc, deleteField, doc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { deleteField, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -53,7 +53,16 @@ export async function completarYFacturar(of) {
   })
 }
 
+// También se usa como botón persistente para "regresar a producción" una OF
+// ya completada (no solo desde el toast inmediato). Si la cotización ya se
+// marcó como cobrada en Finanzas, se bloquea: primero hay que deshacer el
+// cobro para no dejar cobrado:true en una cotización que ya no está Facturada.
 export async function deshacerCompletarYFacturar(of) {
+  const cotizacionSnap = await getDoc(doc(db, 'cotizaciones', of.cotizacionId))
+  if (cotizacionSnap.exists() && cotizacionSnap.data().cobrado) {
+    throw new Error('ya-cobrada')
+  }
+
   const batch = writeBatch(db)
   batch.update(doc(db, 'ordenesFabricacion', of.id), {
     estado: 'En producción',
@@ -83,6 +92,25 @@ export async function desarchivarOF(ofId) {
   })
 }
 
-export async function eliminarOF(ofId) {
-  await deleteDoc(doc(db, 'ordenesFabricacion', ofId))
+// Eliminar una OF regresa la cotización relacionada a "Cotizado" (y borra
+// todo lo que esa OF le había escrito: numeroSerie, facturación, cobro).
+// Así se puede corregir una OF abierta por error en cualquier estado sin
+// dejar la cotización apuntando a un documento que ya no existe.
+export async function eliminarOF(of) {
+  const cotizacionRef = doc(db, 'cotizaciones', of.cotizacionId)
+  const cotizacionSnap = await getDoc(cotizacionRef)
+
+  const batch = writeBatch(db)
+  batch.delete(doc(db, 'ordenesFabricacion', of.id))
+  if (cotizacionSnap.exists()) {
+    batch.update(cotizacionRef, {
+      estado: 'Cotizado',
+      ofId: deleteField(),
+      numeroSerie: deleteField(),
+      fechaFacturado: deleteField(),
+      cobrado: deleteField(),
+      fechaCobro: deleteField(),
+    })
+  }
+  await batch.commit()
 }

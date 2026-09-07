@@ -1,16 +1,21 @@
-import { AlertTriangle, ChevronRight, Download, FileText, Plus } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Download, FileText, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import EstadoBadge from '../../components/EstadoBadge'
+import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
+import { useToast } from '../../lib/ToastContext'
+import { eliminarCotizacion } from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
+
+const PUEDE_ELIMINAR = new Set(['Cotizado', 'Cancelado'])
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
@@ -18,7 +23,20 @@ export default function VentasList() {
   const { cotizaciones, loading } = useCotizaciones()
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [eliminandoId, setEliminandoId] = useState(null)
   const navigate = useNavigate()
+  const toast = useToast()
+
+  const eliminar = (e, cot) => {
+    e.stopPropagation()
+    if (!window.confirm(`¿Eliminar definitivamente la cotización de ${cot.cliente}? Esto no se puede deshacer.`))
+      return
+    setEliminandoId(cot.id)
+    eliminarCotizacion(cot)
+      .then(() => toast(`Cotización de ${cot.cliente} eliminada`))
+      .catch(() => toast('No se pudo eliminar. Intenta de nuevo.', 'error'))
+      .finally(() => setEliminandoId(null))
+  }
 
   const metrics = useMemo(() => {
     const cotizado = cotizaciones
@@ -96,13 +114,14 @@ export default function VentasList() {
               <th className="px-4 py-3">Condición de pago</th>
               <th className="px-4 py-3">Entrega</th>
               <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="stagger divide-y divide-line">
-            {loading && <TableSkeleton rows={3} cols={5} />}
+            {loading && <TableSkeleton rows={3} cols={6} />}
             {!loading && filtradas.length === 0 && (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <EmptyState
                     icon={FileText}
                     title={search ? 'Sin resultados' : 'Sin cotizaciones todavía'}
@@ -139,6 +158,17 @@ export default function VentasList() {
                 <td className="px-4 py-3">
                   <EstadoBadge estado={cot.estado} />
                 </td>
+                <td className="px-4 py-3 text-right">
+                  {PUEDE_ELIMINAR.has(cot.estado) && (
+                    <IconButton
+                      icon={Trash2}
+                      variant="danger"
+                      disabled={eliminandoId === cot.id}
+                      onClick={(e) => eliminar(e, cot)}
+                      title="Eliminar cotización"
+                    />
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -159,10 +189,10 @@ export default function VentasList() {
             />
           )}
           {filtradas.map((cot) => (
-            <button
+            <div
               key={cot.id}
               onClick={() => navigate(`/ventas/${cot.id}`)}
-              className="flex w-full items-center justify-between gap-3 p-4 text-left transition-colors active:bg-brand-50/40"
+              className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left transition-colors active:bg-brand-50/40"
             >
               <div className="min-w-0">
                 <p className="truncate font-medium text-ink">{cot.cliente}</p>
@@ -179,11 +209,22 @@ export default function VentasList() {
                     )}
                 </p>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                <EstadoBadge estado={cot.estado} />
+              <div className="flex shrink-0 items-center gap-1">
+                <div className="flex flex-col items-end gap-1.5">
+                  <EstadoBadge estado={cot.estado} />
+                  {PUEDE_ELIMINAR.has(cot.estado) && (
+                    <IconButton
+                      icon={Trash2}
+                      variant="danger"
+                      disabled={eliminandoId === cot.id}
+                      onClick={(e) => eliminar(e, cot)}
+                      title="Eliminar cotización"
+                    />
+                  )}
+                </div>
                 <ChevronRight className="h-4 w-4 text-line-strong" />
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
