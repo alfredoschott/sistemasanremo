@@ -2,16 +2,85 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function autorizado() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/usuariosAutorizados/$(request.auth.token.email));
+    function email() {
+      return request.auth.token.email;
     }
 
-    // Acceso restringido a la lista en /usuariosAutorizados (agregar
-    // correos con scripts/agregarUsuario.mjs). Roles por área
-    // (Ventas/Compras/Producción/Almacén) siguen pendientes de definir
-    // con Sanremo — ver CLAUDE.md.
-    match /{document=**} {
+    function usuario() {
+      return get(/databases/$(database)/documents/usuariosAutorizados/$(email()));
+    }
+
+    function autorizado() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/usuariosAutorizados/$(email()));
+    }
+
+    function misRoles() {
+      return usuario().data.roles;
+    }
+
+    function esAdmin() {
+      return autorizado() && ('admin' in misRoles());
+    }
+
+    // true si el usuario tiene AL MENOS UNO de los roles dados (o es admin).
+    // Varias colecciones las tocan más de un área en el flujo normal (ej.
+    // Compras escribe en `cotizaciones` al abrir una OF, Producción también
+    // al avanzarla) — por eso son listas, no un solo rol. Esto no es
+    // permisos por campo (ver PROGRESS.md, limitación conocida): cualquiera
+    // de los roles listados puede escribir cualquier campo del documento.
+    function tieneAlgunRol(roles) {
+      return autorizado() && (esAdmin() || misRoles().hasAny(roles));
+    }
+
+    // Solo cada quien puede leer su propio documento (para saber sus roles
+    // al entrar), y solo un admin puede leer la lista completa o modificar
+    // el acceso/rol de cualquiera — incluido el suyo propio.
+    match /usuariosAutorizados/{userEmail} {
+      allow read: if request.auth != null && (email() == userEmail || esAdmin());
+      allow write: if esAdmin();
+    }
+
+    match /cotizaciones/{id} {
+      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+    }
+
+    match /notas/{id} {
+      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+    }
+
+    match /auditoria/{id} {
+      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+    }
+
+    match /ordenesFabricacion/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'produccion']);
+    }
+
+    match /ordenesCompra/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
+    }
+
+    match /proveedores/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
+    }
+
+    match /materiales/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'almacen']);
+    }
+
+    match /movimientosAlmacen/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'almacen']);
+    }
+
+    match /transformadoresTerminados/{id} {
+      allow read, write: if tieneAlgunRol(['transformadores']);
+    }
+
+    // Bajo riesgo (solo mensajes + link) y cruza todas las áreas — se
+    // genera desde casi cualquier acción de negocio. Cualquier persona
+    // autorizada la puede leer/marcar leída.
+    match /notificaciones/{id} {
       allow read, write: if autorizado();
     }
   }

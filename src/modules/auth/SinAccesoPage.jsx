@@ -2,7 +2,7 @@ import { ShieldOff } from 'lucide-react'
 import Button from '../../components/Button'
 import { useAuth } from '../../lib/AuthContext'
 
-export default function SinAccesoPage() {
+export default function SinAccesoPage({ mensaje, mostrarCerrarSesion = true }) {
   const { user, logout } = useAuth()
 
   return (
@@ -11,12 +11,18 @@ export default function SinAccesoPage() {
         <ShieldOff className="mx-auto mb-3 h-10 w-10 text-line-strong" strokeWidth={1.5} />
         <h1 className="mb-1 text-lg font-semibold text-ink">Sin acceso</h1>
         <p className="mb-6 text-sm text-ink-faint">
-          {user?.email} inició sesión correctamente, pero no está en la lista de personas
-          autorizadas para usar este sistema. Pide que te agreguen.
+          {mensaje ?? (
+            <>
+              {user?.email} inició sesión correctamente, pero no está en la lista de personas
+              autorizadas para usar este sistema. Pide que te agreguen.
+            </>
+          )}
         </p>
-        <Button variant="secondary" onClick={logout}>
-          Cerrar sesión
-        </Button>
+        {mostrarCerrarSesion && (
+          <Button variant="secondary" onClick={logout}>
+            Cerrar sesión
+          </Button>
+        )}
       </div>
     </div>
   )

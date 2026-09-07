@@ -1,5 +1,5 @@
-import { doc, updateDoc, writeBatch } from 'firebase/firestore'
-import { AlertTriangle, Bell, CheckCircle2, Info } from 'lucide-react'
+import { deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore'
+import { AlertTriangle, Bell, CheckCircle2, Info, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../lib/firebase'
@@ -47,16 +47,25 @@ export default function NotificationBell() {
     if (n.link) navigate(n.link)
   }
 
+  const eliminarNotificacion = (e, n) => {
+    e.stopPropagation()
+    deleteDoc(doc(db, 'notificaciones', n.id)).catch(() => {})
+  }
+
   return (
     <div className="relative">
+      {/* Botón en px fijos a propósito: es parte de la barra verde, que no
+          debe crecer con el zoom de accesibilidad (ver nota en Topbar.jsx).
+          El panel de notificaciones que abre sí escala normal, como
+          cualquier otro contenido. */}
       <button
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="relative flex h-8 w-8 items-center justify-center rounded-full text-brand-50/90 transition-colors hover:bg-surface/10"
+        className="relative flex h-[32px] w-[32px] items-center justify-center rounded-full text-brand-50/90 transition-colors hover:bg-surface/10"
       >
-        <Bell className="h-4.5 w-4.5" />
+        <Bell className="h-[18px] w-[18px]" />
         {noLeidas > 0 && (
-          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[0.625rem] font-semibold text-white">
+          <span className="absolute right-[2px] top-[2px] flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-[4px] text-[10px] font-semibold text-white">
             <span className="animate-pulse-ring absolute inset-0 rounded-full" />
             {noLeidas > 9 ? '9+' : noLeidas}
           </span>
@@ -64,7 +73,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="animate-scale-in absolute right-0 top-11 w-80 overflow-hidden rounded-lg border border-line bg-surface text-ink shadow-xl">
+        <div className="animate-scale-in absolute right-0 top-[44px] w-80 overflow-hidden rounded-lg border border-line bg-surface text-ink shadow-xl">
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <span className="text-sm font-semibold text-ink">Notificaciones</span>
             {noLeidas > 0 && (
@@ -84,19 +93,30 @@ export default function NotificationBell() {
             {notificaciones.map((n) => {
               const Icon = ICONS[n.tipo] ?? Info
               return (
-                <button
+                <div
                   key={n.id}
-                  onMouseDown={() => handleClick(n)}
-                  className={`flex w-full items-start gap-2.5 border-b border-line px-4 py-2.5 text-left text-sm transition-colors last:border-0 hover:bg-surface-2 ${
+                  className={`group flex w-full items-start gap-2.5 border-b border-line px-4 py-2.5 text-sm transition-colors last:border-0 hover:bg-surface-2 ${
                     n.leida ? '' : 'bg-brand-50/50'
                   }`}
                 >
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${ICON_COLOR[n.tipo] ?? ICON_COLOR.info}`} />
-                  <div className="min-w-0">
-                    <p className="text-ink">{n.mensaje}</p>
-                    <p className="text-xs text-ink-faint">{timeAgo(n.fecha)}</p>
-                  </div>
-                </button>
+                  <button
+                    onMouseDown={() => handleClick(n)}
+                    className="flex flex-1 items-start gap-2.5 text-left"
+                  >
+                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${ICON_COLOR[n.tipo] ?? ICON_COLOR.info}`} />
+                    <div className="min-w-0">
+                      <p className="text-ink">{n.mensaje}</p>
+                      <p className="text-xs text-ink-faint">{timeAgo(n.fecha)}</p>
+                    </div>
+                  </button>
+                  <button
+                    onMouseDown={(e) => eliminarNotificacion(e, n)}
+                    title="Eliminar notificación"
+                    className="shrink-0 rounded-md p-1 text-ink-faint opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               )
             })}
           </div>

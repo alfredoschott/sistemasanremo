@@ -1,5 +1,6 @@
 import BrandMark from '../../components/BrandMark'
 import { useAuth } from '../../lib/AuthContext'
+import { RolesProvider } from '../../lib/RolesContext'
 import { useAutorizado } from '../../lib/useAutorizado'
 import LoginPage from './LoginPage'
 import SinAccesoPage from './SinAccesoPage'
@@ -16,12 +17,12 @@ function Loader() {
 
 export default function RequireAuth({ children }) {
   const { user, loading } = useAuth()
-  const autorizado = useAutorizado(user?.email)
+  const datos = useAutorizado(user?.email)
 
   if (loading) return <Loader />
   if (!user) return <LoginPage />
-  if (autorizado === null) return <Loader />
-  if (!autorizado) return <SinAccesoPage />
+  if (datos === undefined) return <Loader />
+  if (datos === null) return <SinAccesoPage />
 
-  return children
+  return <RolesProvider roles={datos.roles}>{children}</RolesProvider>
 }
