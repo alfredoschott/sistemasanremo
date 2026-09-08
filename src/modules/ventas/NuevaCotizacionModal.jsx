@@ -6,6 +6,7 @@ import { registrarAuditoria } from '../../lib/audit'
 import { CONDICION_PAGO } from '../../lib/estados'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 
@@ -56,6 +57,10 @@ function CotizacionForm({ onClose, cotizacion }) {
 
       if (isEdit) {
         await updateDoc(doc(db, 'cotizaciones', cotizacion.id), data)
+        actualizarSeguimiento(cotizacion.id, {
+          cliente: data.cliente,
+          entregaSemanas: data.entregaSemanas,
+        })
         toast(`Cotización de ${form.cliente} actualizada`)
         registrarAuditoria({ entidad: 'cotizacion', entidadId: cotizacion.id, accion: 'Editada' })
       } else {
@@ -63,6 +68,11 @@ function CotizacionForm({ onClose, cotizacion }) {
           ...data,
           estado: 'Cotizado',
           fecha: serverTimestamp(),
+        })
+        actualizarSeguimiento(ref.id, {
+          cliente: data.cliente,
+          estado: 'Cotizado',
+          entregaSemanas: data.entregaSemanas,
         })
         toast(`Cotización creada para ${form.cliente}`)
         crearNotificacion({

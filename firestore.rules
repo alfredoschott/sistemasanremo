@@ -83,5 +83,19 @@ service cloud.firestore {
     match /notificaciones/{id} {
       allow read, write: if autorizado();
     }
+
+    // Copia mínima y pública de cada cotización (mismo id que el
+    // documento real), para que el cliente vea su estatus con un link,
+    // sin necesitar cuenta — ver src/lib/seguimientoPublico.js y
+    // src/modules/seguimiento/SeguimientoPage.jsx. A propósito NO exige
+    // auth para leer: es el único punto de todo el sistema pensado para
+    // gente de fuera de la empresa. Por eso vive en su propia colección
+    // con solo 4 campos — nunca tiene montos, materiales ni nada del
+    // resto de `cotizaciones`. Escribir sigue restringido a los mismos
+    // roles que ya tocan el ciclo de vida de una cotización.
+    match /seguimientoPublico/{id} {
+      allow read: if true;
+      allow write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+    }
   }
 }

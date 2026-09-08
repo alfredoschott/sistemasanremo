@@ -10,6 +10,7 @@ import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useProveedores } from '../compras/useProveedores'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 import { deshacerCobrado, deshacerPagado, marcarCobrado, marcarPagado } from './finanzasActions'
+import FlujoMensualChart from './FlujoMensualChart'
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 const DIA_MS = 24 * 60 * 60 * 1000
@@ -323,6 +324,8 @@ export default function FinanzasPage() {
           </div>
         </section>
       </div>
+
+      <FlujoMensualChart cobrados={cobrados} pagados={pagados} />
     </div>
   )
 }

@@ -14,17 +14,20 @@ const ComprasPage = lazy(() => import('./modules/compras/ComprasPage'))
 const FinanzasPage = lazy(() => import('./modules/finanzas/FinanzasPage'))
 const NotFoundPage = lazy(() => import('./modules/NotFoundPage'))
 const ProduccionPage = lazy(() => import('./modules/produccion/ProduccionPage'))
+const SeguimientoPage = lazy(() => import('./modules/seguimiento/SeguimientoPage'))
 const TransformadoresPage = lazy(() => import('./modules/transformadores/TransformadoresPage'))
 const UsuariosPage = lazy(() => import('./modules/admin/UsuariosPage'))
 const VentasDetalle = lazy(() => import('./modules/ventas/VentasDetalle'))
 const VentasList = lazy(() => import('./modules/ventas/VentasList'))
 
-export default function App() {
+// /seguimiento/:id es la única ruta pública de todo el sistema — el
+// cliente la abre con un link, sin cuenta, así que va FUERA de
+// RequireAuth. Todo lo demás sigue exigiendo login como siempre.
+function AppAutenticada() {
   return (
     <RequireAuth>
-      <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route element={<AppLayout />}>
+      <Routes>
+        <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route
             path="ventas"
@@ -90,10 +93,20 @@ export default function App() {
               </RequireArea>
             }
           />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
     </RequireAuth>
+  )
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+        <Route path="/seguimiento/:id" element={<SeguimientoPage />} />
+        <Route path="/*" element={<AppAutenticada />} />
+      </Routes>
+    </Suspense>
   )
 }

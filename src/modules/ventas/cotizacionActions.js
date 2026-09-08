@@ -12,9 +12,11 @@ import {
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { actualizarSeguimiento, eliminarSeguimiento } from '../../lib/seguimientoPublico'
 
 export async function cancelarCotizacion(cotizacion) {
   await updateDoc(doc(db, 'cotizaciones', cotizacion.id), { estado: 'Cancelado' })
+  actualizarSeguimiento(cotizacion.id, { estado: 'Cancelado' })
   await registrarAuditoria({
     entidad: 'cotizacion',
     entidadId: cotizacion.id,
@@ -29,6 +31,7 @@ export async function cancelarCotizacion(cotizacion) {
 
 export async function deshacerCancelacion(cotizacion) {
   await updateDoc(doc(db, 'cotizaciones', cotizacion.id), { estado: cotizacion.estado })
+  actualizarSeguimiento(cotizacion.id, { estado: cotizacion.estado })
   await registrarAuditoria({
     entidad: 'cotizacion',
     entidadId: cotizacion.id,
@@ -45,6 +48,7 @@ export async function eliminarCotizacion(cotizacion) {
   )
   await Promise.all(notasSnap.docs.map((d) => deleteDoc(d.ref)))
   await deleteDoc(doc(db, 'cotizaciones', cotizacion.id))
+  eliminarSeguimiento(cotizacion.id)
 }
 
 export async function duplicarCotizacion(cotizacion) {
@@ -56,6 +60,11 @@ export async function duplicarCotizacion(cotizacion) {
     entregaSemanas: cotizacion.entregaSemanas,
     estado: 'Cotizado',
     fecha: serverTimestamp(),
+  })
+  actualizarSeguimiento(ref.id, {
+    cliente: cotizacion.cliente,
+    estado: 'Cotizado',
+    entregaSemanas: cotizacion.entregaSemanas,
   })
   await registrarAuditoria({
     entidad: 'cotizacion',

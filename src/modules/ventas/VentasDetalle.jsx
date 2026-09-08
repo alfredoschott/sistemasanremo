@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, Copy, Pencil, Printer, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, Copy, Link2, Pencil, Printer, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
@@ -70,6 +70,16 @@ export default function VentasDetalle() {
     }
   }
 
+  const copiarLinkSeguimiento = async () => {
+    const url = `${window.location.origin}/seguimiento/${cotizacion.id}`
+    try {
+      await navigator.clipboard.writeText(url)
+      toast('Link para el cliente copiado')
+    } catch {
+      toast(url, 'error')
+    }
+  }
+
   const duplicar = async () => {
     setDuplicando(true)
     try {
@@ -108,6 +118,11 @@ export default function VentasDetalle() {
                 onClick={duplicar}
                 disabled={duplicando}
                 title="Duplicar cotización"
+              />
+              <IconButton
+                icon={Link2}
+                onClick={copiarLinkSeguimiento}
+                title="Copiar link de seguimiento para el cliente"
               />
             </div>
             <div className="flex items-center gap-2">

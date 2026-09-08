@@ -5,6 +5,7 @@ import Modal from '../../components/Modal'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorMaterialesFila from './ProveedorMaterialesFila'
 
@@ -82,6 +83,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
       }
 
       await batch.commit()
+      actualizarSeguimiento(cotizacion.id, { estado: 'OF abierta' })
 
       onClose()
       toast(

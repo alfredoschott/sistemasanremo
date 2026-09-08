@@ -2,6 +2,7 @@ import { collection, deleteField, doc, getDoc, serverTimestamp, updateDoc, write
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { proveedoresDe } from './proveedoresOF'
 
 export async function iniciarProduccion(of) {
@@ -9,6 +10,7 @@ export async function iniciarProduccion(of) {
   batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'En producción', avance: 0 })
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'Producción' })
   await batch.commit()
+  actualizarSeguimiento(of.cotizacionId, { estado: 'Producción', avance: 0 })
   crearNotificacion({
     mensaje: `${of.numeroSerie} entró a producción`,
     tipo: 'info',
@@ -27,10 +29,12 @@ export async function deshacerIniciarProduccion(of) {
   batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'Abierta', avance: 0 })
   batch.update(doc(db, 'cotizaciones', of.cotizacionId), { estado: 'OF abierta' })
   await batch.commit()
+  actualizarSeguimiento(of.cotizacionId, { estado: 'OF abierta', avance: 0 })
 }
 
-export async function actualizarAvance(ofId, avance) {
-  await updateDoc(doc(db, 'ordenesFabricacion', ofId), { avance })
+export async function actualizarAvance(of, avance) {
+  await updateDoc(doc(db, 'ordenesFabricacion', of.id), { avance })
+  actualizarSeguimiento(of.cotizacionId, { avance })
 }
 
 export async function completarYFacturar(of) {
@@ -41,6 +45,7 @@ export async function completarYFacturar(of) {
     fechaFacturado: serverTimestamp(),
   })
   await batch.commit()
+  actualizarSeguimiento(of.cotizacionId, { estado: 'Facturado', avance: 100 })
   crearNotificacion({
     mensaje: `${of.numeroSerie} completada y facturada`,
     tipo: 'success',
@@ -74,6 +79,7 @@ export async function deshacerCompletarYFacturar(of) {
     fechaFacturado: deleteField(),
   })
   await batch.commit()
+  actualizarSeguimiento(of.cotizacionId, { estado: 'Producción', avance: of.avance ?? 0 })
 }
 
 // Archivar solo oculta la OF completada de la vista principal (para no
@@ -114,6 +120,7 @@ export async function eliminarOF(of) {
     })
   }
   await batch.commit()
+  actualizarSeguimiento(of.cotizacionId, { estado: 'Cotizado', avance: 0 })
 }
 
 // Agrega un proveedor a una OF que ya está abierta (no solo al crearla).
