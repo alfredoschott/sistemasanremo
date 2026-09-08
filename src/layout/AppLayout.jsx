@@ -11,7 +11,13 @@ export default function AppLayout() {
         <Topbar />
       </div>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:p-6 print:overflow-visible print:p-0">
+      {/* Sin barra fija abajo (se quitó BottomNav), el contenido puede
+          hacer scroll libremente hasta el borde real de la pantalla —
+          por eso el padding de abajo es el mismo que el de arriba/lados,
+          no uno extra "de seguridad": ese padding extra solo hace falta
+          para UI fija que se quede pegada a un borde (ver ToastContext),
+          no para contenido que ya se puede scrollear más allá. */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:p-6 print:overflow-visible print:p-0">
         <div key={location.pathname} className="mx-auto max-w-6xl animate-fade-in">
           <Outlet />
         </div>
