@@ -13,6 +13,14 @@
     <title>SRM Telsa Transformadores</title>
   </head>
   <body>
+    <!-- Relleno fijo del área segura de arriba (debajo de la barra de
+         estado de iOS: reloj/wifi/batería, eso lo pinta el sistema y no
+         se puede tocar). Sin esto, si el header de la app no calza
+         pixel-perfecto con esa área en cada combinación de dispositivo/
+         orientación, se alcanza a ver el fondo claro de la página como
+         una franja blanca — este div va siempre encima, del mismo verde
+         del header, así que esa franja nunca se nota. -->
+    <div id="safe-area-fill"></div>
     <div id="root"></div>
     <!-- iOS no deja bloquear la rotación desde la web (eso solo lo puede
          hacer una app nativa) — como alternativa, se tapa la pantalla

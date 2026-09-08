@@ -157,6 +157,23 @@ body {
   height: 100%;
 }
 
+/* Ver comentario en index.html: rellena el área segura de arriba con el
+   verde del header para que nunca se note el fondo claro de la página
+   detrás de la barra de estado de iOS. print:hidden vía @media print
+   más abajo no aplica aquí porque .no-print ya oculta el header al
+   imprimir — pero este relleno no estorba: es 0px de alto salvo cuando
+   hay una barra de estado real (env(safe-area-inset-top) > 0). */
+#safe-area-fill {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: linear-gradient(to bottom, var(--color-brand-900), var(--color-brand-800));
+  z-index: 50;
+  pointer-events: none;
+}
+
 /* iOS Safari hace zoom automático al enfocar un input con font-size menor
    a 16px. Todos los inputs/selects/textareas se fuerzan a 16px mínimo en
    pantallas angostas (mobile); en desktop conservan su tamaño de diseño. */
@@ -219,7 +236,8 @@ h1, h2, h3 {
 }
 
 @media print {
-  .no-print {
+  .no-print,
+  #safe-area-fill {
     display: none !important;
   }
   body {
