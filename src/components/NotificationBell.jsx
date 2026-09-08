@@ -73,7 +73,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="animate-scale-in absolute right-0 top-[44px] w-80 overflow-hidden rounded-lg border border-line bg-surface text-ink shadow-xl">
+        <div className="animate-scale-in absolute right-0 top-[44px] w-72 overflow-hidden rounded-lg border border-line bg-surface text-ink shadow-xl sm:w-80">
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <span className="text-sm font-semibold text-ink">Notificaciones</span>
             {noLeidas > 0 && (
