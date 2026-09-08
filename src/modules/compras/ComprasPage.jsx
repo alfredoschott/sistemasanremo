@@ -64,6 +64,7 @@ export default function ComprasPage() {
   const [revirtiendoId, setRevirtiendoId] = useState(null)
   const [eliminandoId, setEliminandoId] = useState(null)
   const [search, setSearch] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('todas')
   const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
 
@@ -84,10 +85,12 @@ export default function ComprasPage() {
 
   const ordenesFiltradas = useMemo(
     () =>
-      ordenes.filter((oc) =>
-        nombreProveedor(oc.proveedorId).toLowerCase().includes(search.toLowerCase().trim()),
-      ),
-    [ordenes, search, nombreProveedor],
+      ordenes
+        .filter((oc) => filtroEstado === 'todas' || oc.estado === filtroEstado)
+        .filter((oc) =>
+          nombreProveedor(oc.proveedorId).toLowerCase().includes(search.toLowerCase().trim()),
+        ),
+    [ordenes, search, filtroEstado, nombreProveedor],
   )
 
   const metrics = useMemo(() => {
@@ -168,7 +171,12 @@ export default function ComprasPage() {
   return (
     <div className="flex flex-col gap-8">
       <MetricsRow>
-        <MetricCard label="O.C. pendientes" value={metrics.pendientes} variant="warn" />
+        <MetricCard
+          label="O.C. pendientes"
+          value={metrics.pendientes}
+          variant="warn"
+          onClick={() => setFiltroEstado('pendiente')}
+        />
         <MetricCard label="Recibidas este mes" value={metrics.recibidasEsteMes} variant="accent" />
         <MetricCard label="Proveedores activos" value={metrics.proveedoresActivos} />
         <MetricCard label="Materiales distintos" value={metrics.materialesDistintos} />
@@ -267,6 +275,25 @@ export default function ComprasPage() {
           </div>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por proveedor…" />
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {[
+            { value: 'todas', label: 'Todas' },
+            { value: 'pendiente', label: 'Pendiente' },
+            { value: 'recibida', label: 'Recibida' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFiltroEstado(opt.value)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filtroEstado === opt.value
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface-2 text-ink-dim hover:bg-line'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
         <div className="overflow-x-auto border border-line-strong bg-surface">
           <table className="hidden w-full text-left text-sm lg:table">
             <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">

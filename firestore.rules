@@ -73,8 +73,11 @@ service cloud.firestore {
       allow read, write: if tieneAlgunRol(['compras', 'almacen']);
     }
 
+    // 'produccion' también escribe aquí: al completar y facturar una OF,
+    // sus transformadores pasan solos a este inventario (ver
+    // completarYFacturar/deshacerCompletarYFacturar en ofActions.js).
     match /transformadoresTerminados/{id} {
-      allow read, write: if tieneAlgunRol(['transformadores']);
+      allow read, write: if tieneAlgunRol(['transformadores', 'produccion']);
     }
 
     // Bajo riesgo (solo mensajes + link) y cruza todas las áreas — se

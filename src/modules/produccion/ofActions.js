@@ -1,4 +1,15 @@
-import { collection, deleteField, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import {
+  collection,
+  deleteField,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -37,6 +48,40 @@ export async function actualizarAvance(of, avance) {
   actualizarSeguimiento(of.cotizacionId, { avance })
 }
 
+// Al facturar, los transformadores de la cotización pasan solos al
+// inventario de "Transformadores terminados" (antes había que agregarlos
+// ahí a mano aparte, y casi nadie se acordaba — el inventario terminaba
+// desactualizado). Quedan con capacidad/voltaje/ubicación/destino vacíos:
+// esos datos logísticos se llenan después, cuando se sepa a dónde va cada
+// unidad.
+async function agregarTransformadoresTerminados(batch, of, cotizacionId) {
+  const cotizacionSnap = await getDoc(doc(db, 'cotizaciones', cotizacionId))
+  const items = cotizacionSnap.data()?.items ?? []
+  for (const item of items) {
+    if (!item.modelo) continue
+    const ref = doc(collection(db, 'transformadoresTerminados'))
+    batch.set(ref, {
+      modelo: item.modelo,
+      cantidad: item.cantidad ?? 1,
+      capacidadKva: null,
+      voltaje: '',
+      ubicacion: '',
+      destino: '',
+      notas: `De ${of.numeroSerie ?? ''} — ${of.cliente ?? ''}`.trim(),
+      ofId: of.id,
+      fecha: serverTimestamp(),
+    })
+  }
+}
+
+async function quitarTransformadoresTerminadosDeOF(ofId) {
+  const snap = await getDocs(query(collection(db, 'transformadoresTerminados'), where('ofId', '==', ofId)))
+  if (snap.empty) return
+  const batch = writeBatch(db)
+  snap.forEach((d) => batch.delete(d.ref))
+  await batch.commit()
+}
+
 export async function completarYFacturar(of) {
   const batch = writeBatch(db)
   batch.update(doc(db, 'ordenesFabricacion', of.id), { estado: 'Completada', avance: 100 })
@@ -44,6 +89,7 @@ export async function completarYFacturar(of) {
     estado: 'Facturado',
     fechaFacturado: serverTimestamp(),
   })
+  await agregarTransformadoresTerminados(batch, of, of.cotizacionId)
   await batch.commit()
   actualizarSeguimiento(of.cotizacionId, { estado: 'Facturado', avance: 100 })
   crearNotificacion({
@@ -79,6 +125,7 @@ export async function deshacerCompletarYFacturar(of) {
     fechaFacturado: deleteField(),
   })
   await batch.commit()
+  await quitarTransformadoresTerminadosDeOF(of.id)
   actualizarSeguimiento(of.cotizacionId, { estado: 'Producción', avance: of.avance ?? 0 })
 }
 
@@ -120,6 +167,7 @@ export async function eliminarOF(of) {
     })
   }
   await batch.commit()
+  await quitarTransformadoresTerminadosDeOF(of.id)
   actualizarSeguimiento(of.cotizacionId, { estado: 'Cotizado', avance: 0 })
 }
 
