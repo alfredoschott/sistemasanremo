@@ -21,7 +21,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-x-hidden overflow-y-auto bg-brand-950 py-8">
+    <div className="relative flex min-h-dvh items-center justify-center overflow-x-hidden overflow-y-auto bg-brand-950 py-8">
       <div
         className="absolute inset-0 opacity-[0.07]"
         style={{
