@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom'
 import { AREAS } from '../lib/areas'
 import { useRoles } from '../lib/RolesContext'
 
-// Con hasta 7 pestañas en el ancho de un teléfono, los nombres largos se
-// encimaban — versión corta solo para la barra mobile.
+// Con hasta 7 pestañas, los nombres largos se encimaban en pantallas
+// angostas — versión corta para la barra compacta (mobile y tablet).
 const LABEL_MOBILE = { produccion: 'Prod.', transformadores: 'Transf.' }
 
 // Tamaños fijos en px a propósito (ver nota en Topbar.jsx): esta barra de
@@ -20,11 +20,13 @@ export default function Sidebar() {
 
   return (
     <nav className="no-print shrink-0 border-b border-line bg-surface">
-      {/* Mobile: mismo diseño que tenía el tab bar de abajo (ícono arriba,
-          texto abajo, repartido en columnas iguales) — solo que ahora
-          vive arriba en vez de abajo. */}
+      {/* Mobile y tablet (hasta laptop, <1024px): mismo diseño que tenía el
+          tab bar de abajo (ícono arriba, texto abajo, columnas iguales) —
+          la fila de escritorio con 7 pestañas numeradas necesita ~887px
+          para no recortarse, así que iPad mini/Air/Pro en portrait usan
+          esta versión compacta en vez de la de escritorio. */}
       <div
-        className="grid pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] sm:hidden"
+        className="grid pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] lg:hidden"
         style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
       >
         {links.map(({ to, label, icon: Icon, end, rol }) => (
@@ -58,8 +60,8 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Escritorio: fila de pestañas numeradas, ícono junto al texto. */}
-      <div className="mx-auto hidden max-w-6xl items-center justify-center gap-[4px] overflow-x-auto px-[24px] sm:flex">
+      {/* Escritorio (≥1024px): fila de pestañas numeradas, ícono junto al texto. */}
+      <div className="mx-auto hidden max-w-6xl items-center justify-center gap-[4px] overflow-x-auto px-[24px] lg:flex">
         {links.map(({ to, label, icon: Icon, end }, i) => (
           <NavLink
             key={to}

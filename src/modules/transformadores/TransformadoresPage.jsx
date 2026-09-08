@@ -147,7 +147,7 @@ export default function TransformadoresPage() {
       <SearchInput value={search} onChange={buscar} placeholder="Buscar por modelo, voltaje o ubicación…" />
 
       <div className="overflow-x-auto border border-line-strong bg-surface">
-        <table className="hidden w-full text-left text-sm md:table">
+        <table className="hidden w-full text-left text-sm lg:table">
           <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
             <tr>
               <th className="px-4 py-3">Modelo</th>
@@ -195,7 +195,7 @@ export default function TransformadoresPage() {
           </tbody>
         </table>
 
-        <div className="divide-y divide-line md:hidden">
+        <div className="divide-y divide-line lg:hidden">
           {loading &&
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-2.5 p-4">

@@ -14,6 +14,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- iOS no deja bloquear la rotación desde la web (eso solo lo puede
+         hacer una app nativa) — como alternativa, se tapa la pantalla
+         pidiendo girar a vertical, pero solo en tamaño de teléfono
+         (alto de pantalla chico). En iPad, con mucho más alto disponible
+         incluso en horizontal, este aviso nunca aparece. Ver reglas en
+         src/index.css (#rotate-guard). -->
+    <div id="rotate-guard">
+      <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="7" y="2" width="10" height="16" rx="2" />
+        <path d="M12 22a4 4 0 0 0 4-4h-8a4 4 0 0 0 4 4Z" />
+        <path d="m20 9 2 2-2 2M22 11h-5" />
+      </svg>
+      <p>Gira tu teléfono a vertical<br />para usar SRM Telsa</p>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -260,7 +260,7 @@ export default function ProveedoresPanel() {
           />
         ) : (
           <>
-            <table className="hidden w-full text-left text-sm md:table">
+            <table className="hidden w-full text-left text-sm lg:table">
               <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
                 <tr>
                   <th className="px-4 py-2">Proveedor</th>
@@ -302,7 +302,7 @@ export default function ProveedoresPanel() {
               </tbody>
             </table>
 
-            <div className="divide-y divide-line md:hidden">
+            <div className="divide-y divide-line lg:hidden">
               {proveedores.map((p) => (
                 <div key={p.id} className="flex flex-col gap-2 p-4">
                   <div className="flex items-start justify-between gap-2">
