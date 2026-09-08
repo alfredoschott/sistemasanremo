@@ -127,14 +127,21 @@
 }
 
 html {
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100%;
   /* Evita el "bounce" de fondo blanco al hacer scroll elástico en iOS. */
   background: var(--color-paper);
 }
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
+  /* Bloquea el "rebote" elástico de iOS en toda la pantalla — sin esto,
+     al llegar al límite del scroll la página entera se estira/regresa
+     de golpe. Solo <main> (en AppLayout) puede hacer scroll; el resto
+     queda fijo, como se siente una app nativa. */
+  overscroll-behavior: none;
   background: var(--color-paper);
   background-image:
     linear-gradient(rgba(20, 32, 26, 0.045) 1px, transparent 1px),
@@ -144,6 +151,10 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  height: 100%;
 }
 
 /* iOS Safari hace zoom automático al enfocar un input con font-size menor

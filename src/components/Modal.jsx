@@ -19,7 +19,7 @@ export default function Modal({ open, onClose, title, subtitle, children, maxWid
       }}
     >
       <div
-        className={`relative max-h-[90vh] w-full ${maxWidth} overflow-y-auto rounded-md border border-line-strong bg-surface p-6 shadow-2xl animate-scale-in`}
+        className={`relative max-h-[90dvh] w-full ${maxWidth} overflow-y-auto overscroll-contain rounded-md border border-line-strong bg-surface p-6 shadow-2xl animate-scale-in`}
       >
         <button
           onClick={onClose}
