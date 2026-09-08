@@ -14,6 +14,12 @@ export default function Modal({ open, onClose, title, subtitle, children, maxWid
   return (
     <div
       className="fixed inset-0 z-20 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] animate-fade-in"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right))',
+      }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

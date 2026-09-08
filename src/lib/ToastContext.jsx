@@ -22,7 +22,13 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div
+        className="pointer-events-none fixed z-50 flex flex-col gap-2"
+        style={{
+          bottom: 'max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem))',
+          right: 'max(1rem, env(safe-area-inset-right))',
+        }}
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
