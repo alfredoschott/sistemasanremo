@@ -21,6 +21,7 @@ import {
   eliminarOF,
   iniciarProduccion,
 } from './ofActions'
+import { plazoMasCorto, proveedoresDe } from './proveedoresOF'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
 
 const ESTADO_OF_BADGE = {
@@ -32,6 +33,7 @@ const ESTADO_OF_BADGE = {
 function OrdenFabricacionCard({ of, viendoArchivadas }) {
   const [busy, setBusy] = useState(false)
   const toast = useToast()
+  const proveedoresOF = proveedoresDe(of)
 
   const runAction = async (action, message, onUndo) => {
     setBusy(true)
@@ -114,7 +116,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
               />
             )}
           </div>
-          {of.estado !== 'Completada' && estaVencido(of.fecha, of.plazoEntregaDias) && (
+          {of.estado !== 'Completada' && estaVencido(of.fecha, plazoMasCorto(of)) && (
             <span
               title="Plazo del proveedor vencido"
               className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
@@ -126,18 +128,23 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
         </div>
       </div>
 
-      <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <dt className="text-ink-faint">Proveedor</dt>
-          <dd className="text-ink">
-            <ProveedorNombre proveedorId={of.proveedorId} />
+      <div className="mb-4 text-sm">
+        <dt className="text-ink-faint">{proveedoresOF.length > 1 ? 'Proveedores' : 'Proveedor'}</dt>
+        {proveedoresOF.length === 0 ? (
+          <dd className="text-ink-dim">Sin proveedor asignado</dd>
+        ) : (
+          <dd className="mt-1 flex flex-col gap-0.5 text-ink">
+            {proveedoresOF.map((p, i) => (
+              <span key={i}>
+                <ProveedorNombre proveedorId={p.proveedorId} />
+                {p.plazoEntregaDias ? (
+                  <span className="text-ink-faint"> · {p.plazoEntregaDias} días</span>
+                ) : null}
+              </span>
+            ))}
           </dd>
-        </div>
-        <div>
-          <dt className="text-ink-faint">Plazo proveedor</dt>
-          <dd className="text-ink">{of.plazoEntregaDias} días</dd>
-        </div>
-      </dl>
+        )}
+      </div>
 
       {of.estado === 'Abierta' && (
         <Button
@@ -265,8 +272,13 @@ export default function ProduccionPage() {
     exportCsv(`ordenes_fabricacion_${new Date().toISOString().slice(0, 10)}.csv`, ordenesFiltradas, [
       { label: 'Número de serie', value: (of) => of.numeroSerie },
       { label: 'Cliente', value: (of) => of.cliente },
-      { label: 'Proveedor', value: (of) => nombreProveedor(of.proveedorId) },
-      { label: 'Plazo (días)', value: (of) => of.plazoEntregaDias },
+      {
+        label: 'Proveedores',
+        value: (of) =>
+          proveedoresDe(of)
+            .map((p) => `${nombreProveedor(p.proveedorId)} (${p.plazoEntregaDias ?? '?'}d)`)
+            .join('; '),
+      },
       { label: 'Estado', value: (of) => of.estado },
       { label: 'Avance %', value: (of) => of.avance ?? 0 },
     ])

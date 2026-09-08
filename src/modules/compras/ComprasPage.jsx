@@ -13,6 +13,7 @@ import { db } from '../../lib/firebase'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
+import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
 import { exportCsv } from '../../lib/exportCsv'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
@@ -42,6 +43,7 @@ function esEsteMes(fecha) {
 export default function ComprasPage() {
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
+  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
   const proveedores = useProveedores()
   const { materiales } = useMateriales()
   const [cotizacionParaOF, setCotizacionParaOF] = useState(null)
@@ -64,6 +66,11 @@ export default function ComprasPage() {
     const map = new Map(materiales.map((m) => [m.id, m.nombre]))
     return (id) => map.get(id) ?? ''
   }, [materiales])
+
+  const numeroSerieOF = useMemo(() => {
+    const map = new Map(ordenesFabricacion.map((of) => [of.id, of.numeroSerie]))
+    return (ofId) => map.get(ofId) ?? null
+  }, [ordenesFabricacion])
 
   const ordenesFiltradas = useMemo(
     () =>
@@ -278,6 +285,11 @@ export default function ComprasPage() {
                 <tr key={oc.id} className="transition-colors hover:bg-surface-2">
                   <td className="px-4 py-3 font-medium text-ink">
                     <ProveedorNombre proveedorId={oc.proveedorId} />
+                    {oc.ofId && (
+                      <p className="text-xs font-normal text-ink-faint">
+                        OF {numeroSerieOF(oc.ofId) ?? '—'}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-ink-dim">
                     <ul className="flex flex-col gap-0.5">
@@ -390,6 +402,7 @@ export default function ComprasPage() {
                     </p>
                     <p className="text-sm text-ink-faint">
                       {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {oc.plazoEntregaDias} días
+                      {oc.ofId && ` · OF ${numeroSerieOF(oc.ofId) ?? '—'}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
