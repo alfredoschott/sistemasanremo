@@ -186,6 +186,48 @@ export default function VentasDetalle() {
           )}
         </dl>
 
+        {cotizacion.items?.length > 0 && (
+          <div className="mt-6 border-t border-line pt-6">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Transformadores cotizados</h2>
+            <div className="overflow-x-auto rounded-md border border-line-strong">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
+                  <tr>
+                    <th className="px-3 py-2">Modelo</th>
+                    <th className="px-3 py-2 text-right">Cantidad</th>
+                    <th className="px-3 py-2 text-right">Precio unitario</th>
+                    <th className="px-3 py-2 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {cotizacion.items.map((item, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2 font-medium text-ink">{item.modelo}</td>
+                      <td className="px-3 py-2 text-right text-ink-dim">{item.cantidad}</td>
+                      <td className="px-3 py-2 text-right text-ink-dim">
+                        {currency.format(item.precioUnitario ?? 0)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium text-ink">
+                        {currency.format((item.cantidad ?? 0) * (item.precioUnitario ?? 0))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-line-strong bg-surface-2">
+                    <td colSpan={3} className="px-3 py-2 text-right font-semibold text-ink">
+                      Total
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold text-ink">
+                      {currency.format(cotizacion.monto ?? 0)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="no-print mt-6 border-t border-line pt-6">
           <Adjuntos
             coleccion="cotizaciones"

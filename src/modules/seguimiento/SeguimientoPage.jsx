@@ -176,7 +176,24 @@ export default function SeguimientoPage() {
                   </>
                 )}
 
-                <div className="mt-6 flex items-center justify-between border-t border-line pt-4 text-sm">
+                {seguimiento.items?.length > 0 && (
+                  <div className="mt-6 border-t border-line pt-4">
+                    <dt className="mb-1.5 text-xs text-ink-faint">Transformadores</dt>
+                    <dd className="flex flex-col gap-1 text-sm text-ink">
+                      {seguimiento.items.map((item, i) => (
+                        <span key={i}>
+                          {item.cantidad}× {item.modelo}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+
+                <div
+                  className={`flex items-center justify-between border-t border-line pt-4 text-sm ${
+                    seguimiento.items?.length > 0 ? 'mt-4' : 'mt-6'
+                  }`}
+                >
                   <div>
                     <dt className="text-xs text-ink-faint">Entrega comprometida</dt>
                     <dd className="font-medium text-ink">

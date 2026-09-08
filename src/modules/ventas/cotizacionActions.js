@@ -55,6 +55,7 @@ export async function duplicarCotizacion(cotizacion) {
   const ref = await addDoc(collection(db, 'cotizaciones'), {
     cliente: cotizacion.cliente,
     monto: cotizacion.monto,
+    items: cotizacion.items ?? [],
     condicionPago: cotizacion.condicionPago,
     porcentajeAnticipo: cotizacion.porcentajeAnticipo ?? null,
     entregaSemanas: cotizacion.entregaSemanas,

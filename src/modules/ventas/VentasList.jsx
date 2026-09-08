@@ -79,6 +79,11 @@ export default function VentasList() {
       filtradas,
       [
         { label: 'Cliente', value: (c) => c.cliente },
+        {
+          label: 'Transformadores',
+          value: (c) =>
+            (c.items ?? []).map((i) => `${i.cantidad}x ${i.modelo}`).join('; '),
+        },
         { label: 'Monto', value: (c) => c.monto },
         { label: 'Condición de pago', value: (c) => c.condicionPago },
         { label: 'Entrega (semanas)', value: (c) => c.entregaSemanas },
