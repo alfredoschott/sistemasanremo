@@ -292,12 +292,15 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
   )
 }
 
+const ESTADOS_FILTRO_OF = ['Todas', 'Abierta', 'En producción', 'Completada']
+
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
   const proveedores = useProveedores()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [viendoArchivadas, setViendoArchivadas] = useState(false)
+  const [filtroEstado, setFiltroEstado] = useState('Todas')
 
   const nombreProveedor = useMemo(() => {
     const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
@@ -306,16 +309,22 @@ export default function ProduccionPage() {
 
   const archivadas = useMemo(() => ordenes.filter((of) => of.archivada), [ordenes])
 
+  // Con varias OF abiertas, en producción y completadas a la vez, mezcladas
+  // solo por fecha de creación, las activas se pierden entre las que ya
+  // terminaron — por eso el filtro por estado, igual que en Ventas.
   const ordenesFiltradas = useMemo(
     () =>
       ordenes
         .filter((of) => Boolean(of.archivada) === viendoArchivadas)
+        .filter((of) => filtroEstado === 'Todas' || of.estado === filtroEstado)
         .filter((of) => {
           const texto = `${of.cliente ?? ''} ${of.numeroSerie ?? ''}`.toLowerCase()
           return texto.includes(search.toLowerCase().trim())
         }),
-    [ordenes, search, viendoArchivadas],
+    [ordenes, search, viendoArchivadas, filtroEstado],
   )
+
+  const hayFiltrosActivos = filtroEstado !== 'Todas' || Boolean(search)
 
   const exportar = () => {
     exportCsv(`ordenes_fabricacion_${new Date().toISOString().slice(0, 10)}.csv`, ordenesFiltradas, [
@@ -372,13 +381,56 @@ export default function ProduccionPage() {
       </div>
 
       <MetricsRow>
-        <MetricCard label="Abiertas" value={metrics.abiertas} />
-        <MetricCard label="En producción" value={metrics.enProduccion} variant="warn" />
+        <MetricCard
+          label="Abiertas"
+          value={metrics.abiertas}
+          onClick={() => setFiltroEstado('Abierta')}
+        />
+        <MetricCard
+          label="En producción"
+          value={metrics.enProduccion}
+          variant="warn"
+          onClick={() => setFiltroEstado('En producción')}
+        />
         <MetricCard label="Avance promedio" value={`${metrics.avancePromedio}%`} />
-        <MetricCard label="Completadas" value={metrics.completadas} variant="accent" />
+        <MetricCard
+          label="Completadas"
+          value={metrics.completadas}
+          variant="accent"
+          onClick={() => setFiltroEstado('Completada')}
+        />
       </MetricsRow>
 
       <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente o número de serie…" />
+
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {ESTADOS_FILTRO_OF.map((estado) => (
+            <button
+              key={estado}
+              onClick={() => setFiltroEstado(estado)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filtroEstado === estado
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface-2 text-ink-dim hover:bg-line'
+              }`}
+            >
+              {estado}
+            </button>
+          ))}
+        </div>
+        {hayFiltrosActivos && (
+          <button
+            onClick={() => {
+              setFiltroEstado('Todas')
+              setSearch('')
+            }}
+            className="text-xs font-medium text-ink-faint hover:text-ink-dim hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
 
       {loading && (
         <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

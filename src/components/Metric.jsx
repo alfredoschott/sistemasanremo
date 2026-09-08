@@ -12,13 +12,17 @@ const BAR_COLOR = {
   danger: 'bg-red-600',
 }
 
-export function MetricCard({ label, value, variant = 'default' }) {
+export function MetricCard({ label, value, variant = 'default', onClick }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="border border-line bg-surface p-3.5 transition-transform duration-200 hover:-translate-y-0.5">
+    <Tag
+      onClick={onClick}
+      className={`border border-line bg-surface p-3.5 text-left transition-transform duration-200 hover:-translate-y-0.5 ${onClick ? 'cursor-pointer' : ''}`}
+    >
       <div className={`animate-grow-x mb-2.5 h-0.5 w-6 origin-left ${BAR_COLOR[variant]}`} />
       <p className="mb-1 font-mono text-[0.6875rem] uppercase tracking-wide text-ink-faint">{label}</p>
       <p className={`font-mono text-xl font-semibold tabular-nums ${VALUE_COLOR[variant]}`}>{value}</p>
-    </div>
+    </Tag>
   )
 }
 
