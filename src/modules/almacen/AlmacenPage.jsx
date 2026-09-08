@@ -15,6 +15,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
@@ -228,7 +229,8 @@ export default function AlmacenPage() {
   const movimientosHoy = useMovimientosHoy()
   const [modalOpen, setModalOpen] = useState(false)
   const [capturaOpen, setCapturaOpen] = useState(false)
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas')
   const [sort, setSort] = useState({ field: 'nombre', dir: 'asc' })
   const [page, setPage] = useState(1)

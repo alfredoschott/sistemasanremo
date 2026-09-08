@@ -1,5 +1,6 @@
 import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Plus, Trash2, Undo2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
@@ -294,7 +295,8 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
   const proveedores = useProveedores()
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [viendoArchivadas, setViendoArchivadas] = useState(false)
 
   const nombreProveedor = useMemo(() => {
@@ -308,7 +310,10 @@ export default function ProduccionPage() {
     () =>
       ordenes
         .filter((of) => Boolean(of.archivada) === viendoArchivadas)
-        .filter((of) => of.cliente?.toLowerCase().includes(search.toLowerCase().trim())),
+        .filter((of) => {
+          const texto = `${of.cliente ?? ''} ${of.numeroSerie ?? ''}`.toLowerCase()
+          return texto.includes(search.toLowerCase().trim())
+        }),
     [ordenes, search, viendoArchivadas],
   )
 
@@ -373,7 +378,7 @@ export default function ProduccionPage() {
         <MetricCard label="Completadas" value={metrics.completadas} variant="accent" />
       </MetricsRow>
 
-      <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
+      <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente o número de serie…" />
 
       {loading && (
         <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

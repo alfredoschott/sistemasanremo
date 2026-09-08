@@ -2,6 +2,7 @@ import { LogOut, Minus, Plus, ShieldCheck, WifiOff } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../components/BrandMark'
+import GlobalSearch from '../components/GlobalSearch'
 import NotificationBell from '../components/NotificationBell'
 import { useAuth } from '../lib/AuthContext'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
@@ -87,6 +88,7 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center justify-end gap-[4px]">
+        <GlobalSearch />
         <NotificationBell />
 
         <div className="relative">

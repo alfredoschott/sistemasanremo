@@ -1,6 +1,7 @@
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
 import { Container, Download, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
@@ -62,7 +63,8 @@ function CantidadInput({ transformador }) {
 
 export default function TransformadoresPage() {
   const { transformadores, loading } = useTransformadores()
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [page, setPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
   const [paraEditar, setParaEditar] = useState(null)

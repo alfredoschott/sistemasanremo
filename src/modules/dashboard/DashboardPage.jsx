@@ -19,6 +19,8 @@ import { useMovimientosHoy } from '../almacen/useMovimientosHoy'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
 import { useTransformadores } from '../transformadores/useTransformadores'
+import VencimientosProximos from './VencimientosProximos'
+import VentasTrendChart from './VentasTrendChart'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 
 // Sin centavos y a propósito: en una tarjeta de resumen de 3 columnas
@@ -265,6 +267,8 @@ export default function DashboardPage() {
         </div>
       )}
 
+      <VencimientosProximos />
+      {tieneAcceso('ventas') && <VentasTrendChart />}
       <ActividadReciente />
     </div>
   )

@@ -9,6 +9,7 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
+import { ESTADOS_COTIZACION } from '../../lib/estados'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import { eliminarCotizacion } from './cotizacionActions'
@@ -17,12 +18,21 @@ import { useCotizaciones } from './useCotizaciones'
 
 const PUEDE_ELIMINAR = new Set(['Cotizado', 'Cancelado'])
 
+const ESTADOS_FILTRO = ['Todos', ...ESTADOS_COTIZACION, 'Cancelado']
+const PAGO_FILTRO = [
+  { value: 'todas', label: 'Todas' },
+  { value: 'anticipo', label: 'Anticipo' },
+  { value: 'fudeco', label: 'Crédito Fudeco' },
+]
+
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 export default function VentasList() {
   const { cotizaciones, loading } = useCotizaciones()
   const [modalOpen, setModalOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('Todos')
+  const [filtroPago, setFiltroPago] = useState('todas')
   const [eliminandoId, setEliminandoId] = useState(null)
   const navigate = useNavigate()
   const toast = useToast()
@@ -54,9 +64,14 @@ export default function VentasList() {
 
   const filtradas = useMemo(
     () =>
-      cotizaciones.filter((c) => c.cliente?.toLowerCase().includes(search.toLowerCase().trim())),
-    [cotizaciones, search],
+      cotizaciones
+        .filter((c) => c.cliente?.toLowerCase().includes(search.toLowerCase().trim()))
+        .filter((c) => filtroEstado === 'Todos' || c.estado === filtroEstado)
+        .filter((c) => filtroPago === 'todas' || c.condicionPago === filtroPago),
+    [cotizaciones, search, filtroEstado, filtroPago],
   )
+
+  const hayFiltrosActivos = filtroEstado !== 'Todos' || filtroPago !== 'todas' || Boolean(search)
 
   const exportar = () => {
     exportCsv(
@@ -105,6 +120,52 @@ export default function VentasList() {
 
       <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente…" />
 
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {ESTADOS_FILTRO.map((estado) => (
+            <button
+              key={estado}
+              onClick={() => setFiltroEstado(estado)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filtroEstado === estado
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface-2 text-ink-dim hover:bg-line'
+              }`}
+            >
+              {estado}
+            </button>
+          ))}
+        </div>
+        <div className="h-4 w-px bg-line hidden sm:block" />
+        <div className="flex flex-wrap gap-1.5">
+          {PAGO_FILTRO.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setFiltroPago(p.value)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filtroPago === p.value
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface-2 text-ink-dim hover:bg-line'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {hayFiltrosActivos && (
+          <button
+            onClick={() => {
+              setFiltroEstado('Todos')
+              setFiltroPago('todas')
+              setSearch('')
+            }}
+            className="text-xs font-medium text-ink-faint hover:text-ink-dim hover:underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       <div className="overflow-x-auto border border-line-strong bg-surface">
         <table className="hidden w-full text-left text-sm lg:table">
           <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
@@ -124,8 +185,8 @@ export default function VentasList() {
                 <td colSpan={6}>
                   <EmptyState
                     icon={FileText}
-                    title={search ? 'Sin resultados' : 'Sin cotizaciones todavía'}
-                    subtitle={search ? 'Prueba con otro nombre' : 'Crea la primera con "Nueva cotización"'}
+                    title={hayFiltrosActivos ? 'Sin resultados' : 'Sin cotizaciones todavía'}
+                    subtitle={hayFiltrosActivos ? 'Prueba con otro filtro o término' : 'Crea la primera con "Nueva cotización"'}
                   />
                 </td>
               </tr>
@@ -184,8 +245,8 @@ export default function VentasList() {
           {!loading && filtradas.length === 0 && (
             <EmptyState
               icon={FileText}
-              title={search ? 'Sin resultados' : 'Sin cotizaciones todavía'}
-              subtitle={search ? 'Prueba con otro nombre' : 'Crea la primera con "Nueva cotización"'}
+              title={hayFiltrosActivos ? 'Sin resultados' : 'Sin cotizaciones todavía'}
+              subtitle={hayFiltrosActivos ? 'Prueba con otro filtro o término' : 'Crea la primera con "Nueva cotización"'}
             />
           )}
           {filtradas.map((cot) => (
