@@ -126,8 +126,15 @@
   }
 }
 
+html {
+  overflow-x: hidden;
+  /* Evita el "bounce" de fondo blanco al hacer scroll elástico en iOS. */
+  background: var(--color-paper);
+}
+
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--color-paper);
   background-image:
     linear-gradient(rgba(20, 32, 26, 0.045) 1px, transparent 1px),
@@ -136,6 +143,18 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari hace zoom automático al enfocar un input con font-size menor
+   a 16px. Todos los inputs/selects/textareas se fuerzan a 16px mínimo en
+   pantallas angostas (mobile); en desktop conservan su tamaño de diseño. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 h1, h2, h3 {

@@ -57,7 +57,9 @@ export default function Topbar() {
   const online = useOnlineStatus()
 
   return (
-    <header className="relative z-10 grid h-[64px] shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-brand-950/60 bg-gradient-to-b from-brand-900 to-brand-800 px-[16px] text-white">
+    <header
+      className="relative z-10 grid min-h-[64px] shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-brand-950/60 bg-gradient-to-b from-brand-900 to-brand-800 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] text-white"
+    >
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand-400/60 to-transparent" />
       <div className="pointer-events-none absolute left-[12px] top-1/2 h-[4px] w-[4px] -translate-y-1/2 rounded-full bg-white/15" />
       <div className="pointer-events-none absolute right-[12px] top-1/2 h-[4px] w-[4px] -translate-y-1/2 rounded-full bg-white/15" />

@@ -1,10 +1,12 @@
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore'
+import { MapPin } from 'lucide-react'
 import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
+import { googleMapsUrl } from '../../lib/maps'
 
 function TransformadorForm({ onClose, transformador }) {
   const isEdit = Boolean(transformador)
@@ -13,6 +15,7 @@ function TransformadorForm({ onClose, transformador }) {
   const [voltaje, setVoltaje] = useState(transformador?.voltaje ?? '')
   const [cantidad, setCantidad] = useState(String(transformador?.cantidad ?? '1'))
   const [ubicacion, setUbicacion] = useState(transformador?.ubicacion ?? '')
+  const [destino, setDestino] = useState(transformador?.destino ?? '')
   const [notas, setNotas] = useState(transformador?.notas ?? '')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
@@ -27,6 +30,7 @@ function TransformadorForm({ onClose, transformador }) {
         voltaje: voltaje.trim(),
         cantidad: Number(cantidad) || 0,
         ubicacion: ubicacion.trim(),
+        destino: destino.trim(),
         notas: notas.trim(),
       }
 
@@ -104,6 +108,27 @@ function TransformadorForm({ onClose, transformador }) {
           />
         </label>
       </div>
+
+      <label className="text-sm font-medium text-ink-dim">
+        Destino (dirección de entrega)
+        <input
+          value={destino}
+          onChange={(e) => setDestino(e.target.value)}
+          placeholder="Calle, número, ciudad…"
+          className={inputClass}
+        />
+        {destino.trim() && (
+          <a
+            href={googleMapsUrl(destino.trim())}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-800 hover:underline"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            Ver en Google Maps
+          </a>
+        )}
+      </label>
 
       <label className="text-sm font-medium text-ink-dim">
         Notas

@@ -12,7 +12,7 @@ export default function IconButton({
 }) {
   return (
     <button
-      className={`relative rounded-md p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`relative flex items-center justify-center rounded-md p-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50 sm:p-1.5 ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       <Icon className="h-4 w-4" />

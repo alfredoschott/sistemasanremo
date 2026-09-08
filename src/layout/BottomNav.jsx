@@ -25,7 +25,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="grid shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
+      className="grid shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] sm:hidden"
       style={{ gridTemplateColumns: `repeat(${links.length}, minmax(0, 1fr))` }}
     >
       {links.map(({ to, label, icon: Icon, end }) => (

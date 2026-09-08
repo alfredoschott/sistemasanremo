@@ -1,5 +1,5 @@
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { Container, Download, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Container, Download, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -10,9 +10,27 @@ import SearchInput from '../../components/SearchInput'
 import Skeleton, { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
+import { googleMapsUrl } from '../../lib/maps'
 import { useToast } from '../../lib/ToastContext'
 import TransformadorModal from './TransformadorModal'
 import { useTransformadores } from './useTransformadores'
+
+function DestinoLink({ destino, className = '' }) {
+  if (!destino) return <span className="text-ink-dim">—</span>
+  return (
+    <a
+      href={googleMapsUrl(destino)}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={`inline-flex items-center gap-1 text-brand-700 hover:text-brand-800 hover:underline ${className}`}
+      title="Ver en Google Maps"
+    >
+      <MapPin className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">{destino}</span>
+    </a>
+  )
+}
 
 const POR_PAGINA = 20
 
@@ -58,7 +76,7 @@ export default function TransformadoresPage() {
   const filtrados = useMemo(
     () =>
       transformadores.filter((t) => {
-        const texto = `${t.modelo ?? ''} ${t.voltaje ?? ''} ${t.ubicacion ?? ''}`.toLowerCase()
+        const texto = `${t.modelo ?? ''} ${t.voltaje ?? ''} ${t.ubicacion ?? ''} ${t.destino ?? ''}`.toLowerCase()
         return texto.includes(search.toLowerCase().trim())
       }),
     [transformadores, search],
@@ -82,6 +100,7 @@ export default function TransformadoresPage() {
       { label: 'Voltaje', value: (t) => t.voltaje ?? '' },
       { label: 'Cantidad', value: (t) => t.cantidad ?? 0 },
       { label: 'Ubicación', value: (t) => t.ubicacion ?? '' },
+      { label: 'Destino', value: (t) => t.destino ?? '' },
       { label: 'Notas', value: (t) => t.notas ?? '' },
     ])
   }
@@ -135,15 +154,16 @@ export default function TransformadoresPage() {
               <th className="px-4 py-3">Capacidad</th>
               <th className="px-4 py-3">Voltaje</th>
               <th className="px-4 py-3">Ubicación</th>
+              <th className="px-4 py-3">Destino</th>
               <th className="px-4 py-3">Cantidad</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="stagger divide-y divide-line">
-            {loading && <TableSkeleton rows={3} cols={6} />}
+            {loading && <TableSkeleton rows={3} cols={7} />}
             {!loading && pagina.length === 0 && (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <EmptyState
                     icon={Container}
                     title={search ? 'Sin resultados' : 'Sin transformadores en inventario'}
@@ -158,6 +178,9 @@ export default function TransformadoresPage() {
                 <td className="px-4 py-3 text-ink-dim">{t.capacidadKva ? `${t.capacidadKva} kVA` : '—'}</td>
                 <td className="px-4 py-3 text-ink-dim">{t.voltaje || '—'}</td>
                 <td className="px-4 py-3 text-ink-dim">{t.ubicacion || '—'}</td>
+                <td className="max-w-[180px] px-4 py-3 text-ink-dim">
+                  <DestinoLink destino={t.destino} />
+                </td>
                 <td className="px-4 py-3">
                   <CantidadInput transformador={t} />
                 </td>
@@ -196,6 +219,7 @@ export default function TransformadoresPage() {
                     {t.capacidadKva ? `${t.capacidadKva} kVA` : '—'} · {t.voltaje || '—'}
                   </p>
                   {t.ubicacion && <p className="text-xs text-ink-faint">{t.ubicacion}</p>}
+                  {t.destino && <DestinoLink destino={t.destino} className="mt-1 text-xs" />}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <IconButton icon={Pencil} onClick={() => setParaEditar(t)} title="Editar" />
