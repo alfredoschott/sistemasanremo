@@ -23,6 +23,7 @@ function lineasFromOc(oc) {
 function OrdenCompraForm({ onClose, oc, lineaInicial }) {
   const [proveedorId, setProveedorId] = useState(oc?.proveedorId ?? '')
   const [plazoEntregaDias, setPlazoEntregaDias] = useState(String(oc?.plazoEntregaDias ?? '20'))
+  const [fechaCompromiso, setFechaCompromiso] = useState(oc?.fechaCompromiso ?? '')
   const [montoTotal, setMontoTotal] = useState(String(oc?.montoTotal ?? ''))
   const [materiales, setMateriales] = useState(() => {
     if (oc) return lineasFromOc(oc)
@@ -51,6 +52,7 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
       const data = {
         proveedorId,
         plazoEntregaDias: Number(plazoEntregaDias),
+        fechaCompromiso: fechaCompromiso || null,
         montoTotal: montoTotal ? Number(montoTotal) : null,
         // Si ya se recibió, los materiales quedan fijos: el stock ya se sumó
         // con esas cantidades y editarlas aquí lo dejaría descuadrado.
@@ -89,17 +91,28 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
         <ProveedorPicker value={proveedorId} onChange={setProveedorId} />
       </label>
 
-      <label className="text-sm font-medium text-ink-dim">
-        Plazo de entrega (días)
-        <input
-          required
-          type="number"
-          min="1"
-          value={plazoEntregaDias}
-          onChange={(e) => setPlazoEntregaDias(e.target.value)}
-          className={inputClass}
-        />
-      </label>
+      <div className="flex gap-3">
+        <label className="flex-1 text-sm font-medium text-ink-dim">
+          Plazo de entrega (días)
+          <input
+            required
+            type="number"
+            min="1"
+            value={plazoEntregaDias}
+            onChange={(e) => setPlazoEntregaDias(e.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex-1 text-sm font-medium text-ink-dim">
+          Fecha comprometida (opcional)
+          <input
+            type="date"
+            value={fechaCompromiso}
+            onChange={(e) => setFechaCompromiso(e.target.value)}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
       <label className="text-sm font-medium text-ink-dim">
         Monto total (MXN) — opcional, para el flujo de caja

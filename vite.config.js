@@ -5,6 +5,24 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        // Firebase (firestore + auth + storage) es lo más pesado del
+        // bundle y lo usan casi todas las páginas, así que separarlo por
+        // ruta no ayuda — pero en su propio chunk vendor el navegador lo
+        // cachea aparte de nuestro propio código, que cambia más seguido.
+        manualChunks(id) {
+          if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+            return 'firebase'
+          }
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-router')) {
+            return 'react-vendor'
+          }
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

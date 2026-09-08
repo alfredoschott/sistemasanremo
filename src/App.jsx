@@ -1,23 +1,30 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import AppLayout from './layout/AppLayout'
-import AlmacenPage from './modules/almacen/AlmacenPage'
 import RequireArea from './modules/auth/RequireArea'
 import RequireAuth from './modules/auth/RequireAuth'
-import ComprasPage from './modules/compras/ComprasPage'
 import DashboardPage from './modules/dashboard/DashboardPage'
-import FinanzasPage from './modules/finanzas/FinanzasPage'
-import NotFoundPage from './modules/NotFoundPage'
-import ProduccionPage from './modules/produccion/ProduccionPage'
-import TransformadoresPage from './modules/transformadores/TransformadoresPage'
-import UsuariosPage from './modules/admin/UsuariosPage'
-import VentasDetalle from './modules/ventas/VentasDetalle'
-import VentasList from './modules/ventas/VentasList'
+import PageLoading from './components/PageLoading'
+
+// Cada módulo se carga como su propio chunk, en lugar de ir todo en un solo
+// bundle de ~1MB — así la carga inicial solo trae el Inicio, y el resto se
+// descarga bajo demanda al navegar a esa sección.
+const AlmacenPage = lazy(() => import('./modules/almacen/AlmacenPage'))
+const ComprasPage = lazy(() => import('./modules/compras/ComprasPage'))
+const FinanzasPage = lazy(() => import('./modules/finanzas/FinanzasPage'))
+const NotFoundPage = lazy(() => import('./modules/NotFoundPage'))
+const ProduccionPage = lazy(() => import('./modules/produccion/ProduccionPage'))
+const TransformadoresPage = lazy(() => import('./modules/transformadores/TransformadoresPage'))
+const UsuariosPage = lazy(() => import('./modules/admin/UsuariosPage'))
+const VentasDetalle = lazy(() => import('./modules/ventas/VentasDetalle'))
+const VentasList = lazy(() => import('./modules/ventas/VentasList'))
 
 export default function App() {
   return (
     <RequireAuth>
-      <Routes>
-        <Route element={<AppLayout />}>
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route
             path="ventas"
@@ -83,9 +90,10 @@ export default function App() {
               </RequireArea>
             }
           />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </RequireAuth>
   )
 }

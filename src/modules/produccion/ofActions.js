@@ -1,7 +1,8 @@
-import { deleteField, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, deleteField, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { proveedoresDe } from './proveedoresOF'
 
 export async function iniciarProduccion(of) {
   const batch = writeBatch(db)
@@ -113,4 +114,38 @@ export async function eliminarOF(of) {
     })
   }
   await batch.commit()
+}
+
+// Agrega un proveedor a una OF que ya está abierta (no solo al crearla).
+// Si trae materiales, genera su O.C. de una vez — igual que al abrir la OF.
+// También migra OF antiguas (con proveedorId/plazoEntregaDias planos) al
+// nuevo formato de array la primera vez que se editan.
+export async function agregarProveedorAOF(of, proveedor) {
+  const batch = writeBatch(db)
+  const ofRef = doc(db, 'ordenesFabricacion', of.id)
+  batch.update(ofRef, { proveedores: [...proveedoresDe(of), proveedor] })
+
+  if (proveedor.materiales.length > 0) {
+    const ocRef = doc(collection(db, 'ordenesCompra'))
+    batch.set(ocRef, {
+      ofId: of.id,
+      proveedorId: proveedor.proveedorId,
+      plazoEntregaDias: proveedor.plazoEntregaDias,
+      fechaCompromiso: proveedor.fechaCompromiso ?? null,
+      montoTotal: null,
+      materiales: proveedor.materiales,
+      estado: 'pendiente',
+      fecha: serverTimestamp(),
+    })
+  }
+
+  await batch.commit()
+}
+
+// Quita un proveedor de la lista de una OF. No borra su O.C. si ya se
+// había generado (esa se maneja aparte desde Compras) — solo deja de
+// aparecer como proveedor asignado a esta OF.
+export async function quitarProveedorDeOF(of, index) {
+  const restantes = proveedoresDe(of).filter((_, i) => i !== index)
+  await updateDoc(doc(db, 'ordenesFabricacion', of.id), { proveedores: restantes })
 }

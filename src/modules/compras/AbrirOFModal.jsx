@@ -1,16 +1,12 @@
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
-import { X } from 'lucide-react'
 import { useState } from 'react'
 import Button from '../../components/Button'
-import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { useToast } from '../../lib/ToastContext'
-import { inputClass, inputClassInline } from '../../lib/ui'
-import MaterialPicker from '../almacen/MaterialPicker'
-import ProveedorPicker from './ProveedorPicker'
+import ProveedorMaterialesFila from './ProveedorMaterialesFila'
 
 function generarNumeroSerie() {
   const year = new Date().getFullYear()
@@ -19,7 +15,7 @@ function generarNumeroSerie() {
 }
 
 function filaVacia() {
-  return { proveedorId: '', plazoEntregaDias: '20', materiales: [] }
+  return { proveedorId: '', plazoEntregaDias: '20', fechaCompromiso: '', materiales: [] }
 }
 
 export default function AbrirOFModal({ cotizacion, onClose }) {
@@ -31,32 +27,8 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
 
   const agregarProveedor = () => setProveedores((prev) => [...prev, filaVacia()])
   const quitarProveedor = (i) => setProveedores((prev) => prev.filter((_, idx) => idx !== i))
-  const actualizarProveedor = (i, campo) => (valor) =>
-    setProveedores((prev) => prev.map((f, idx) => (idx === i ? { ...f, [campo]: valor } : f)))
-
-  const agregarMaterial = (i) =>
-    setProveedores((prev) =>
-      prev.map((f, idx) =>
-        idx === i ? { ...f, materiales: [...f.materiales, { materialId: '', cantidad: '1' }] } : f,
-      ),
-    )
-  const quitarMaterial = (i, j) =>
-    setProveedores((prev) =>
-      prev.map((f, idx) =>
-        idx === i ? { ...f, materiales: f.materiales.filter((_, jdx) => jdx !== j) } : f,
-      ),
-    )
-  const actualizarMaterial = (i, j, campo) => (valor) =>
-    setProveedores((prev) =>
-      prev.map((f, idx) =>
-        idx === i
-          ? {
-              ...f,
-              materiales: f.materiales.map((l, jdx) => (jdx === j ? { ...l, [campo]: valor } : l)),
-            }
-          : f,
-      ),
-    )
+  const actualizarProveedor = (i) => (fila) =>
+    setProveedores((prev) => prev.map((f, idx) => (idx === i ? fila : f)))
 
   const submit = async (e) => {
     e.preventDefault()
@@ -71,6 +43,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
         .map((f) => ({
           proveedorId: f.proveedorId,
           plazoEntregaDias: Number(f.plazoEntregaDias) || 20,
+          fechaCompromiso: f.fechaCompromiso || null,
           materiales: f.materiales
             .filter((l) => l.materialId)
             .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad) || 1 })),
@@ -99,6 +72,7 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
           ofId: ofRef.id,
           proveedorId: prov.proveedorId,
           plazoEntregaDias: prov.plazoEntregaDias,
+          fechaCompromiso: prov.fechaCompromiso,
           montoTotal: null,
           materiales: prov.materiales,
           estado: 'pendiente',
@@ -144,74 +118,13 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
         </div>
 
         {proveedores.map((fila, i) => (
-          <div key={i} className="rounded-md border border-line-strong p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                Proveedor {i + 1}
-              </span>
-              <IconButton
-                type="button"
-                icon={X}
-                variant="danger"
-                onClick={() => quitarProveedor(i)}
-                title="Quitar proveedor"
-              />
-            </div>
-
-            <label className="text-sm font-medium text-ink-dim">
-              Proveedor
-              <ProveedorPicker value={fila.proveedorId} onChange={actualizarProveedor(i, 'proveedorId')} />
-            </label>
-
-            <label className="mt-2 block text-sm font-medium text-ink-dim">
-              Plazo de entrega (días)
-              <input
-                required
-                type="number"
-                min="1"
-                value={fila.plazoEntregaDias}
-                onChange={(e) => actualizarProveedor(i, 'plazoEntregaDias')(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-
-            <div className="mt-2">
-              <span className="text-sm font-medium text-ink-dim">Materiales a comprar</span>
-              <div className="mt-1 flex flex-col gap-2">
-                {fila.materiales.map((linea, j) => (
-                  <div key={j} className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <MaterialPicker
-                        inline
-                        value={linea.materialId}
-                        onChange={actualizarMaterial(i, j, 'materialId')}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      min="1"
-                      value={linea.cantidad}
-                      onChange={(e) => actualizarMaterial(i, j, 'cantidad')(e.target.value)}
-                      className={`w-16 ${inputClassInline}`}
-                    />
-                    <IconButton
-                      type="button"
-                      icon={X}
-                      variant="danger"
-                      onClick={() => quitarMaterial(i, j)}
-                    />
-                  </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => agregarMaterial(i)}
-                className="mt-1.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
-              >
-                + Agregar material
-              </button>
-            </div>
-          </div>
+          <ProveedorMaterialesFila
+            key={i}
+            label={`Proveedor ${i + 1}`}
+            fila={fila}
+            onChange={actualizarProveedor(i)}
+            onRemove={() => quitarProveedor(i)}
+          />
         ))}
 
         <button

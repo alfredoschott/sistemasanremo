@@ -32,6 +32,16 @@ const OC_BADGE = {
   recibida: 'bg-brand-50 text-brand-800',
 }
 
+function plazoTexto(oc) {
+  if (oc.fechaCompromiso) {
+    return new Date(`${oc.fechaCompromiso}T12:00:00`).toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'short',
+    })
+  }
+  return `${oc.plazoEntregaDias} días`
+}
+
 function esEsteMes(fecha) {
   const ms = fecha?.toMillis?.()
   if (!ms) return false
@@ -103,6 +113,7 @@ export default function ComprasPage() {
             .join('; '),
       },
       { label: 'Plazo (días)', value: (oc) => oc.plazoEntregaDias },
+      { label: 'Fecha comprometida', value: (oc) => oc.fechaCompromiso ?? '' },
       { label: 'Monto total', value: (oc) => oc.montoTotal ?? '' },
       { label: 'Estado', value: (oc) => oc.estado },
     ])
@@ -301,7 +312,7 @@ export default function ComprasPage() {
                       ))}
                     </ul>
                   </td>
-                  <td className="px-4 py-3 text-ink-dim">{oc.plazoEntregaDias} días</td>
+                  <td className="px-4 py-3 text-ink-dim">{plazoTexto(oc)}</td>
                   <td className="px-4 py-3 text-ink-dim">
                     {oc.montoTotal ? currency.format(oc.montoTotal) : '—'}
                   </td>
@@ -314,7 +325,8 @@ export default function ComprasPage() {
                       >
                         {oc.estado}
                       </span>
-                      {oc.estado === 'pendiente' && estaVencido(oc.fecha, oc.plazoEntregaDias) && (
+                      {oc.estado === 'pendiente' &&
+                        estaVencido(oc.fecha, oc.plazoEntregaDias, oc.fechaCompromiso) && (
                         <span
                           title="Plazo vencido"
                           className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
@@ -401,7 +413,7 @@ export default function ComprasPage() {
                       <ProveedorNombre proveedorId={oc.proveedorId} />
                     </p>
                     <p className="text-sm text-ink-faint">
-                      {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {oc.plazoEntregaDias} días
+                      {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {plazoTexto(oc)}
                       {oc.ofId && ` · OF ${numeroSerieOF(oc.ofId) ?? '—'}`}
                     </p>
                   </div>
@@ -434,7 +446,8 @@ export default function ComprasPage() {
                     >
                       {oc.estado}
                     </span>
-                    {oc.estado === 'pendiente' && estaVencido(oc.fecha, oc.plazoEntregaDias) && (
+                    {oc.estado === 'pendiente' &&
+                      estaVencido(oc.fecha, oc.plazoEntregaDias, oc.fechaCompromiso) && (
                       <span
                         title="Plazo vencido"
                         className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"

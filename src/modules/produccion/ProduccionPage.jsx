@@ -1,4 +1,4 @@
-import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Trash2, Undo2 } from 'lucide-react'
+import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Plus, Trash2, Undo2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -7,10 +7,10 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import SearchInput from '../../components/SearchInput'
 import Skeleton from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
-import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import { useProveedores } from '../compras/useProveedores'
 import ProveedorNombre from '../compras/ProveedorNombre'
+import AgregarProveedorOFModal from './AgregarProveedorOFModal'
 import {
   actualizarAvance,
   archivarOF,
@@ -20,8 +20,9 @@ import {
   deshacerIniciarProduccion,
   eliminarOF,
   iniciarProduccion,
+  quitarProveedorDeOF,
 } from './ofActions'
-import { plazoMasCorto, proveedoresDe } from './proveedoresOF'
+import { ofVencida, proveedoresDe } from './proveedoresOF'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
 
 const ESTADO_OF_BADGE = {
@@ -32,8 +33,10 @@ const ESTADO_OF_BADGE = {
 
 function OrdenFabricacionCard({ of, viendoArchivadas }) {
   const [busy, setBusy] = useState(false)
+  const [agregandoProveedor, setAgregandoProveedor] = useState(false)
   const toast = useToast()
   const proveedoresOF = proveedoresDe(of)
+  const puedeEditarProveedores = of.estado !== 'Completada'
 
   const runAction = async (action, message, onUndo) => {
     setBusy(true)
@@ -55,6 +58,12 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
     )
 
   const desarchivar = () => runAction(() => desarchivarOF(of.id), `${of.numeroSerie} restaurada`)
+
+  const quitarProveedor = (index) => {
+    if (!window.confirm('¿Quitar este proveedor de la OF? Si ya tenía una O.C. generada, esa no se toca.'))
+      return
+    runAction(() => quitarProveedorDeOF(of, index), 'Proveedor quitado')
+  }
 
   const eliminar = () => {
     if (
@@ -116,7 +125,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
               />
             )}
           </div>
-          {of.estado !== 'Completada' && estaVencido(of.fecha, plazoMasCorto(of)) && (
+          {of.estado !== 'Completada' && ofVencida(of) && (
             <span
               title="Plazo del proveedor vencido"
               className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
@@ -133,18 +142,53 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
         {proveedoresOF.length === 0 ? (
           <dd className="text-ink-dim">Sin proveedor asignado</dd>
         ) : (
-          <dd className="mt-1 flex flex-col gap-0.5 text-ink">
+          <dd className="mt-1 flex flex-col gap-1 text-ink">
             {proveedoresOF.map((p, i) => (
-              <span key={i}>
-                <ProveedorNombre proveedorId={p.proveedorId} />
-                {p.plazoEntregaDias ? (
-                  <span className="text-ink-faint"> · {p.plazoEntregaDias} días</span>
-                ) : null}
+              <span key={i} className="flex items-center gap-1">
+                <span>
+                  <ProveedorNombre proveedorId={p.proveedorId} />
+                  {p.fechaCompromiso ? (
+                    <span className="text-ink-faint">
+                      {' '}
+                      · llega {new Date(`${p.fechaCompromiso}T12:00:00`).toLocaleDateString('es-MX', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                    </span>
+                  ) : p.plazoEntregaDias ? (
+                    <span className="text-ink-faint"> · {p.plazoEntregaDias} días</span>
+                  ) : null}
+                </span>
+                {puedeEditarProveedores && (
+                  <IconButton
+                    icon={X}
+                    variant="danger"
+                    onClick={() => quitarProveedor(i)}
+                    disabled={busy}
+                    title="Quitar proveedor"
+                    className="h-5 w-5 p-0.5"
+                  />
+                )}
               </span>
             ))}
           </dd>
         )}
+        {puedeEditarProveedores && (
+          <button
+            type="button"
+            onClick={() => setAgregandoProveedor(true)}
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+          >
+            <Plus className="h-3 w-3" />
+            Agregar proveedor
+          </button>
+        )}
       </div>
+
+      <AgregarProveedorOFModal
+        of={agregandoProveedor ? of : null}
+        onClose={() => setAgregandoProveedor(false)}
+      />
 
       {of.estado === 'Abierta' && (
         <Button
@@ -276,7 +320,10 @@ export default function ProduccionPage() {
         label: 'Proveedores',
         value: (of) =>
           proveedoresDe(of)
-            .map((p) => `${nombreProveedor(p.proveedorId)} (${p.plazoEntregaDias ?? '?'}d)`)
+            .map(
+              (p) =>
+                `${nombreProveedor(p.proveedorId)} (${p.fechaCompromiso ?? `${p.plazoEntregaDias ?? '?'}d`})`,
+            )
             .join('; '),
       },
       { label: 'Estado', value: (of) => of.estado },
