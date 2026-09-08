@@ -1,8 +1,8 @@
 import { Boxes, Container, Factory, ShoppingCart, TrendingUp, Wallet } from 'lucide-react'
 
 // Fuente única de verdad de las áreas del sistema: rol requerido, ruta,
-// ícono y etiqueta. La usan Sidebar/BottomNav (para decidir qué enlaces
-// mostrar), App.jsx (para proteger cada ruta) y el panel de Usuarios
+// ícono y etiqueta. La usa Sidebar (para decidir qué enlaces mostrar),
+// App.jsx (para proteger cada ruta) y el panel de Usuarios
 // (para armar los checkboxes de asignación). "admin" no aparece aquí:
 // es un rol especial que da acceso a todas las áreas (ver useRoles).
 export const AREAS = [
