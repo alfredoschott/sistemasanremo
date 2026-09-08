@@ -1,9 +1,18 @@
-import { AlertTriangle, ArrowDownCircle, ArrowUpCircle, Check, Undo2, Wallet } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Check,
+  Download,
+  Undo2,
+  Wallet,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
+import { exportCsv } from '../../lib/exportCsv'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
@@ -25,6 +34,28 @@ function fechaVencimiento(base, dias) {
 function formatFecha(ms) {
   if (!ms) return '—'
   return new Date(ms).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function textoVencimiento(vencimientoMs) {
+  if (!vencimientoMs) return `Vence ${formatFecha(vencimientoMs)}`
+  const diasAtraso = Math.round((Date.now() - vencimientoMs) / DIA_MS)
+  if (diasAtraso <= 0) return `Vence ${formatFecha(vencimientoMs)}`
+  return diasAtraso === 1 ? 'Vencida hace 1 día' : `Vencida hace ${diasAtraso} días`
+}
+
+// Agrupa una lista de pendientes (por cliente o por proveedor) sumando su
+// monto, para saber de un vistazo quién concentra más deuda — no solo la
+// lista suelta renglón por renglón.
+function agruparPorDeuda(lista, claveDe, montoDe) {
+  const grupos = new Map()
+  for (const item of lista) {
+    const clave = claveDe(item)
+    const previo = grupos.get(clave) ?? { clave, monto: 0, count: 0 }
+    previo.monto += montoDe(item) ?? 0
+    previo.count += 1
+    grupos.set(clave, previo)
+  }
+  return [...grupos.values()].sort((a, b) => b.monto - a.monto)
 }
 
 export default function FinanzasPage() {
@@ -89,6 +120,51 @@ export default function FinanzasPage() {
       .reduce((sum, o) => sum + (o.montoTotal ?? 0), 0)
     return { totalCobrar, totalPagar, saldoProyectado30: cobrarPronto - pagarPronto }
   }, [porCobrar, porPagar])
+
+  const desglosePorCliente = useMemo(
+    () => agruparPorDeuda(porCobrar, (c) => c.cliente, (c) => c.monto),
+    [porCobrar],
+  )
+
+  const desglosePorProveedor = useMemo(
+    () => agruparPorDeuda(porPagar, (o) => o.proveedorId, (o) => o.montoTotal),
+    [porPagar],
+  )
+
+  const proveedorNombrePorId = useMemo(
+    () => new Map(proveedores.map((p) => [p.id, p.nombre])),
+    [proveedores],
+  )
+
+  const exportarCobrar = () => {
+    const lista = verCobrados ? cobrados : porCobrar
+    exportCsv(
+      `${verCobrados ? 'cobrados' : 'por-cobrar'}_${new Date().toISOString().slice(0, 10)}.csv`,
+      lista,
+      [
+        { label: 'Cliente', value: (c) => c.cliente },
+        { label: 'Monto', value: (c) => c.monto ?? 0 },
+        verCobrados
+          ? { label: 'Cobrado', value: (c) => formatFecha(c.fechaCobro?.toMillis?.()) }
+          : { label: 'Vence', value: (c) => formatFecha(c.vencimiento) },
+      ],
+    )
+  }
+
+  const exportarPagar = () => {
+    const lista = verPagados ? pagados : porPagar
+    exportCsv(
+      `${verPagados ? 'pagados' : 'por-pagar'}_${new Date().toISOString().slice(0, 10)}.csv`,
+      lista,
+      [
+        { label: 'Proveedor', value: (o) => proveedorNombrePorId.get(o.proveedorId) ?? '—' },
+        { label: 'Monto', value: (o) => o.montoTotal ?? 0 },
+        verPagados
+          ? { label: 'Pagado', value: (o) => formatFecha(o.fechaPago?.toMillis?.()) }
+          : { label: 'Vence', value: (o) => formatFecha(o.vencimiento) },
+      ],
+    )
+  }
 
   const accionCobrar = async (cotizacion) => {
     setBusyId(cotizacion.id)
@@ -164,14 +240,19 @@ export default function FinanzasPage() {
               <ArrowDownCircle className="h-4 w-4 text-brand-600" />
               {verCobrados ? 'Cobrados' : 'Por cobrar (crédito Fudeco)'}
             </h2>
-            {(cobrados.length > 0 || verCobrados) && (
-              <button
-                onClick={() => setVerCobrados((v) => !v)}
-                className="text-xs font-medium text-brand-700 hover:underline"
-              >
-                {verCobrados ? 'Ver por cobrar' : `Ver cobrados (${cobrados.length})`}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {(porCobrar.length > 0 || cobrados.length > 0) && (
+                <IconButton icon={Download} onClick={exportarCobrar} title="Exportar CSV" />
+              )}
+              {(cobrados.length > 0 || verCobrados) && (
+                <button
+                  onClick={() => setVerCobrados((v) => !v)}
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  {verCobrados ? 'Ver por cobrar' : `Ver cobrados (${cobrados.length})`}
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto border border-line-strong bg-surface">
             {verCobrados ? (
@@ -212,7 +293,7 @@ export default function FinanzasPage() {
                         <p className="font-medium text-ink">{c.cliente}</p>
                         <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
                           {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                          Vence {formatFecha(c.vencimiento)}
+                          {textoVencimiento(c.vencimiento)}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -244,14 +325,19 @@ export default function FinanzasPage() {
               <ArrowUpCircle className="h-4 w-4 text-amber-600" />
               {verPagados ? 'Pagados' : 'Por pagar (proveedores)'}
             </h2>
-            {(pagados.length > 0 || verPagados) && (
-              <button
-                onClick={() => setVerPagados((v) => !v)}
-                className="text-xs font-medium text-brand-700 hover:underline"
-              >
-                {verPagados ? 'Ver por pagar' : `Ver pagados (${pagados.length})`}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {(porPagar.length > 0 || pagados.length > 0) && (
+                <IconButton icon={Download} onClick={exportarPagar} title="Exportar CSV" />
+              )}
+              {(pagados.length > 0 || verPagados) && (
+                <button
+                  onClick={() => setVerPagados((v) => !v)}
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  {verPagados ? 'Ver por pagar' : `Ver pagados (${pagados.length})`}
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto border border-line-strong bg-surface">
             {verPagados ? (
@@ -298,7 +384,7 @@ export default function FinanzasPage() {
                         </p>
                         <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
                           {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                          Vence {formatFecha(o.vencimiento)}
+                          {textoVencimiento(o.vencimiento)}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -324,6 +410,58 @@ export default function FinanzasPage() {
           </div>
         </section>
       </div>
+
+      {(desglosePorCliente.length > 0 || desglosePorProveedor.length > 0) && (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section>
+            <h2 className="mb-3 text-sm font-semibold text-ink">Quién debe más</h2>
+            <div className="overflow-x-auto border border-line-strong bg-surface">
+              {desglosePorCliente.length === 0 ? (
+                <EmptyState icon={Wallet} title="Nada pendiente de cobro" />
+              ) : (
+                <ul className="divide-y divide-line">
+                  {desglosePorCliente.map((g) => (
+                    <li key={g.clave} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                      <p className="min-w-0 truncate font-medium text-ink">{g.clave}</p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-xs text-ink-faint">
+                          {g.count} {g.count === 1 ? 'cotización' : 'cotizaciones'}
+                        </span>
+                        <span className="font-medium text-ink">{currency.format(g.monto)}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-sm font-semibold text-ink">A quién le debemos más</h2>
+            <div className="overflow-x-auto border border-line-strong bg-surface">
+              {desglosePorProveedor.length === 0 ? (
+                <EmptyState icon={Wallet} title="Nada pendiente de pago" />
+              ) : (
+                <ul className="divide-y divide-line">
+                  {desglosePorProveedor.map((g) => (
+                    <li key={g.clave} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                      <p className="min-w-0 truncate font-medium text-ink">
+                        {proveedorNombrePorId.get(g.clave) ?? '—'}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-xs text-ink-faint">
+                          {g.count} {g.count === 1 ? 'orden' : 'órdenes'}
+                        </span>
+                        <span className="font-medium text-ink">{currency.format(g.monto)}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
       <FlujoMensualChart cobrados={cobrados} pagados={pagados} />
     </div>
