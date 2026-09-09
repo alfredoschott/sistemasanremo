@@ -177,7 +177,7 @@ export default function ComprasPage() {
           variant="warn"
           onClick={() => setFiltroEstado('pendiente')}
         />
-        <MetricCard label="Recibidas este mes" value={metrics.recibidasEsteMes} variant="accent" />
+        <MetricCard label="Recibidas este mes" value={metrics.recibidasEsteMes} variant="brandLight" />
         <MetricCard label="Proveedores activos" value={metrics.proveedoresActivos} />
         <MetricCard label="Materiales distintos" value={metrics.materialesDistintos} />
       </MetricsRow>
@@ -286,7 +286,7 @@ export default function ComprasPage() {
               onClick={() => setFiltroEstado(opt.value)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 filtroEstado === opt.value
-                  ? 'bg-brand-700 text-white'
+                  ? 'bg-brand-500 text-white'
                   : 'bg-surface-2 text-ink-dim hover:bg-line'
               }`}
             >

@@ -26,6 +26,7 @@ export async function cancelarCotizacion(cotizacion) {
     mensaje: `Cotización de ${cotizacion.cliente} cancelada`,
     tipo: 'warning',
     link: `/ventas/${cotizacion.id}`,
+    areas: ['ventas', 'compras'],
   })
 }
 

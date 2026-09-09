@@ -49,7 +49,12 @@ export async function recibirOrdenCompra(oc) {
   })
 
   for (const nombre of bajoMinimo) {
-    await crearNotificacion({ mensaje: `${nombre} sigue bajo el mínimo`, tipo: 'warning', link: '/almacen' })
+    await crearNotificacion({
+      mensaje: `${nombre} sigue bajo el mínimo`,
+      tipo: 'warning',
+      link: '/almacen',
+      areas: ['almacen', 'compras'],
+    })
   }
 }
 
@@ -114,7 +119,12 @@ export async function registrarMovimientoManual({ materialId, tipo, cantidad }) 
   })
 
   if (aviso) {
-    await crearNotificacion({ mensaje: `${aviso} quedó bajo el mínimo`, tipo: 'warning', link: '/almacen' })
+    await crearNotificacion({
+      mensaje: `${aviso} quedó bajo el mínimo`,
+      tipo: 'warning',
+      link: '/almacen',
+      areas: ['almacen', 'compras'],
+    })
   }
 
   return { movimientoId: movimientoRef.id, materialId, tipo, cantidad }

@@ -73,7 +73,12 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
           fecha: serverTimestamp(),
         })
         toast('Orden de compra creada')
-        crearNotificacion({ mensaje: 'Nueva orden de compra creada', tipo: 'info', link: '/compras' })
+        crearNotificacion({
+          mensaje: 'Nueva orden de compra creada',
+          tipo: 'info',
+          link: '/compras',
+          areas: ['compras'],
+        })
       }
 
       onClose()

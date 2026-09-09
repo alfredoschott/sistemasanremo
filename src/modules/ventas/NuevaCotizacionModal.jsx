@@ -128,6 +128,7 @@ function CotizacionForm({ onClose, cotizacion }) {
           mensaje: `Nueva cotización: ${form.cliente}`,
           tipo: 'success',
           link: `/ventas/${ref.id}`,
+          areas: ['ventas', 'compras'],
         })
         registrarAuditoria({ entidad: 'cotizacion', entidadId: ref.id, accion: 'Creada' })
       }

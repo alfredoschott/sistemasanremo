@@ -178,7 +178,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
           <button
             type="button"
             onClick={() => setAgregandoProveedor(true)}
-            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-green-700 transition-colors hover:text-green-800 hover:underline"
           >
             <Plus className="h-3 w-3" />
             Agregar proveedor
@@ -224,7 +224,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
           </div>
           <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-line">
             <div
-              className="h-full bg-brand-600 transition-all duration-300 ease-out"
+              className="h-full bg-green-600 transition-all duration-300 ease-out"
               style={{ width: `${of.avance ?? 0}%` }}
             />
           </div>
@@ -240,7 +240,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
                 toast('No se pudo actualizar el avance.', 'error'),
               )
             }
-            className="mb-3 w-full accent-brand-700"
+            className="mb-3 w-full accent-green-600"
           />
           <Button
             className="w-full"
@@ -396,7 +396,7 @@ export default function ProduccionPage() {
         <MetricCard
           label="Completadas"
           value={metrics.completadas}
-          variant="accent"
+          variant="green"
           onClick={() => setFiltroEstado('Completada')}
         />
       </MetricsRow>
@@ -411,7 +411,7 @@ export default function ProduccionPage() {
               onClick={() => setFiltroEstado(estado)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 filtroEstado === estado
-                  ? 'bg-brand-700 text-white'
+                  ? 'bg-green-600 text-white'
                   : 'bg-surface-2 text-ink-dim hover:bg-line'
               }`}
             >

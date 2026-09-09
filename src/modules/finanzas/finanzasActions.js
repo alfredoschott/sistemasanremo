@@ -17,6 +17,7 @@ export async function marcarCobrado(cotizacion) {
     mensaje: `Cobro recibido de ${cotizacion.cliente}`,
     tipo: 'success',
     link: `/ventas/${cotizacion.id}`,
+    areas: ['finanzas', 'ventas'],
   })
 }
 
@@ -29,6 +30,7 @@ export async function marcarPagado(oc) {
     mensaje: 'Pago a proveedor registrado',
     tipo: 'info',
     link: '/finanzas',
+    areas: ['finanzas', 'compras'],
   })
 }
 

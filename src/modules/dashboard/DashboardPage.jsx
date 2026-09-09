@@ -33,6 +33,19 @@ const currency = new Intl.NumberFormat('es-MX', {
 })
 
 const ICONS = { success: CheckCircle2, warning: AlertTriangle, info: Info }
+const ICON_COLORS = { success: 'text-brand-600', warning: 'text-amber-600', info: 'text-sky-600' }
+
+// Acento por área: ícono en chip de color + barra superior + cifra
+// destacada tintada. Todo dentro de la familia verde de marca — cada
+// área un matiz distinto, sin salirse de la paleta.
+const ACCENTS = {
+  brand: { chip: 'bg-brand-100 text-brand-700', bar: 'bg-brand-600', star: 'text-brand-800' },
+  brandLight: { chip: 'bg-brand-50 text-brand-500', bar: 'bg-brand-400', star: 'text-brand-600' },
+  green: { chip: 'bg-green-100 text-green-700', bar: 'bg-green-600', star: 'text-green-800' },
+  emerald: { chip: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-600', star: 'text-emerald-800' },
+  lime: { chip: 'bg-lime-100 text-lime-800', bar: 'bg-lime-600', star: 'text-lime-800' },
+  teal: { chip: 'bg-teal-100 text-teal-700', bar: 'bg-teal-600', star: 'text-teal-800' },
+}
 
 function timeAgo(fecha) {
   const ms = fecha?.toMillis?.()
@@ -50,7 +63,7 @@ function timeAgo(fecha) {
 // que su propia área necesita, y DashboardPage decide cuáles renderizar
 // según el rol — así alguien con una sola área ve algo completo, no un
 // hueco vacío esperando el resto de tarjetas que nunca le corresponden.
-function Stat({ label, value, danger, size = 'text-lg' }) {
+function Stat({ label, value, danger, size = 'text-lg', colorClass = 'text-ink' }) {
   return (
     <div className="min-w-0">
       <dt className="mb-0.5 truncate text-[0.625rem] uppercase tracking-wide text-ink-faint">
@@ -58,7 +71,7 @@ function Stat({ label, value, danger, size = 'text-lg' }) {
       </dt>
       <dd
         className={`truncate font-mono ${size} font-semibold tabular-nums ${
-          danger ? 'text-red-700' : 'text-ink'
+          danger ? 'text-red-700' : colorClass
         }`}
         title={String(value)}
       >
@@ -72,18 +85,22 @@ function Stat({ label, value, danger, size = 'text-lg' }) {
 // columna angosta se queda sin espacio y trunca el número. Con un número
 // impar de datos, el último se vuelve "estrella" a todo el ancho abajo —
 // también le da jerarquía visual al dato más importante de cada área.
-function AreaCard({ to, icon: Icon, title, stats }) {
+function AreaCard({ to, icon: Icon, title, stats, accent = 'brand' }) {
   const esImpar = stats.length % 2 === 1
   const pares = esImpar ? stats.slice(0, -1) : stats
   const estrella = esImpar ? stats[stats.length - 1] : null
+  const { chip, bar, star } = ACCENTS[accent]
 
   return (
     <Link
       to={to}
-      className="group rounded-lg border border-line bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group relative overflow-hidden rounded-lg border border-line bg-surface p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-brand-700" />
+      <span className={`absolute inset-x-0 top-0 h-1 ${bar}`} aria-hidden="true" />
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${chip}`}>
+          <Icon className="h-4 w-4" />
+        </span>
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
       </div>
       <dl className="grid grid-cols-2 gap-3">
@@ -93,7 +110,7 @@ function AreaCard({ to, icon: Icon, title, stats }) {
       </dl>
       {estrella && (
         <dl className="mt-3 border-t border-line pt-3">
-          <Stat {...estrella} size="text-2xl" />
+          <Stat {...estrella} size="text-2xl" colorClass={star} />
         </dl>
       )}
     </Link>
@@ -115,7 +132,7 @@ function VentasCard() {
       { label: 'Facturado', value: currency.format(facturado) },
     ]
   }, [cotizaciones])
-  return <AreaCard to="/ventas" icon={TrendingUp} title="Ventas" stats={stats} />
+  return <AreaCard to="/ventas" icon={TrendingUp} title="Ventas" stats={stats} accent="brand" />
 }
 
 function ComprasCard() {
@@ -135,7 +152,7 @@ function ComprasCard() {
       { label: 'O.C. pendientes', value: pendientes, danger: pendientes > 0 },
     ]
   }, [ordenes])
-  return <AreaCard to="/compras" icon={ShoppingCart} title="Compras" stats={stats} />
+  return <AreaCard to="/compras" icon={ShoppingCart} title="Compras" stats={stats} accent="brandLight" />
 }
 
 function ProduccionCard() {
@@ -153,7 +170,7 @@ function ProduccionCard() {
       { label: 'Avance promedio', value: `${avancePromedio}%` },
     ]
   }, [ordenes])
-  return <AreaCard to="/produccion" icon={Factory} title="Producción" stats={stats} />
+  return <AreaCard to="/produccion" icon={Factory} title="Producción" stats={stats} accent="green" />
 }
 
 function AlmacenCard() {
@@ -173,7 +190,7 @@ function AlmacenCard() {
       { label: 'Movimientos hoy', value: movimientosHoy },
     ]
   }, [materiales, movimientosHoy])
-  return <AreaCard to="/almacen" icon={Boxes} title="Almacén" stats={stats} />
+  return <AreaCard to="/almacen" icon={Boxes} title="Almacén" stats={stats} accent="emerald" />
 }
 
 function TransformadoresCard() {
@@ -185,7 +202,7 @@ function TransformadoresCard() {
       { label: 'Unidades totales', value: unidades },
     ]
   }, [transformadores])
-  return <AreaCard to="/transformadores" icon={Container} title="Transformadores" stats={stats} />
+  return <AreaCard to="/transformadores" icon={Container} title="Transformadores" stats={stats} accent="lime" />
 }
 
 function FinanzasCard() {
@@ -205,7 +222,7 @@ function FinanzasCard() {
       { label: 'Saldo (30d)', value: currency.format(saldo), danger: saldo < 0 },
     ]
   }, [cotizaciones, ordenes])
-  return <AreaCard to="/finanzas" icon={Wallet} title="Finanzas" stats={stats} />
+  return <AreaCard to="/finanzas" icon={Wallet} title="Finanzas" stats={stats} accent="teal" />
 }
 
 const AREA_CARDS = {
@@ -228,9 +245,10 @@ function ActividadReciente() {
         <ul className="stagger flex flex-col gap-2.5">
           {notificaciones.slice(0, 8).map((n) => {
             const Icon = ICONS[n.tipo] ?? Info
+            const colorClass = ICON_COLORS[n.tipo] ?? 'text-ink-faint'
             return (
               <li key={n.id} className="flex items-start gap-2.5 text-sm">
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" />
+                <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${colorClass}`} />
                 <span className="flex-1 text-ink-dim">{n.mensaje}</span>
                 <span className="shrink-0 text-xs text-ink-faint">{timeAgo(n.fecha)}</span>
               </li>

@@ -224,7 +224,7 @@ export default function FinanzasPage() {
       </p>
 
       <MetricsRow>
-        <MetricCard label="Por cobrar" value={currency.format(metrics.totalCobrar)} variant="accent" />
+        <MetricCard label="Por cobrar" value={currency.format(metrics.totalCobrar)} variant="teal" />
         <MetricCard label="Por pagar" value={currency.format(metrics.totalPagar)} variant="warn" />
         <MetricCard
           label="Saldo proyectado (30 días)"
@@ -247,7 +247,7 @@ export default function FinanzasPage() {
               {(cobrados.length > 0 || verCobrados) && (
                 <button
                   onClick={() => setVerCobrados((v) => !v)}
-                  className="text-xs font-medium text-brand-700 hover:underline"
+                  className="text-xs font-medium text-teal-700 hover:underline"
                 >
                   {verCobrados ? 'Ver por cobrar' : `Ver cobrados (${cobrados.length})`}
                 </button>
@@ -332,7 +332,7 @@ export default function FinanzasPage() {
               {(pagados.length > 0 || verPagados) && (
                 <button
                   onClick={() => setVerPagados((v) => !v)}
-                  className="text-xs font-medium text-brand-700 hover:underline"
+                  className="text-xs font-medium text-teal-700 hover:underline"
                 >
                   {verPagados ? 'Ver por pagar' : `Ver pagados (${pagados.length})`}
                 </button>

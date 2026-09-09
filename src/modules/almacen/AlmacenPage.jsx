@@ -317,7 +317,7 @@ export default function AlmacenPage() {
 
   const pillClass = (activo) =>
     `shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-      activo ? 'bg-brand-700 text-white' : 'bg-surface-2 text-ink-dim hover:bg-line'
+      activo ? 'bg-emerald-600 text-white' : 'bg-surface-2 text-ink-dim hover:bg-line'
     }`
 
   return (
@@ -357,7 +357,7 @@ export default function AlmacenPage() {
         <MetricCard label="Sin capturar" value={metrics.sinCapturar} variant="default" />
         <MetricCard label="Estado crítico" value={metrics.critico} variant="danger" />
         <MetricCard label="Stock bajo" value={metrics.bajo} variant="warn" />
-        <MetricCard label="Materiales totales" value={metrics.total} variant="accent" />
+        <MetricCard label="Materiales totales" value={metrics.total} variant="emerald" />
       </MetricsRow>
 
       <SearchInput value={search} onChange={buscar} placeholder="Buscar material…" />

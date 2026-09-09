@@ -26,6 +26,7 @@ export async function iniciarProduccion(of) {
     mensaje: `${of.numeroSerie} entró a producción`,
     tipo: 'info',
     link: `/ventas/${of.cotizacionId}`,
+    areas: ['produccion', 'ventas'],
   })
   registrarAuditoria({
     entidad: 'cotizacion',
@@ -96,6 +97,7 @@ export async function completarYFacturar(of) {
     mensaje: `${of.numeroSerie} completada y facturada`,
     tipo: 'success',
     link: `/ventas/${of.cotizacionId}`,
+    areas: ['produccion', 'ventas', 'finanzas'],
   })
   registrarAuditoria({
     entidad: 'cotizacion',

@@ -24,7 +24,7 @@ function DestinoLink({ destino, className = '' }) {
       target="_blank"
       rel="noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center gap-1 text-brand-700 hover:text-brand-800 hover:underline ${className}`}
+      className={`inline-flex items-center gap-1 text-lime-800 hover:text-lime-900 hover:underline ${className}`}
       title="Ver en Google Maps"
     >
       <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -141,7 +141,7 @@ export default function TransformadoresPage() {
       </div>
 
       <MetricsRow>
-        <MetricCard label="Unidades en inventario" value={metrics.totalUnidades} variant="accent" />
+        <MetricCard label="Unidades en inventario" value={metrics.totalUnidades} variant="lime" />
         <MetricCard label="Modelos distintos" value={metrics.modelosDistintos} />
         <MetricCard label="Modelos sin stock" value={metrics.sinStock} variant="warn" />
       </MetricsRow>
