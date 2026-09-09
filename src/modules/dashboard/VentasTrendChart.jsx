@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react'
+import { currencyCompact as currency } from '../../lib/currency'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 const MESES_A_MOSTRAR = 6
-
-const currency = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 0,
-})
 
 // Últimos N meses (incluyendo el actual), más viejo primero — así la
 // barra de la derecha siempre es "ahora", como se lee un timeline.

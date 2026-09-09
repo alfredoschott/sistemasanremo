@@ -10,6 +10,7 @@ import Modal from '../../components/Modal'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
+import { currency } from '../../lib/currency'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
@@ -25,7 +26,6 @@ import { useCotizacionesCotizadas } from './useCotizacionesCotizadas'
 import { useOrdenesCompra } from './useOrdenesCompra'
 import { useProveedores } from './useProveedores'
 
-const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 const OC_BADGE = {
   pendiente: 'bg-amber-100 text-amber-700',

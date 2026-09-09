@@ -12,6 +12,7 @@ import { exportCsv } from '../../lib/exportCsv'
 import { ESTADOS_COTIZACION } from '../../lib/estados'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
+import { currency } from '../../lib/currency'
 import { eliminarCotizacion } from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
@@ -25,7 +26,6 @@ const PAGO_FILTRO = [
   { value: 'fudeco', label: 'Crédito Fudeco' },
 ]
 
-const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 export default function VentasList() {
   const { cotizaciones, loading } = useCotizaciones()

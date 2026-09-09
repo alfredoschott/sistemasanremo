@@ -1,6 +1,7 @@
 import { Container, Factory, Search, ShoppingCart, TrendingUp, Truck, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { currencyCompact } from '../lib/currency'
 import { useRoles } from '../lib/RolesContext'
 import { useMateriales } from '../modules/almacen/useMateriales'
 import { useProveedores } from '../modules/compras/useProveedores'
@@ -72,7 +73,7 @@ export default function GlobalSearch() {
         .map((c) => ({
           id: c.id,
           titulo: c.cliente,
-          subtitulo: `${c.estado} · $${(c.monto ?? 0).toLocaleString('es-MX')}`,
+          subtitulo: `${c.estado} · ${currencyCompact.format(c.monto ?? 0)}`,
           onClick: () => navigate(`/ventas/${c.id}`),
         }))
       if (items.length) grupos.push({ label: 'Cotizaciones', icon: TrendingUp, items })

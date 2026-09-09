@@ -15,11 +15,11 @@ import {
   duplicarCotizacion,
   eliminarCotizacion,
 } from './cotizacionActions'
+import { currency } from '../../lib/currency'
 import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
 
-const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 export default function VentasDetalle() {
   const { id } = useParams()

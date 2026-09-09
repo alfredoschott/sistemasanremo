@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react'
+import { currencyCompact as currency } from '../../lib/currency'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 const MESES_A_MOSTRAR = 6
-
-const currency = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 0,
-})
 
 function ultimosMeses(n) {
   const hoy = new Date()

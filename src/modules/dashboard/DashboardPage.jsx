@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { currencyCompact as currency } from '../../lib/currency'
 import { useRoles } from '../../lib/RolesContext'
 import { useNotificaciones } from '../../lib/useNotificaciones'
 import { estadoMaterial } from '../almacen/materialStatus'
@@ -24,13 +25,8 @@ import VentasTrendChart from './VentasTrendChart'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 
 // Sin centavos y a propósito: en una tarjeta de resumen de 3 columnas
-// angostas, "$527,000.00" no cabe sin truncarse — el detalle exacto con
-// centavos ya está en la página de cada área (Ventas, Finanzas).
-const currency = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 0,
-})
+// angostas, "MXN 527,000" no cabe con centavos sin truncarse — el detalle
+// exacto ya está en la página de cada área (Ventas, Finanzas).
 
 const ICONS = { success: CheckCircle2, warning: AlertTriangle, info: Info }
 const ICON_COLORS = { success: 'text-brand-600', warning: 'text-amber-600', info: 'text-sky-600' }

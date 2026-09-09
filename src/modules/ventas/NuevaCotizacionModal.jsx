@@ -8,11 +8,11 @@ import { registrarAuditoria } from '../../lib/audit'
 import { CONDICION_PAGO } from '../../lib/estados'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { currency } from '../../lib/currency'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
 
-const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
 const lineaVacia = () => ({ modelo: '', cantidad: '1', precioUnitario: '' })
 

@@ -17,11 +17,11 @@ import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useProveedores } from '../compras/useProveedores'
+import { currency } from '../../lib/currency'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 import { deshacerCobrado, deshacerPagado, marcarCobrado, marcarPagado } from './finanzasActions'
 import FlujoMensualChart from './FlujoMensualChart'
 
-const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 const DIA_MS = 24 * 60 * 60 * 1000
 
 function fechaVencimiento(base, dias) {
