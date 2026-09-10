@@ -57,6 +57,13 @@ service cloud.firestore {
       allow read, write: if tieneAlgunRol(['compras', 'produccion']);
     }
 
+    // Estándar de materiales por modelo (ver ListasMaterialesPage.jsx) —
+    // Compras también lo lee al abrir una OF, para calcular
+    // `materialesRequeridos` de esa orden.
+    match /listasMateriales/{id} {
+      allow read, write: if tieneAlgunRol(['compras', 'produccion']);
+    }
+
     match /ordenesCompra/{id} {
       allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
     }
@@ -65,12 +72,14 @@ service cloud.firestore {
       allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
     }
 
+    // 'produccion' también escribe aquí: registrar consumo de materiales
+    // en una OF resta stock real (ver stockActions.registrarConsumoMaterial).
     match /materiales/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'almacen']);
+      allow read, write: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
     }
 
     match /movimientosAlmacen/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'almacen']);
+      allow read, write: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
     }
 
     // 'produccion' también escribe aquí: al completar y facturar una OF,

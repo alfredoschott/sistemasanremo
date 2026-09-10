@@ -10,8 +10,9 @@ documento original del proyecto.
 - **Setup**: Vite + React 19 + Tailwind v4 + Firebase SDK + React Router.
 - **Firebase**: proyecto real creado — `sistema-sanremo`, Firestore edición
   Standard, región `us-central1`/`us-east1` (confirmar cuál se eligió).
-  Reglas de seguridad publicadas (`firestore.rules`): solo usuarios
-  autenticados pueden leer/escribir, sin roles por área todavía.
+  Reglas de seguridad publicadas (`firestore.rules`): exigen pertenecer a
+  `/usuariosAutorizados` y además tener el rol del área que corresponde a
+  cada colección (ver **Roles por área**, más abajo).
 - **Auth**: login con Google (`signInWithPopup`) funcionando end-to-end.
   Estructura en `src/lib/authProviders.js` lista para sumar Microsoft
   después (agregar una entrada al array + habilitar el proveedor en la
@@ -130,6 +131,17 @@ documento original del proyecto.
   `toast(mensaje, tipo, { onUndo })` — botón "Deshacer" ~10s en: marcar
   recibida una O.C., movimiento manual de almacén, cancelar cotización,
   cobrado/pagado en Finanzas, iniciar producción/completar y facturar.
+- **Roles por área**: implementado (no confundir con el "sin definir
+  todavía" de versiones viejas de este archivo). `/usuariosAutorizados/{email}`
+  guarda un array `roles` (ventas, compras, produccion, almacen, finanzas,
+  transformadores, admin); `firestore.rules` exige el rol correspondiente
+  por colección (`tieneAlgunRol`), un admin siempre pasa. Panel
+  `Admin → Usuarios` (`UsuariosPage.jsx`) para agregar/quitar personas y
+  editarles roles. `RolesProvider`/`useRoles` en el cliente filtra
+  notificaciones por área y oculta del sidebar los módulos a los que el
+  usuario no tiene acceso. Limitación conocida: es por colección completa,
+  no por campo — cualquiera de los roles listados en una colección puede
+  escribir cualquier campo del documento.
 - **Revisión de seguridad completa**:
   - Corregido: inyección de fórmulas CSV (`exportCsv.js` neutraliza
     celdas que empiezan con `= + - @`), límite de 20 MB por adjunto
@@ -151,6 +163,35 @@ documento original del proyecto.
     firebase-admin, herramientas de desarrollo, no se empacan al
     cliente).
 - Repo git local inicializado con commits por feature.
+- **Listas de materiales (LDM) + consumo trazable en Producción** — primera
+  versión funcional, capturada pero SIN DATOS REALES todavía (el usuario
+  las va a ir pasando):
+  - `Producción → Listas de materiales` (`ListasMaterialesPage.jsx`):
+    catálogo de qué material y cuánto lleva cada modelo de transformador
+    (colección `listasMateriales`, un doc por modelo, no puede haber dos
+    para el mismo modelo). Es el estándar — el pedido real puede variar.
+  - Al abrir una OF (`AbrirOFModal.jsx`), se calcula `materialesRequeridos`
+    (`materialesRequeridos.js`) = LDM del modelo cotizado × cantidad, y se
+    guarda como copia propia de esa OF — editable sin tocar el estándar.
+    Si el modelo no tiene LDM capturada, la OF simplemente no trae nada
+    precargado (no truena).
+  - Botón "Materiales" (ícono de caja, con badge de cuántos faltan) en
+    cada tarjeta de OF abre `MaterialesOFModal.jsx`: por línea muestra
+    Planeado/Consumido/Disponible en Almacén, deja "Registrar consumo"
+    (resta stock real, trazado hacia la OF), agregar material que no
+    venía en la lista, y generar la O.C. sugerida para lo que falte.
+  - Si un consumo deja el acumulado por arriba de lo planeado, no se
+    bloquea — pide un motivo corto y lo guarda en el movimiento
+    (`stockActions.registrarConsumoMaterial`/`revertirConsumoMaterial`).
+  - El historial de cada material en Almacén ahora también muestra "· OF
+    ..." en los movimientos que salieron de una OF, con el motivo del
+    exceso si lo hubo — trazabilidad completa material ↔ OF en ambos
+    sentidos.
+  - **Pendiente de publicar** (ver siguiente sección): reglas nuevas para
+    `listasMateriales`, y `materiales`/`movimientosAlmacen` ahora también
+    aceptan el rol `produccion` (antes solo compras/almacén) — sin esto
+    publicado, la página de Listas de materiales y el registro de consumo
+    fallan con "permission-denied" aunque el código esté bien.
 
 **Nota para la próxima sesión**: el sistema ya cubre el flujo completo
 de negocio + bastantes extras, y ya pasó una revisión de seguridad.
@@ -160,14 +201,21 @@ pendientes reales.
 
 ## Pendiente / próximos pasos
 
-1. **Publicar firestore.rules actualizado** (urgente): el archivo local
-   ya tiene la restricción a `/usuariosAutorizados`, pero falta pegarlo
-   en Firebase Console → Firestore → Reglas (igual que las veces
-   anteriores) para que tome efecto — mientras no se publique, sigue
-   abierto a cualquier cuenta de Google. `storage.rules` también está
-   actualizado localmente pero Storage sigue sin activarse (ver
-   Decisiones).
-2. **Finanzas — alcance a propósito recortado**: "por cobrar" solo
+1. **Publicar firestore.rules actualizado** (urgente): tiene reglas nuevas
+   sin publicar por la función de Listas de materiales — `match
+   /listasMateriales` (nueva colección) y `materiales`/`movimientosAlmacen`
+   ahora también aceptan el rol `produccion`. Sin publicar, la página
+   `Producción → Listas de materiales` se queda cargando para siempre y
+   "Registrar consumo" falla — verificado en esta sesión, no es un bug de
+   código.
+2. **Publicar storage.rules**: falta pegar el contenido de `storage.rules`
+   en Firebase Console → Storage → Reglas (o `firebase deploy --only
+   storage` con el CLI) para que la función de adjuntos funcione de
+   verdad.
+3. **Llenar las Listas de materiales con datos reales**: la pantalla y el
+   cálculo ya funcionan (ver "Hecho"), pero no hay ninguna LDM capturada
+   todavía — el usuario va a ir pasando las recetas de cada modelo.
+4. **Finanzas — alcance a propósito recortado**: "por cobrar" solo
    cubre crédito Fudeco. El resto del anticipo (cuando la condición es
    "anticipo") no se rastrea como cuenta por cobrar porque no hay una
    regla de negocio clara sobre cuándo se cobra ese resto — preguntar a
@@ -176,39 +224,21 @@ pendientes reales.
    campo no aparece en "por pagar" aunque exista. Sin recordatorios
    automáticos ni Cloud Functions — es una pantalla de visibilidad, el
    admin sigue marcando manualmente cobrado/pagado.
-1. **Publicar storage.rules**: igual que se hizo con firestore.rules,
-   falta pegar el contenido de `storage.rules` en Firebase Console →
-   Storage → Reglas (o `firebase deploy --only storage` con el CLI) para
-   que la función de adjuntos funcione de verdad.
-2. **Cloud Functions** (automatizaciones del lado servidor): hoy la
-   suma/resta de stock corre client-side vía `runTransaction`, lo cual
-   funciona pero no es a prueba de un cliente malicioso o con Firestore
-   rules más laxas. Migrar a Cloud Functions da más control (ej. trigger
-   al marcar O.C. recibida, resta automática al consumir BOM en
-   Producción, sugerencia de O.C. cuando stock < mínimo).
-3. **Consumo de BOM en Producción**: hoy Producción no resta stock del
-   material — falta enlazar el catálogo de materiales de este sistema
-   con el proyecto de tornillería/BOM que Yamil está armando por
-   separado (ver contexto del proyecto), y que Producción reste stock al
-   avanzar.
-4. **Roles por área** — sin definir con Sanremo todavía, dejado fuera a
-   propósito (ver Decisiones). Hoy cualquier usuario autenticado puede
-   escribir en cualquier colección.
-5. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
+5. **Cloud Functions** (automatizaciones del lado servidor): hoy la
+   suma/resta de stock (incluido el consumo de materiales en Producción)
+   corre client-side vía `runTransaction`, lo cual funciona pero no es a
+   prueba de un cliente malicioso o con Firestore rules más laxas. Migrar
+   a Cloud Functions da más control (ej. trigger al marcar O.C. recibida,
+   sugerencia de O.C. cuando stock < mínimo).
+6. **CFDI/facturación fiscal** — fuera del MVP a propósito. Solo registrar
    monto y referencia a la OF; integración a un PAC (Facturama, SW Sapien)
    es fase futura.
-6. **Deploy**: reglas de Firestore ya publicadas manualmente desde la
+7. **Deploy**: reglas de Firestore ya publicadas manualmente desde la
    consola; falta hacer `firebase deploy --only hosting` (o similar) para
    tener una URL real que el equipo de Sanremo pueda usar, hoy solo
    corre en `localhost`.
 
 ## Decisiones tomadas en esta fase
-
-- Roles por usuario: pedido explícitamente por el usuario junto con
-  varias otras cosas ("todo"), pero se dejó fuera a propósito porque el
-  documento original dice "sin definir aún, no asumir, preguntar" sobre
-  permisos por área. Retomar cuando Sanremo defina quién puede escribir
-  en qué módulo.
 
 - Orden de construcción del MVP: Ventas → Compras → Producción → Almacén
   (confirmado con el usuario).

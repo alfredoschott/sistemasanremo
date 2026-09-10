@@ -34,6 +34,9 @@ export default function OrdenFabricacionImprimible({ of, nombreProveedor }) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Cliente</p>
           <h1 className="text-2xl font-semibold text-ink">{of.cliente}</h1>
+          {of.modelos?.length > 0 && (
+            <p className="mt-1 text-sm text-ink-dim">{of.modelos.join(', ')}</p>
+          )}
         </div>
         <span
           className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${

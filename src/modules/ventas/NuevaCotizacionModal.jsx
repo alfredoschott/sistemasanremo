@@ -12,6 +12,7 @@ import { currency } from '../../lib/currency'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
+import { useListasMateriales } from '../produccion/useListasMateriales'
 
 
 const lineaVacia = () => ({ modelo: '', cantidad: '1', precioUnitario: '' })
@@ -61,6 +62,12 @@ function CotizacionForm({ onClose, cotizacion }) {
   const [saving, setSaving] = useState(false)
   const toast = useToast()
   const isEdit = Boolean(cotizacion)
+  // Modelos que ya tienen lista de materiales capturada — sugeridos al
+  // escribir para que el modelo quede exactamente igual y sí haga match
+  // al calcular materialesRequeridos (ver AbrirOFModal). Sigue siendo
+  // texto libre: un modelo nuevo se puede escribir aunque no esté en LDM.
+  const { listas: listasMateriales } = useListasMateriales()
+  const modelosConocidos = listasMateriales.map((l) => l.modelo)
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
@@ -161,6 +168,7 @@ function CotizacionForm({ onClose, cotizacion }) {
             <div key={index} className="flex items-center gap-2">
               <input
                 required
+                list="modelos-conocidos"
                 value={linea.modelo}
                 onChange={actualizarLinea(index, 'modelo')}
                 placeholder="Modelo, p. ej. TDD-75-13.2"
@@ -198,6 +206,11 @@ function CotizacionForm({ onClose, cotizacion }) {
             </div>
           ))}
         </div>
+        <datalist id="modelos-conocidos">
+          {modelosConocidos.map((modelo) => (
+            <option key={modelo} value={modelo} />
+          ))}
+        </datalist>
         <button
           type="button"
           onClick={agregarLinea}

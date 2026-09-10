@@ -176,3 +176,82 @@ export async function restaurarMaterial(materialId, data) {
   if (!data) return
   await setDoc(doc(db, 'materiales', materialId), data)
 }
+
+// Registra que Producción sacó material del almacén para una OF —
+// consumo parcial, no toda la lista de materiales de un jalón. Descuenta
+// stock real (sigue sin permitir negativo: es una restricción física, no
+// de planeación) y suma `cantidadConsumida` en la línea correspondiente de
+// `materialesRequeridos` de esa OF, para llevar el acumulado.
+//
+// Si el acumulado ya supera lo planeado, no se bloquea — el usuario ya
+// decidió seguir y capturó un motivo (ver MaterialesOFModal) — pero sí
+// queda guardado en el movimiento para no perder el rastro de por qué se
+// usó más de lo previsto.
+export async function registrarConsumoMaterial({ of, materialId, cantidad, motivoExceso }) {
+  const movimientoRef = doc(collection(db, 'movimientosAlmacen'))
+
+  const aviso = await runTransaction(db, async (tx) => {
+    const materialRef = doc(db, 'materiales', materialId)
+    const ofRef = doc(db, 'ordenesFabricacion', of.id)
+    const [materialSnap, ofSnap] = await Promise.all([tx.get(materialRef), tx.get(ofRef)])
+
+    const data = materialSnap.data() ?? {}
+    const nuevoStock = (data.stock ?? 0) - cantidad
+    if (nuevoStock < 0) {
+      throw new Error('stock-insuficiente')
+    }
+
+    const requeridos = ofSnap.data()?.materialesRequeridos ?? []
+    const nuevosRequeridos = requeridos.map((linea) =>
+      linea.materialId === materialId
+        ? { ...linea, cantidadConsumida: (linea.cantidadConsumida ?? 0) + cantidad }
+        : linea,
+    )
+
+    tx.update(materialRef, { stock: nuevoStock })
+    tx.update(ofRef, { materialesRequeridos: nuevosRequeridos })
+    tx.set(movimientoRef, {
+      materialId,
+      tipo: 'salida',
+      cantidad,
+      referencia: { tipo: 'produccion', id: of.id },
+      motivoExceso: motivoExceso || null,
+      fecha: serverTimestamp(),
+    })
+
+    return nuevoStock < (data.minimo ?? 0) ? data.nombre : null
+  })
+
+  if (aviso) {
+    await crearNotificacion({
+      mensaje: `${aviso} quedó bajo el mínimo`,
+      tipo: 'warning',
+      link: '/almacen',
+      areas: ['almacen', 'compras'],
+    })
+  }
+
+  return { movimientoId: movimientoRef.id }
+}
+
+// Deshace un consumo específico (usado por el toast "Deshacer"): regresa
+// el stock y resta lo consumido de la línea de la OF.
+export async function revertirConsumoMaterial({ movimientoId, of, materialId, cantidad }) {
+  await runTransaction(db, async (tx) => {
+    const materialRef = doc(db, 'materiales', materialId)
+    const ofRef = doc(db, 'ordenesFabricacion', of.id)
+    const [materialSnap, ofSnap] = await Promise.all([tx.get(materialRef), tx.get(ofRef)])
+
+    const stockActual = materialSnap.data()?.stock ?? 0
+    const requeridos = ofSnap.data()?.materialesRequeridos ?? []
+    const nuevosRequeridos = requeridos.map((linea) =>
+      linea.materialId === materialId
+        ? { ...linea, cantidadConsumida: Math.max(0, (linea.cantidadConsumida ?? 0) - cantidad) }
+        : linea,
+    )
+
+    tx.update(materialRef, { stock: stockActual + cantidad })
+    tx.update(ofRef, { materialesRequeridos: nuevosRequeridos })
+    tx.delete(doc(db, 'movimientosAlmacen', movimientoId))
+  })
+}

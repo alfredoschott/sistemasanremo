@@ -12,7 +12,8 @@ import {
   Printer,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -66,6 +67,8 @@ function esEsteMes(fecha) {
 }
 
 export default function ComprasPage() {
+  const navigate = useNavigate()
+  const proveedoresRef = useRef(null)
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
   const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
@@ -251,9 +254,22 @@ export default function ComprasPage() {
           variant="warn"
           onClick={() => setFiltroEstado('pendiente')}
         />
-        <MetricCard label="Recibidas este mes" value={metrics.recibidasEsteMes} variant="brandLight" />
-        <MetricCard label="Proveedores activos" value={metrics.proveedoresActivos} />
-        <MetricCard label="Materiales distintos" value={metrics.materialesDistintos} />
+        <MetricCard
+          label="Recibidas este mes"
+          value={metrics.recibidasEsteMes}
+          variant="brandLight"
+          onClick={() => setFiltroEstado('recibida')}
+        />
+        <MetricCard
+          label="Proveedores activos"
+          value={metrics.proveedoresActivos}
+          onClick={() => proveedoresRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        />
+        <MetricCard
+          label="Materiales distintos"
+          value={metrics.materialesDistintos}
+          onClick={() => navigate('/almacen')}
+        />
       </MetricsRow>
 
       <section>
@@ -651,7 +667,9 @@ export default function ComprasPage() {
         </div>
       </section>
 
-      <ProveedoresPanel />
+      <div ref={proveedoresRef}>
+        <ProveedoresPanel />
+      </div>
 
       <AbrirOFModal cotizacion={cotizacionParaOF} onClose={() => setCotizacionParaOF(null)} />
       <NuevaOrdenCompraModal open={ocModalOpen} onClose={() => setOcModalOpen(false)} />

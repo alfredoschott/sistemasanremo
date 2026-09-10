@@ -4,7 +4,8 @@ import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import { claveMes, nombreMes } from '../../lib/meses'
 import { useToast } from '../../lib/ToastContext'
-import { revertirMovimientoManual } from './stockActions'
+import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
+import { revertirConsumoMaterial, revertirMovimientoManual } from './stockActions'
 import { useMovimientosMaterial } from './useMovimientosMaterial'
 
 function formatFecha(fecha) {
@@ -56,8 +57,14 @@ function GrupoMes({ label, count, defaultOpen, children }) {
 
 export default function HistorialMaterialModal({ material, onClose }) {
   const movimientos = useMovimientosMaterial(material?.id)
+  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
   const [revirtiendoId, setRevirtiendoId] = useState(null)
   const toast = useToast()
+
+  const numeroSerieOF = useMemo(() => {
+    const map = new Map(ordenesFabricacion.map((of) => [of.id, of.numeroSerie]))
+    return (ofId) => map.get(ofId) ?? null
+  }, [ordenesFabricacion])
 
   // Los dos meses más recientes con movimientos empiezan expandidos; el
   // resto (historial más viejo) empieza colapsado.
@@ -73,12 +80,21 @@ export default function HistorialMaterialModal({ material, onClose }) {
       return
     setRevirtiendoId(m.id)
     try {
-      await revertirMovimientoManual({
-        movimientoId: m.id,
-        materialId: m.materialId,
-        tipo: m.tipo,
-        cantidad: m.cantidad,
-      })
+      if (m.referencia?.tipo === 'produccion') {
+        await revertirConsumoMaterial({
+          movimientoId: m.id,
+          of: { id: m.referencia.id },
+          materialId: m.materialId,
+          cantidad: m.cantidad,
+        })
+      } else {
+        await revertirMovimientoManual({
+          movimientoId: m.id,
+          materialId: m.materialId,
+          tipo: m.tipo,
+          cantidad: m.cantidad,
+        })
+      }
       toast('Movimiento revertido')
     } catch {
       toast('No se pudo revertir el movimiento.', 'error')
@@ -107,26 +123,34 @@ export default function HistorialMaterialModal({ material, onClose }) {
               defaultOpen={clavesRecientes.has(g.clave)}
             >
               {g.items.map((m) => (
-                <li key={m.id} className="flex items-center gap-2.5 text-sm">
-                  {m.tipo === 'entrada' ? (
-                    <ArrowDownCircle className="h-4 w-4 shrink-0 text-brand-600" />
-                  ) : (
-                    <ArrowUpCircle className="h-4 w-4 shrink-0 text-amber-600" />
-                  )}
-                  <span className="flex-1 text-ink">
-                    {m.tipo === 'entrada' ? 'Entrada' : 'Salida'} de {m.cantidad}
-                    {m.referencia?.tipo === 'ordenCompra' && (
-                      <span className="text-ink-faint"> · O.C.</span>
+                <li key={m.id} className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2.5 text-sm">
+                    {m.tipo === 'entrada' ? (
+                      <ArrowDownCircle className="h-4 w-4 shrink-0 text-brand-600" />
+                    ) : (
+                      <ArrowUpCircle className="h-4 w-4 shrink-0 text-amber-600" />
                     )}
-                  </span>
-                  <span className="shrink-0 text-xs text-ink-faint">{formatFecha(m.fecha)}</span>
-                  {!m.referencia && (
-                    <IconButton
-                      icon={Undo2}
-                      disabled={revirtiendoId === m.id}
-                      onClick={() => revertir(m)}
-                      title="Deshacer este movimiento"
-                    />
+                    <span className="flex-1 text-ink">
+                      {m.tipo === 'entrada' ? 'Entrada' : 'Salida'} de {m.cantidad}
+                      {m.referencia?.tipo === 'ordenCompra' && (
+                        <span className="text-ink-faint"> · O.C.</span>
+                      )}
+                      {m.referencia?.tipo === 'produccion' && (
+                        <span className="text-ink-faint"> · OF {numeroSerieOF(m.referencia.id) ?? ''}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-xs text-ink-faint">{formatFecha(m.fecha)}</span>
+                    {(!m.referencia || m.referencia.tipo === 'produccion') && (
+                      <IconButton
+                        icon={Undo2}
+                        disabled={revirtiendoId === m.id}
+                        onClick={() => revertir(m)}
+                        title="Deshacer este movimiento"
+                      />
+                    )}
+                  </div>
+                  {m.motivoExceso && (
+                    <p className="pl-[26px] text-xs text-amber-700">Exceso sobre lo planeado: {m.motivoExceso}</p>
                   )}
                 </li>
               ))}

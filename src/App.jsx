@@ -12,6 +12,7 @@ import PageLoading from './components/PageLoading'
 const AlmacenPage = lazy(() => import('./modules/almacen/AlmacenPage'))
 const ComprasPage = lazy(() => import('./modules/compras/ComprasPage'))
 const FinanzasPage = lazy(() => import('./modules/finanzas/FinanzasPage'))
+const ListasMaterialesPage = lazy(() => import('./modules/produccion/ListasMaterialesPage'))
 const NotFoundPage = lazy(() => import('./modules/NotFoundPage'))
 const ProduccionPage = lazy(() => import('./modules/produccion/ProduccionPage'))
 const SeguimientoPage = lazy(() => import('./modules/seguimiento/SeguimientoPage'))
@@ -58,6 +59,14 @@ function AppAutenticada() {
             element={
               <RequireArea rol="produccion">
                 <ProduccionPage />
+              </RequireArea>
+            }
+          />
+          <Route
+            path="produccion/listas-materiales"
+            element={
+              <RequireArea rol="produccion">
+                <ListasMaterialesPage />
               </RequireArea>
             }
           />

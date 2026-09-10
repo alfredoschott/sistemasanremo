@@ -2,6 +2,8 @@ import {
   Archive,
   AlertTriangle,
   ArchiveRestore,
+  Boxes,
+  ClipboardList,
   Download,
   Factory,
   Plus,
@@ -11,7 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
@@ -21,6 +23,7 @@ import Skeleton from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
 import { imprimirComoPdf } from '../../lib/imprimir'
 import { useToast } from '../../lib/ToastContext'
+import { useMateriales } from '../almacen/useMateriales'
 import { useProveedores } from '../compras/useProveedores'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import AgregarProveedorOFModal from './AgregarProveedorOFModal'
@@ -35,6 +38,7 @@ import {
   iniciarProduccion,
   quitarProveedorDeOF,
 } from './ofActions'
+import MaterialesOFModal from './MaterialesOFModal'
 import OrdenFabricacionImprimible from './OrdenFabricacionImprimible'
 import { ofVencida, proveedoresDe } from './proveedoresOF'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
@@ -45,12 +49,18 @@ const ESTADO_OF_BADGE = {
   Completada: 'bg-brand-50 text-brand-800',
 }
 
-function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir }) {
+function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriales, materiales }) {
   const [busy, setBusy] = useState(false)
   const [agregandoProveedor, setAgregandoProveedor] = useState(false)
   const toast = useToast()
   const proveedoresOF = proveedoresDe(of)
   const puedeEditarProveedores = of.estado !== 'Completada'
+  const materialesRequeridos = of.materialesRequeridos ?? []
+  const materialesFaltantes = materialesRequeridos.filter((l) => {
+    const pendiente = Math.max(0, l.cantidadPlan - (l.cantidadConsumida ?? 0))
+    const disponible = materiales.find((m) => m.id === l.materialId)?.stock ?? 0
+    return pendiente > disponible
+  }).length
 
   const runAction = async (action, message, onUndo) => {
     setBusy(true)
@@ -119,6 +129,9 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir }) {
         <div>
           <p className="text-sm text-ink-faint">{of.numeroSerie}</p>
           <h3 className="text-lg font-semibold text-ink">{of.cliente}</h3>
+          {of.modelos?.length > 0 && (
+            <p className="text-xs text-ink-faint">{of.modelos.join(', ')}</p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-1">
@@ -129,6 +142,12 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir }) {
             >
               {of.estado}
             </span>
+            <IconButton
+              icon={Boxes}
+              badge={materialesFaltantes}
+              onClick={onVerMateriales}
+              title="Materiales de la OF"
+            />
             <IconButton
               icon={Printer}
               onClick={onImprimir}
@@ -315,11 +334,13 @@ const ESTADOS_FILTRO_OF = ['Todas', 'Abierta', 'En producción', 'Completada']
 export default function ProduccionPage() {
   const { ordenes, loading } = useOrdenesFabricacion()
   const proveedores = useProveedores()
+  const { materiales } = useMateriales()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [viendoArchivadas, setViendoArchivadas] = useState(false)
   const [filtroEstado, setFiltroEstado] = useState('Todas')
   const [printingOF, setPrintingOF] = useState(null)
+  const [materialesOF, setMaterialesOF] = useState(null)
 
   const nombreProveedor = useMemo(() => {
     const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
@@ -407,6 +428,13 @@ export default function ProduccionPage() {
               {viendoArchivadas ? 'Ver activas' : `Archivadas (${archivadas.length})`}
             </Button>
           )}
+          <Link
+            to="/produccion/listas-materiales"
+            className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3.5 py-2 text-sm font-medium text-ink-dim transition-colors hover:bg-surface-2"
+          >
+            <ClipboardList className="h-4 w-4" />
+            Listas de materiales
+          </Link>
           <Button variant="secondary" onClick={exportar} className="inline-flex items-center gap-1.5">
             <Download className="h-4 w-4" />
             Exportar CSV
@@ -501,12 +529,21 @@ export default function ProduccionPage() {
             of={of}
             viendoArchivadas={viendoArchivadas}
             onImprimir={() => setPrintingOF(of)}
+            onVerMateriales={() => setMaterialesOF(of.id)}
+            materiales={materiales}
           />
         ))}
       </div>
     </div>
 
     <OrdenFabricacionImprimible of={printingOF} nombreProveedor={nombreProveedor} />
+    <MaterialesOFModal
+      // Se busca en `ordenes` (no se guarda el objeto directo) para que el
+      // modal siga viendo el consumo actualizado en vivo mientras está
+      // abierto, en vez de quedarse con la copia de cuando se abrió.
+      of={ordenes.find((of) => of.id === materialesOF) ?? null}
+      onClose={() => setMaterialesOF(null)}
+    />
     </>
   )
 }

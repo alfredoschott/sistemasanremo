@@ -216,6 +216,35 @@ export async function agregarProveedorAOF(of, proveedor) {
   await batch.commit()
 }
 
+// Agrega una línea de material a la OF que no venía en el cálculo
+// automático (ver materialesRequeridos.js) — el pedido puede llevar algo
+// distinto a la lista de materiales estándar del modelo. Arranca en 0
+// consumido; el consumo real se registra aparte, vía
+// stockActions.registrarConsumoMaterial (ese sí toca stock real).
+export async function agregarMaterialAOF(of, materialId, cantidadPlan) {
+  const requeridos = of.materialesRequeridos ?? []
+  if (requeridos.some((l) => l.materialId === materialId)) {
+    throw new Error('material-ya-agregado')
+  }
+  await updateDoc(doc(db, 'ordenesFabricacion', of.id), {
+    materialesRequeridos: [...requeridos, { materialId, cantidadPlan, cantidadConsumida: 0 }],
+  })
+}
+
+// Quita una línea de material de la OF — solo si nunca se le registró
+// consumo (si ya se sacó stock con esa referencia, quitarla perdería el
+// rastro de a qué línea pertenece; hay que revertir esos consumos primero).
+export async function quitarMaterialDeOF(of, materialId) {
+  const requeridos = of.materialesRequeridos ?? []
+  const linea = requeridos.find((l) => l.materialId === materialId)
+  if (linea?.cantidadConsumida > 0) {
+    throw new Error('material-con-consumo')
+  }
+  await updateDoc(doc(db, 'ordenesFabricacion', of.id), {
+    materialesRequeridos: requeridos.filter((l) => l.materialId !== materialId),
+  })
+}
+
 // Quita un proveedor de la lista de una OF. No borra su O.C. si ya se
 // había generado (esa se maneja aparte desde Compras) — solo deja de
 // aparecer como proveedor asignado a esta OF.
