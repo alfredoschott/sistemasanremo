@@ -10,10 +10,10 @@ import {
   Pencil,
   Plus,
   Printer,
+  ShoppingCart,
   Trash2,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -67,7 +67,6 @@ function esEsteMes(fecha) {
 }
 
 export default function ComprasPage() {
-  const navigate = useNavigate()
   const proveedoresRef = useRef(null)
   const { cotizaciones, loading: loadingCotizaciones } = useCotizacionesCotizadas()
   const { ordenes, loading: loadingOrdenes } = useOrdenesCompra()
@@ -86,8 +85,37 @@ export default function ComprasPage() {
   const [printingOC, setPrintingOC] = useState(null)
   const [viendoArchivadas, setViendoArchivadas] = useState(false)
   const [archivandoId, setArchivandoId] = useState(null)
+  const [ocSugerida, setOcSugerida] = useState(null)
   const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
+
+  // Suma lo pendiente (planeado - consumido) de materialesRequeridos entre
+  // todas las OF activas (ni completadas ni archivadas) — una OF sola ya
+  // te dice qué le falta a ella (ver MaterialesOFModal), pero si dos OF
+  // piden el mismo material por separado, aquí se ve que entre las dos no
+  // alcanza el stock aunque cada una por su lado pareciera que sí.
+  const faltantesConsolidados = useMemo(() => {
+    const pendientePorMaterial = new Map()
+    for (const of_ of ordenesFabricacion) {
+      if (of_.archivada || of_.estado === 'Completada') continue
+      for (const linea of of_.materialesRequeridos ?? []) {
+        const pendiente = Math.max(0, linea.cantidadPlan - (linea.cantidadConsumida ?? 0))
+        if (pendiente <= 0) continue
+        pendientePorMaterial.set(
+          linea.materialId,
+          (pendientePorMaterial.get(linea.materialId) ?? 0) + pendiente,
+        )
+      }
+    }
+    const stockDe = (id) => materiales.find((m) => m.id === id)?.stock ?? 0
+    return [...pendientePorMaterial.entries()]
+      .map(([materialId, pendiente]) => {
+        const disponible = stockDe(materialId)
+        return { materialId, pendiente, disponible, falta: Math.max(0, pendiente - disponible) }
+      })
+      .filter((l) => l.falta > 0)
+      .sort((a, b) => b.falta - a.falta)
+  }, [ordenesFabricacion, materiales])
 
   // Revisa una vez cargadas las O.C. si hay alguna recibida hace tiempo
   // para archivarla sola (ver autoArchivarRecibidasVencidas) — así la lista
@@ -265,11 +293,10 @@ export default function ComprasPage() {
           value={metrics.proveedoresActivos}
           onClick={() => proveedoresRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         />
-        <MetricCard
-          label="Materiales distintos"
-          value={metrics.materialesDistintos}
-          onClick={() => navigate('/almacen')}
-        />
+        {/* Sin onClick a propósito: no hay una vista que muestre exactamente
+            estos N materiales — Almacén enseña el catálogo completo, así
+            que llevar ahí sería engañoso (ver conversación del proyecto). */}
+        <MetricCard label="Materiales distintos" value={metrics.materialesDistintos} />
       </MetricsRow>
 
       <section>
@@ -342,6 +369,50 @@ export default function ComprasPage() {
           </div>
         </div>
       </section>
+
+      {faltantesConsolidados.length > 0 && (
+        <section>
+          <h2 className="mb-1 text-xl font-semibold text-ink">Faltantes entre todas las OF activas</h2>
+          <p className="mb-3 text-sm text-ink-faint">
+            Suma lo pendiente de todas las OF abiertas o en producción — si dos OF piden el mismo
+            material por separado, aquí se ve si entre las dos alcanza el stock o no.
+          </p>
+          <div className="overflow-x-auto border border-line-strong bg-surface">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
+                <tr>
+                  <th className="px-4 py-3">Material</th>
+                  <th className="px-4 py-3 text-right">Pendiente (todas las OF)</th>
+                  <th className="px-4 py-3 text-right">Disponible</th>
+                  <th className="px-4 py-3 text-right">Falta</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {faltantesConsolidados.map((linea) => (
+                  <tr key={linea.materialId}>
+                    <td className="px-4 py-3 font-medium text-ink">
+                      <MaterialNombre materialId={linea.materialId} />
+                    </td>
+                    <td className="px-4 py-3 text-right text-ink-dim">{linea.pendiente}</td>
+                    <td className="px-4 py-3 text-right text-ink-dim">{linea.disponible}</td>
+                    <td className="px-4 py-3 text-right font-medium text-red-700">{linea.falta}</td>
+                    <td className="px-4 py-3 text-right">
+                      <IconButton
+                        icon={ShoppingCart}
+                        onClick={() =>
+                          setOcSugerida({ materialId: linea.materialId, cantidad: String(linea.falta) })
+                        }
+                        title="Generar O.C. sugerida"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -677,6 +748,11 @@ export default function ComprasPage() {
         open={Boolean(ocParaEditar)}
         onClose={() => setOcParaEditar(null)}
         oc={ocParaEditar}
+      />
+      <NuevaOrdenCompraModal
+        open={Boolean(ocSugerida)}
+        onClose={() => setOcSugerida(null)}
+        lineaInicial={ocSugerida}
       />
 
       <Modal

@@ -1,4 +1,4 @@
-import { AlertTriangle, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { AlertTriangle, Plus, RefreshCw, ShoppingCart, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import Button from '../../components/Button'
 import IconButton from '../../components/IconButton'
@@ -10,7 +10,7 @@ import MaterialPicker from '../almacen/MaterialPicker'
 import { registrarConsumoMaterial, revertirConsumoMaterial } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
-import { agregarMaterialAOF, quitarMaterialDeOF } from './ofActions'
+import { agregarMaterialAOF, quitarMaterialDeOF, recalcularMaterialesDeOF } from './ofActions'
 
 // Materiales requeridos de una OF: comparados en vivo contra el stock de
 // Almacén (para saber qué falta comprar), con consumo parcial registrado
@@ -34,8 +34,21 @@ export default function MaterialesOFModal({ of, onClose }) {
 
   const [ocSugerida, setOcSugerida] = useState(null)
   const [quitandoId, setQuitandoId] = useState(null)
+  const [recalculando, setRecalculando] = useState(false)
 
   if (!of) return null
+
+  const recalcular = async () => {
+    setRecalculando(true)
+    try {
+      await recalcularMaterialesDeOF(of)
+      toast('Materiales recalculados desde la cotización')
+    } catch {
+      toast('No se pudo recalcular. Intenta de nuevo.', 'error')
+    } finally {
+      setRecalculando(false)
+    }
+  }
 
   const requeridos = of.materialesRequeridos ?? []
   const nombreMaterial = (id) => materiales.find((m) => m.id === id)?.nombre ?? ''
@@ -136,6 +149,19 @@ export default function MaterialesOFModal({ of, onClose }) {
         subtitle={`${of.numeroSerie} — ${of.cliente}${of.modelos?.length ? ` — ${of.modelos.join(', ')}` : ''}`}
         maxWidth="max-w-xl"
       >
+        <div className="mb-2 flex justify-end">
+          <button
+            type="button"
+            onClick={recalcular}
+            disabled={recalculando}
+            title="Si la cotización cambió (modelo o cantidad) después de abrir esta OF, esto vuelve a calcular los materiales — sin perder el consumo ya registrado."
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${recalculando ? 'animate-spin' : ''}`} />
+            {recalculando ? 'Recalculando…' : 'Recalcular desde la cotización'}
+          </button>
+        </div>
+
         {requeridos.length === 0 ? (
           <p className="text-sm text-ink-faint">
             Este modelo no tiene lista de materiales capturada todavía — agrégalos a mano abajo.

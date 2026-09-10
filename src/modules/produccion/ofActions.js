@@ -14,6 +14,7 @@ import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
+import { calcularMaterialesRequeridos } from './materialesRequeridos'
 import { proveedoresDe } from './proveedoresOF'
 
 export async function iniciarProduccion(of) {
@@ -242,6 +243,40 @@ export async function quitarMaterialDeOF(of, materialId) {
   }
   await updateDoc(doc(db, 'ordenesFabricacion', of.id), {
     materialesRequeridos: requeridos.filter((l) => l.materialId !== materialId),
+  })
+}
+
+// materialesRequeridos se calcula UNA vez al abrir la OF (ver
+// AbrirOFModal) y de ahí en adelante es una copia propia, no una
+// referencia viva — si después se edita la cotización (otro modelo, otra
+// cantidad) o la LDM del modelo, la OF no se entera sola. Este botón
+// vuelve a correr el mismo cálculo con los datos actuales y lo reemplaza,
+// pero conservando el consumo ya registrado por material (nunca se pierde
+// la trazabilidad aunque el plan cambie) — incluso para materiales que ya
+// no aparecen en el nuevo cálculo, si tienen consumo se quedan.
+export async function recalcularMaterialesDeOF(of) {
+  const [cotizacionSnap, listasSnap] = await Promise.all([
+    getDoc(doc(db, 'cotizaciones', of.cotizacionId)),
+    getDocs(collection(db, 'listasMateriales')),
+  ])
+  const items = cotizacionSnap.data()?.items ?? []
+  const listas = listasSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  const nuevos = calcularMaterialesRequeridos(items, listas)
+
+  const anteriores = of.materialesRequeridos ?? []
+  const consumidoPorMaterial = new Map(anteriores.map((l) => [l.materialId, l.cantidadConsumida ?? 0]))
+  const combinados = nuevos.map((l) => ({
+    ...l,
+    cantidadConsumida: consumidoPorMaterial.get(l.materialId) ?? 0,
+  }))
+
+  const idsNuevos = new Set(nuevos.map((l) => l.materialId))
+  const conservados = anteriores.filter(
+    (l) => !idsNuevos.has(l.materialId) && (l.cantidadConsumida ?? 0) > 0,
+  )
+
+  await updateDoc(doc(db, 'ordenesFabricacion', of.id), {
+    materialesRequeridos: [...combinados, ...conservados],
   })
 }
 
