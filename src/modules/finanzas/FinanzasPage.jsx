@@ -3,6 +3,7 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Check,
+  ChevronDown,
   Download,
   Undo2,
   Wallet,
@@ -13,6 +14,7 @@ import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { exportCsv } from '../../lib/exportCsv'
+import { claveMes, nombreMes } from '../../lib/meses'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
@@ -56,6 +58,48 @@ function agruparPorDeuda(lista, claveDe, montoDe) {
     grupos.set(clave, previo)
   }
   return [...grupos.values()].sort((a, b) => b.monto - a.monto)
+}
+
+// Agrupa una lista de pendientes (ya viene ordenada por vencimiento) en
+// bloques por mes, para no mostrar todo de golpe en una sola lista larga.
+function agruparPorMes(lista, montoDe) {
+  const grupos = new Map()
+  for (const item of lista) {
+    const ms = item.vencimiento
+    const clave = ms ? claveMes(ms) : 'sin-fecha'
+    const previo = grupos.get(clave) ?? {
+      clave,
+      label: ms ? nombreMes(ms) : 'Sin fecha de vencimiento',
+      items: [],
+      total: 0,
+    }
+    previo.items.push(item)
+    previo.total += montoDe(item) ?? 0
+    grupos.set(clave, previo)
+  }
+  return [...grupos.values()]
+}
+
+function GrupoMes({ label, total, count, defaultOpen, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="border-b border-line last:border-b-0">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 bg-surface-2 px-4 py-2 text-left"
+      >
+        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+          <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} />
+          {label}
+          <span className="font-normal normal-case text-ink-faint">
+            ({count})
+          </span>
+        </span>
+        <span className="text-xs font-semibold text-ink">{currency.format(total)}</span>
+      </button>
+      {open && <ul className="stagger divide-y divide-line">{children}</ul>}
+    </div>
+  )
 }
 
 export default function FinanzasPage() {
@@ -120,6 +164,26 @@ export default function FinanzasPage() {
       .reduce((sum, o) => sum + (o.montoTotal ?? 0), 0)
     return { totalCobrar, totalPagar, saldoProyectado30: cobrarPronto - pagarPronto }
   }, [porCobrar, porPagar])
+
+  // Mes actual y siguiente empiezan expandidos; el resto (más lejano o ya
+  // vencido de meses pasados) empieza colapsado para no saturar la pantalla.
+  const mesActualClave = useMemo(() => claveMes(Date.now()), [])
+  const mesSiguienteClave = useMemo(() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() + 1)
+    return claveMes(d.getTime())
+  }, [])
+  const abiertoPorDefecto = (clave) =>
+    clave === mesActualClave || clave === mesSiguienteClave || clave === 'sin-fecha'
+
+  const gruposPorCobrar = useMemo(
+    () => agruparPorMes(porCobrar, (c) => c.monto),
+    [porCobrar],
+  )
+  const gruposPorPagar = useMemo(
+    () => agruparPorMes(porPagar, (o) => o.montoTotal),
+    [porPagar],
+  )
 
   const desglosePorCliente = useMemo(
     () => agruparPorDeuda(porCobrar, (c) => c.cliente, (c) => c.monto),
@@ -284,37 +348,45 @@ export default function FinanzasPage() {
             ) : porCobrar.length === 0 ? (
               <EmptyState icon={Wallet} title="Nada pendiente de cobro" />
             ) : (
-              <ul className="stagger divide-y divide-line">
-                {porCobrar.map((c) => {
-                  const vencida = c.vencimiento && c.vencimiento < Date.now()
-                  return (
-                    <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink">{c.cliente}</p>
-                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
-                          {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                          {textoVencimiento(c.vencimiento)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-ink">
-                          {currency.format(c.monto ?? 0)}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          loading={busyId === c.id}
-                          onClick={() => accionCobrar(c)}
-                          className="inline-flex items-center gap-1"
-                        >
-                          {busyId !== c.id && <Check className="h-3.5 w-3.5" />}
-                          Cobrado
-                        </Button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+              gruposPorCobrar.map((g) => (
+                <GrupoMes
+                  key={g.clave}
+                  label={g.label}
+                  total={g.total}
+                  count={g.items.length}
+                  defaultOpen={abiertoPorDefecto(g.clave)}
+                >
+                  {g.items.map((c) => {
+                    const vencida = c.vencimiento && c.vencimiento < Date.now()
+                    return (
+                      <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink">{c.cliente}</p>
+                          <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
+                            {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
+                            {textoVencimiento(c.vencimiento)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="font-medium text-ink">
+                            {currency.format(c.monto ?? 0)}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            loading={busyId === c.id}
+                            onClick={() => accionCobrar(c)}
+                            className="inline-flex items-center gap-1"
+                          >
+                            {busyId !== c.id && <Check className="h-3.5 w-3.5" />}
+                            Cobrado
+                          </Button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </GrupoMes>
+              ))
             )}
           </div>
         </section>
@@ -373,39 +445,47 @@ export default function FinanzasPage() {
             ) : porPagar.length === 0 ? (
               <EmptyState icon={Wallet} title="Nada pendiente de pago" />
             ) : (
-              <ul className="stagger divide-y divide-line">
-                {porPagar.map((o) => {
-                  const vencida = o.vencimiento && o.vencimiento < Date.now()
-                  return (
-                    <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink">
-                          <ProveedorNombre proveedorId={o.proveedorId} />
-                        </p>
-                        <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
-                          {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                          {textoVencimiento(o.vencimiento)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-ink">
-                          {currency.format(o.montoTotal ?? 0)}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          loading={busyId === o.id}
-                          onClick={() => accionPagar(o)}
-                          className="inline-flex items-center gap-1"
-                        >
-                          {busyId !== o.id && <Check className="h-3.5 w-3.5" />}
-                          Pagado
-                        </Button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+              gruposPorPagar.map((g) => (
+                <GrupoMes
+                  key={g.clave}
+                  label={g.label}
+                  total={g.total}
+                  count={g.items.length}
+                  defaultOpen={abiertoPorDefecto(g.clave)}
+                >
+                  {g.items.map((o) => {
+                    const vencida = o.vencimiento && o.vencimiento < Date.now()
+                    return (
+                      <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink">
+                            <ProveedorNombre proveedorId={o.proveedorId} />
+                          </p>
+                          <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
+                            {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
+                            {textoVencimiento(o.vencimiento)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="font-medium text-ink">
+                            {currency.format(o.montoTotal ?? 0)}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            loading={busyId === o.id}
+                            onClick={() => accionPagar(o)}
+                            className="inline-flex items-center gap-1"
+                          >
+                            {busyId !== o.id && <Check className="h-3.5 w-3.5" />}
+                            Pagado
+                          </Button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </GrupoMes>
+              ))
             )}
           </div>
         </section>

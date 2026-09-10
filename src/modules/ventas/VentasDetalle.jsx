@@ -3,10 +3,13 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
+import DocumentoMembrete from '../../components/DocumentoMembrete'
 import EstadoBadge from '../../components/EstadoBadge'
 import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
+import { currency } from '../../lib/currency'
+import { folioCorto, formatoFechaLarga, imprimirComoPdf } from '../../lib/imprimir'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
 import {
@@ -15,11 +18,16 @@ import {
   duplicarCotizacion,
   eliminarCotizacion,
 } from './cotizacionActions'
-import { currency } from '../../lib/currency'
 import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizacion } from './useCotizacion'
 
+// El id de Firestore es ilegible como folio de un documento impreso — si ya
+// hay OF (numeroSerie) usamos ese, que la gente de Sanremo ya reconoce; si
+// no, un folio corto derivado del id en vez del string completo.
+function folioDe(cotizacion) {
+  return cotizacion.numeroSerie ?? folioCorto('COT', cotizacion.id)
+}
 
 export default function VentasDetalle() {
   const { id } = useParams()
@@ -103,60 +111,77 @@ export default function VentasDetalle() {
         Volver a cotizaciones
       </Link>
 
-      <div className="mt-3 rounded-lg border border-line bg-surface p-6 shadow-sm">
+      <div className="mt-3 rounded-lg border border-line bg-surface p-6 shadow-sm print:rounded-none print:border-0 print:p-0 print:shadow-none">
+        {/* Membrete: solo aparece al imprimir/exportar a PDF — en pantalla ya
+            se ve la marca en el topbar, no hace falta repetirla aquí. */}
+        <DocumentoMembrete
+          className="mb-6 hidden print:flex"
+          titulo="Cotización"
+          folio={folioDe(cotizacion)}
+          fecha={formatoFechaLarga(cotizacion.fecha)}
+        />
+
         <div className="mb-6 flex items-start justify-between">
           <div>
             <h1 className="text-xl font-semibold text-ink">{cotizacion.cliente}</h1>
             <p className="text-sm text-ink-faint">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
-          <div className="no-print flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            {/* Fuera de no-print a propósito: el estado también debe verse
+                en el PDF, no solo en pantalla. */}
             <EstadoBadge estado={cotizacion.estado} />
-            <div className="flex items-center gap-1 border-r border-line pr-2">
-              <IconButton icon={Printer} onClick={() => window.print()} title="Imprimir" />
-              <IconButton
-                icon={Copy}
-                onClick={duplicar}
-                disabled={duplicando}
-                title="Duplicar cotización"
-              />
-              <IconButton
-                icon={Link2}
-                onClick={copiarLinkSeguimiento}
-                title="Copiar link de seguimiento para el cliente"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              {puedeEditar && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="inline-flex items-center gap-1"
-                  onClick={() => setEditOpen(true)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Editar
-                </Button>
-              )}
-              {puedeCancelar && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="inline-flex items-center gap-1"
-                  onClick={() => setConfirmCancelOpen(true)}
-                >
-                  <Ban className="h-3.5 w-3.5" />
-                  Cancelar
-                </Button>
-              )}
-              {puedeEliminar && (
+            <div className="no-print flex items-center gap-3">
+              <div className="flex items-center gap-1 border-r border-line pr-2">
                 <IconButton
-                  icon={Trash2}
-                  variant="danger"
-                  onClick={eliminar}
-                  disabled={eliminando}
-                  title="Eliminar cotización"
+                  icon={Printer}
+                  onClick={() => imprimirComoPdf(`Cotizacion ${cotizacion.cliente} ${folioDe(cotizacion)}`)}
+                  title="Imprimir / guardar como PDF"
                 />
-              )}
+                <IconButton
+                  icon={Copy}
+                  onClick={duplicar}
+                  disabled={duplicando}
+                  title="Duplicar cotización"
+                />
+                <IconButton
+                  icon={Link2}
+                  onClick={copiarLinkSeguimiento}
+                  title="Copiar link de seguimiento para el cliente"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {puedeEditar && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="inline-flex items-center gap-1"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </Button>
+                )}
+                {puedeCancelar && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="inline-flex items-center gap-1"
+                    onClick={() => setConfirmCancelOpen(true)}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    Cancelar
+                  </Button>
+                )}
+                {puedeEliminar && (
+                  <IconButton
+                    icon={Trash2}
+                    variant="danger"
+                    onClick={eliminar}
+                    disabled={eliminando}
+                    title="Eliminar cotización"
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,14 @@
-import { AlertTriangle, ChevronRight, Download, FileText, Plus, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
+  Download,
+  FileText,
+  Plus,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -13,11 +22,17 @@ import { ESTADOS_COTIZACION } from '../../lib/estados'
 import { estaVencido } from '../../lib/plazos'
 import { useToast } from '../../lib/ToastContext'
 import { currency } from '../../lib/currency'
-import { eliminarCotizacion } from './cotizacionActions'
+import {
+  archivarCotizacion,
+  autoArchivarVencidas,
+  desarchivarCotizacion,
+  eliminarCotizacion,
+} from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
 
 const PUEDE_ELIMINAR = new Set(['Cotizado', 'Cancelado'])
+const PUEDE_ARCHIVAR = new Set(['Facturado', 'Cancelado'])
 
 const ESTADOS_FILTRO = ['Todos', ...ESTADOS_COTIZACION, 'Cancelado']
 const PAGO_FILTRO = [
@@ -34,8 +49,18 @@ export default function VentasList() {
   const [filtroEstado, setFiltroEstado] = useState('Todos')
   const [filtroPago, setFiltroPago] = useState('todas')
   const [eliminandoId, setEliminandoId] = useState(null)
+  const [archivandoId, setArchivandoId] = useState(null)
+  const [viendoArchivadas, setViendoArchivadas] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
+
+  // Revisa una vez cargadas las cotizaciones si hay alguna ya cerrada desde
+  // hace tiempo para archivarla sola (ver autoArchivarVencidas) — así la
+  // lista no se llena de pedidos viejos aunque nadie se acuerde de archivar.
+  useEffect(() => {
+    if (loading) return
+    autoArchivarVencidas(cotizaciones).catch(() => {})
+  }, [loading, cotizaciones])
 
   const eliminar = (e, cot) => {
     e.stopPropagation()
@@ -46,6 +71,28 @@ export default function VentasList() {
       .then(() => toast(`Cotización de ${cot.cliente} eliminada`))
       .catch(() => toast('No se pudo eliminar. Intenta de nuevo.', 'error'))
       .finally(() => setEliminandoId(null))
+  }
+
+  const archivar = (e, cot) => {
+    e.stopPropagation()
+    setArchivandoId(cot.id)
+    archivarCotizacion(cot)
+      .then(() =>
+        toast(`Cotización de ${cot.cliente} archivada`, 'success', {
+          onUndo: () => desarchivarCotizacion(cot),
+        }),
+      )
+      .catch(() => toast('No se pudo archivar. Intenta de nuevo.', 'error'))
+      .finally(() => setArchivandoId(null))
+  }
+
+  const desarchivar = (e, cot) => {
+    e.stopPropagation()
+    setArchivandoId(cot.id)
+    desarchivarCotizacion(cot)
+      .then(() => toast(`Cotización de ${cot.cliente} restaurada`))
+      .catch(() => toast('No se pudo restaurar. Intenta de nuevo.', 'error'))
+      .finally(() => setArchivandoId(null))
   }
 
   const metrics = useMemo(() => {
@@ -62,13 +109,19 @@ export default function VentasList() {
     return { cotizado, enProduccion, facturado, anticipos }
   }, [cotizaciones])
 
+  const archivadas = useMemo(() => cotizaciones.filter((c) => c.archivada), [cotizaciones])
+
+  // Facturado/Cancelado se hunden al final (en vez de mezclarse con las
+  // activas) mientras no se archivan a mano o solas a los 30 días.
   const filtradas = useMemo(
     () =>
       cotizaciones
+        .filter((c) => Boolean(c.archivada) === viendoArchivadas)
         .filter((c) => c.cliente?.toLowerCase().includes(search.toLowerCase().trim()))
         .filter((c) => filtroEstado === 'Todos' || c.estado === filtroEstado)
-        .filter((c) => filtroPago === 'todas' || c.condicionPago === filtroPago),
-    [cotizaciones, search, filtroEstado, filtroPago],
+        .filter((c) => filtroPago === 'todas' || c.condicionPago === filtroPago)
+        .sort((a, b) => (PUEDE_ARCHIVAR.has(a.estado) ? 1 : 0) - (PUEDE_ARCHIVAR.has(b.estado) ? 1 : 0)),
+    [cotizaciones, search, filtroEstado, filtroPago, viendoArchivadas],
   )
 
   const hayFiltrosActivos = filtroEstado !== 'Todos' || filtroPago !== 'todas' || Boolean(search)
@@ -98,9 +151,19 @@ export default function VentasList() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-ink">Cotizaciones</h1>
-          <p className="text-sm text-ink-faint">{cotizaciones.length} en total</p>
+          <p className="text-sm text-ink-faint">{cotizaciones.length - archivadas.length} en total</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {(archivadas.length > 0 || viendoArchivadas) && (
+            <Button
+              variant="secondary"
+              onClick={() => setViendoArchivadas((v) => !v)}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Archive className="h-4 w-4" />
+              {viendoArchivadas ? 'Ver activas' : `Archivadas (${archivadas.length})`}
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={exportar}
@@ -225,15 +288,34 @@ export default function VentasList() {
                   <EstadoBadge estado={cot.estado} />
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {PUEDE_ELIMINAR.has(cot.estado) && (
-                    <IconButton
-                      icon={Trash2}
-                      variant="danger"
-                      disabled={eliminandoId === cot.id}
-                      onClick={(e) => eliminar(e, cot)}
-                      title="Eliminar cotización"
-                    />
-                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    {viendoArchivadas ? (
+                      <IconButton
+                        icon={ArchiveRestore}
+                        disabled={archivandoId === cot.id}
+                        onClick={(e) => desarchivar(e, cot)}
+                        title="Restaurar a la lista principal"
+                      />
+                    ) : (
+                      PUEDE_ARCHIVAR.has(cot.estado) && (
+                        <IconButton
+                          icon={Archive}
+                          disabled={archivandoId === cot.id}
+                          onClick={(e) => archivar(e, cot)}
+                          title="Archivar"
+                        />
+                      )
+                    )}
+                    {PUEDE_ELIMINAR.has(cot.estado) && (
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        disabled={eliminandoId === cot.id}
+                        onClick={(e) => eliminar(e, cot)}
+                        title="Eliminar cotización"
+                      />
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -278,15 +360,34 @@ export default function VentasList() {
               <div className="flex shrink-0 items-center gap-1">
                 <div className="flex flex-col items-end gap-1.5">
                   <EstadoBadge estado={cot.estado} />
-                  {PUEDE_ELIMINAR.has(cot.estado) && (
-                    <IconButton
-                      icon={Trash2}
-                      variant="danger"
-                      disabled={eliminandoId === cot.id}
-                      onClick={(e) => eliminar(e, cot)}
-                      title="Eliminar cotización"
-                    />
-                  )}
+                  <div className="flex items-center gap-1">
+                    {viendoArchivadas ? (
+                      <IconButton
+                        icon={ArchiveRestore}
+                        disabled={archivandoId === cot.id}
+                        onClick={(e) => desarchivar(e, cot)}
+                        title="Restaurar a la lista principal"
+                      />
+                    ) : (
+                      PUEDE_ARCHIVAR.has(cot.estado) && (
+                        <IconButton
+                          icon={Archive}
+                          disabled={archivandoId === cot.id}
+                          onClick={(e) => archivar(e, cot)}
+                          title="Archivar"
+                        />
+                      )
+                    )}
+                    {PUEDE_ELIMINAR.has(cot.estado) && (
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        disabled={eliminandoId === cot.id}
+                        onClick={(e) => eliminar(e, cot)}
+                        title="Eliminar cotización"
+                      />
+                    )}
+                  </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-line-strong" />
               </div>

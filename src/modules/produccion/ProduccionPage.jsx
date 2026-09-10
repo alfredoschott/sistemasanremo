@@ -1,5 +1,16 @@
-import { Archive, AlertTriangle, ArchiveRestore, Download, Factory, Plus, Trash2, Undo2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import {
+  Archive,
+  AlertTriangle,
+  ArchiveRestore,
+  Download,
+  Factory,
+  Plus,
+  Printer,
+  Trash2,
+  Undo2,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -8,6 +19,7 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import SearchInput from '../../components/SearchInput'
 import Skeleton from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
+import { imprimirComoPdf } from '../../lib/imprimir'
 import { useToast } from '../../lib/ToastContext'
 import { useProveedores } from '../compras/useProveedores'
 import ProveedorNombre from '../compras/ProveedorNombre'
@@ -23,6 +35,7 @@ import {
   iniciarProduccion,
   quitarProveedorDeOF,
 } from './ofActions'
+import OrdenFabricacionImprimible from './OrdenFabricacionImprimible'
 import { ofVencida, proveedoresDe } from './proveedoresOF'
 import { useOrdenesFabricacion } from './useOrdenesFabricacion'
 
@@ -32,7 +45,7 @@ const ESTADO_OF_BADGE = {
   Completada: 'bg-brand-50 text-brand-800',
 }
 
-function OrdenFabricacionCard({ of, viendoArchivadas }) {
+function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir }) {
   const [busy, setBusy] = useState(false)
   const [agregandoProveedor, setAgregandoProveedor] = useState(false)
   const toast = useToast()
@@ -53,12 +66,12 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
 
   const archivar = () =>
     runAction(
-      () => archivarOF(of.id),
+      () => archivarOF(of),
       `${of.numeroSerie} archivada`,
-      () => desarchivarOF(of.id),
+      () => desarchivarOF(of),
     )
 
-  const desarchivar = () => runAction(() => desarchivarOF(of.id), `${of.numeroSerie} restaurada`)
+  const desarchivar = () => runAction(() => desarchivarOF(of), `${of.numeroSerie} restaurada`)
 
   const quitarProveedor = (index) => {
     if (!window.confirm('¿Quitar este proveedor de la OF? Si ya tenía una O.C. generada, esa no se toca.'))
@@ -116,6 +129,11 @@ function OrdenFabricacionCard({ of, viendoArchivadas }) {
             >
               {of.estado}
             </span>
+            <IconButton
+              icon={Printer}
+              onClick={onImprimir}
+              title="Imprimir / guardar como PDF"
+            />
             {of.estado !== 'Completada' && (
               <IconButton
                 icon={Trash2}
@@ -301,17 +319,31 @@ export default function ProduccionPage() {
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [viendoArchivadas, setViendoArchivadas] = useState(false)
   const [filtroEstado, setFiltroEstado] = useState('Todas')
+  const [printingOF, setPrintingOF] = useState(null)
 
   const nombreProveedor = useMemo(() => {
     const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
     return (id) => map.get(id) ?? ''
   }, [proveedores])
 
+  // Al mandar imprimir una OF, el documento imprimible (oculto en
+  // pantalla, ver OrdenFabricacionImprimible) ya está montado con esa OF
+  // porque printingOF cambió — solo falta abrir el diálogo de impresión.
+  useEffect(() => {
+    if (!printingOF) return
+    imprimirComoPdf(`OF ${printingOF.cliente} ${printingOF.numeroSerie}`)
+    const limpiar = () => setPrintingOF(null)
+    window.addEventListener('afterprint', limpiar, { once: true })
+    return () => window.removeEventListener('afterprint', limpiar)
+  }, [printingOF])
+
   const archivadas = useMemo(() => ordenes.filter((of) => of.archivada), [ordenes])
 
   // Con varias OF abiertas, en producción y completadas a la vez, mezcladas
   // solo por fecha de creación, las activas se pierden entre las que ya
-  // terminaron — por eso el filtro por estado, igual que en Ventas.
+  // terminaron — por eso el filtro por estado, igual que en Ventas. Y las
+  // ya "Completada" se hunden al final de su grupo (en vez de eliminarse
+  // por completo requieren archivarse a mano o solas a los 30 días).
   const ordenesFiltradas = useMemo(
     () =>
       ordenes
@@ -320,7 +352,8 @@ export default function ProduccionPage() {
         .filter((of) => {
           const texto = `${of.cliente ?? ''} ${of.numeroSerie ?? ''}`.toLowerCase()
           return texto.includes(search.toLowerCase().trim())
-        }),
+        })
+        .sort((a, b) => (a.estado === 'Completada' ? 1 : 0) - (b.estado === 'Completada' ? 1 : 0)),
     [ordenes, search, viendoArchivadas, filtroEstado],
   )
 
@@ -359,7 +392,8 @@ export default function ProduccionPage() {
   }, [ordenes])
 
   return (
-    <div>
+    <>
+    <div className={printingOF ? 'print:hidden' : ''}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-ink">Órdenes de fabricación</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -462,9 +496,17 @@ export default function ProduccionPage() {
 
       <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ordenesFiltradas.map((of) => (
-          <OrdenFabricacionCard key={of.id} of={of} viendoArchivadas={viendoArchivadas} />
+          <OrdenFabricacionCard
+            key={of.id}
+            of={of}
+            viendoArchivadas={viendoArchivadas}
+            onImprimir={() => setPrintingOF(of)}
+          />
         ))}
       </div>
     </div>
+
+    <OrdenFabricacionImprimible of={printingOF} nombreProveedor={nombreProveedor} />
+    </>
   )
 }

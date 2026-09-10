@@ -2,12 +2,14 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   query,
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
@@ -50,6 +52,53 @@ export async function eliminarCotizacion(cotizacion) {
   await Promise.all(notasSnap.docs.map((d) => deleteDoc(d.ref)))
   await deleteDoc(doc(db, 'cotizaciones', cotizacion.id))
   eliminarSeguimiento(cotizacion.id)
+}
+
+// Archivar solo oculta la cotización de la lista principal (para no
+// amontonar la lista con pedidos viejos ya cerrados) — el registro se
+// conserva. También archiva su OF asociada (si tiene), porque si no
+// desaparece de Ventas pero se sigue amontonando en Producción.
+export async function archivarCotizacion(cotizacion) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'cotizaciones', cotizacion.id), {
+    archivada: true,
+    archivadaEn: serverTimestamp(),
+  })
+  const ofSnap = await getDocs(
+    query(collection(db, 'ordenesFabricacion'), where('cotizacionId', '==', cotizacion.id)),
+  )
+  ofSnap.forEach((d) => batch.update(d.ref, { archivada: true, archivadaEn: serverTimestamp() }))
+  await batch.commit()
+}
+
+export async function desarchivarCotizacion(cotizacion) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'cotizaciones', cotizacion.id), {
+    archivada: false,
+    archivadaEn: deleteField(),
+  })
+  const ofSnap = await getDocs(
+    query(collection(db, 'ordenesFabricacion'), where('cotizacionId', '==', cotizacion.id)),
+  )
+  ofSnap.forEach((d) => batch.update(d.ref, { archivada: false, archivadaEn: deleteField() }))
+  await batch.commit()
+}
+
+const DIA_MS = 24 * 60 * 60 * 1000
+const DIAS_AUTO_ARCHIVO = 30
+
+// Corre desde VentasList en cada carga: archiva solas las cotizaciones ya
+// cerradas (Facturado/Cancelado) que llevan más de DIAS_AUTO_ARCHIVO sin
+// archivarse a mano, para que nadie tenga que acordarse de hacerlo. Las
+// activas (Cotizado, OF abierta, Producción) nunca se tocan aquí.
+export async function autoArchivarVencidas(cotizaciones) {
+  const limite = Date.now() - DIAS_AUTO_ARCHIVO * DIA_MS
+  const candidatas = cotizaciones.filter((c) => {
+    if (c.archivada || !['Facturado', 'Cancelado'].includes(c.estado)) return false
+    const ms = (c.fechaFacturado ?? c.fecha)?.toMillis?.()
+    return Boolean(ms) && ms < limite
+  })
+  await Promise.all(candidatas.map((c) => archivarCotizacion(c)))
 }
 
 export async function duplicarCotizacion(cotizacion) {

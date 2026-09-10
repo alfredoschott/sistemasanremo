@@ -133,19 +133,36 @@ export async function deshacerCompletarYFacturar(of) {
 
 // Archivar solo oculta la OF completada de la vista principal (para no
 // amontonar la lista con pedidos viejos) — el registro y su auditoría
-// se conservan, a diferencia de eliminar.
-export async function archivarOF(ofId) {
-  await updateDoc(doc(db, 'ordenesFabricacion', ofId), {
+// se conservan, a diferencia de eliminar. También archiva la cotización
+// asociada, así no se queda amontonando la lista de Ventas por separado.
+export async function archivarOF(of) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'ordenesFabricacion', of.id), {
     archivada: true,
     archivadaEn: serverTimestamp(),
   })
+  if (of.cotizacionId) {
+    batch.update(doc(db, 'cotizaciones', of.cotizacionId), {
+      archivada: true,
+      archivadaEn: serverTimestamp(),
+    })
+  }
+  await batch.commit()
 }
 
-export async function desarchivarOF(ofId) {
-  await updateDoc(doc(db, 'ordenesFabricacion', ofId), {
+export async function desarchivarOF(of) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, 'ordenesFabricacion', of.id), {
     archivada: false,
     archivadaEn: deleteField(),
   })
+  if (of.cotizacionId) {
+    batch.update(doc(db, 'cotizaciones', of.cotizacionId), {
+      archivada: false,
+      archivadaEn: deleteField(),
+    })
+  }
+  await batch.commit()
 }
 
 // Eliminar una OF regresa la cotización relacionada a "Cotizado" (y borra

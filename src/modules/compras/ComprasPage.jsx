@@ -1,6 +1,18 @@
 import { deleteDoc, doc } from 'firebase/firestore'
-import { AlertTriangle, ClipboardList, Download, PackageCheck, Paperclip, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  ClipboardList,
+  Download,
+  PackageCheck,
+  Paperclip,
+  Pencil,
+  Plus,
+  Printer,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import Adjuntos from '../../components/Adjuntos'
 import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
@@ -9,17 +21,20 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import Modal from '../../components/Modal'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
-import { db } from '../../lib/firebase'
 import { currency } from '../../lib/currency'
+import { db } from '../../lib/firebase'
+import { exportCsv } from '../../lib/exportCsv'
+import { folioCorto, imprimirComoPdf } from '../../lib/imprimir'
+import { estaVencido } from '../../lib/plazos'
+import { useToast } from '../../lib/ToastContext'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
 import { useMateriales } from '../almacen/useMateriales'
 import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
-import { exportCsv } from '../../lib/exportCsv'
-import { estaVencido } from '../../lib/plazos'
-import { useToast } from '../../lib/ToastContext'
 import AbrirOFModal from './AbrirOFModal'
 import NuevaOrdenCompraModal from './NuevaOrdenCompraModal'
+import { archivarOC, autoArchivarRecibidasVencidas, desarchivarOC } from './ocActions'
+import OrdenCompraImprimible from './OrdenCompraImprimible'
 import ProveedoresPanel from './ProveedoresPanel'
 import ProveedorNombre from './ProveedorNombre'
 import { useCotizacionesCotizadas } from './useCotizacionesCotizadas'
@@ -65,8 +80,19 @@ export default function ComprasPage() {
   const [eliminandoId, setEliminandoId] = useState(null)
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todas')
+  const [printingOC, setPrintingOC] = useState(null)
+  const [viendoArchivadas, setViendoArchivadas] = useState(false)
+  const [archivandoId, setArchivandoId] = useState(null)
   const ocDocumentos = ordenes.find((o) => o.id === ocDocumentosId) ?? null
   const toast = useToast()
+
+  // Revisa una vez cargadas las O.C. si hay alguna recibida hace tiempo
+  // para archivarla sola (ver autoArchivarRecibidasVencidas) — así la lista
+  // no se llena de compras viejas aunque nadie se acuerde de archivar.
+  useEffect(() => {
+    if (loadingOrdenes) return
+    autoArchivarRecibidasVencidas(ordenes).catch(() => {})
+  }, [loadingOrdenes, ordenes])
 
   const nombreProveedor = useMemo(() => {
     const map = new Map(proveedores.map((p) => [p.id, p.nombre]))
@@ -83,14 +109,37 @@ export default function ComprasPage() {
     return (ofId) => map.get(ofId) ?? null
   }, [ordenesFabricacion])
 
+  // Al mandar imprimir una O.C., el documento imprimible (oculto en
+  // pantalla, ver OrdenCompraImprimible) ya está montado con esa O.C.
+  // porque printingOC cambió — solo falta abrir el diálogo de impresión.
+  // El nombre del archivo usa el número de la OF cuando la O.C. viene de
+  // una (así coincide con el folio que ya reconocen en planta) y si no
+  // cae al folio corto de la O.C. — nunca al id de Firestore, ilegible.
+  useEffect(() => {
+    if (!printingOC) return
+    const referencia = printingOC.ofId
+      ? (numeroSerieOF(printingOC.ofId) ?? folioCorto('OC', printingOC.id))
+      : folioCorto('OC', printingOC.id)
+    imprimirComoPdf(`OC ${nombreProveedor(printingOC.proveedorId)} ${referencia}`)
+    const limpiar = () => setPrintingOC(null)
+    window.addEventListener('afterprint', limpiar, { once: true })
+    return () => window.removeEventListener('afterprint', limpiar)
+  }, [printingOC, nombreProveedor, numeroSerieOF])
+
+  const archivadas = useMemo(() => ordenes.filter((oc) => oc.archivada), [ordenes])
+
+  // Las "recibida" se hunden al final (en vez de mezclarse con las
+  // pendientes) mientras no se archivan a mano o solas a los 30 días.
   const ordenesFiltradas = useMemo(
     () =>
       ordenes
+        .filter((oc) => Boolean(oc.archivada) === viendoArchivadas)
         .filter((oc) => filtroEstado === 'todas' || oc.estado === filtroEstado)
         .filter((oc) =>
           nombreProveedor(oc.proveedorId).toLowerCase().includes(search.toLowerCase().trim()),
-        ),
-    [ordenes, search, filtroEstado, nombreProveedor],
+        )
+        .sort((a, b) => (a.estado === 'recibida' ? 1 : 0) - (b.estado === 'recibida' ? 1 : 0)),
+    [ordenes, search, filtroEstado, nombreProveedor, viendoArchivadas],
   )
 
   const metrics = useMemo(() => {
@@ -168,8 +217,33 @@ export default function ComprasPage() {
     }
   }
 
+  const archivar = async (oc) => {
+    setArchivandoId(oc.id)
+    try {
+      await archivarOC(oc)
+      toast('O.C. archivada', 'success', { onUndo: () => desarchivarOC(oc) })
+    } catch {
+      toast('No se pudo archivar. Intenta de nuevo.', 'error')
+    } finally {
+      setArchivandoId(null)
+    }
+  }
+
+  const desarchivar = async (oc) => {
+    setArchivandoId(oc.id)
+    try {
+      await desarchivarOC(oc)
+      toast('O.C. restaurada')
+    } catch {
+      toast('No se pudo restaurar. Intenta de nuevo.', 'error')
+    } finally {
+      setArchivandoId(null)
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-8">
+    <>
+    <div className={`flex flex-col gap-8 ${printingOC ? 'print:hidden' : ''}`}>
       <MetricsRow>
         <MetricCard
           label="O.C. pendientes"
@@ -257,6 +331,16 @@ export default function ComprasPage() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-semibold text-ink">Órdenes de compra</h2>
           <div className="flex flex-wrap items-center gap-2">
+            {(archivadas.length > 0 || viendoArchivadas) && (
+              <Button
+                variant="secondary"
+                onClick={() => setViendoArchivadas((v) => !v)}
+                className="inline-flex items-center gap-1.5"
+              >
+                <Archive className="h-4 w-4" />
+                {viendoArchivadas ? 'Ver activas' : `Archivadas (${archivadas.length})`}
+              </Button>
+            )}
             <Button
               variant="secondary"
               onClick={exportarOc}
@@ -367,6 +451,11 @@ export default function ComprasPage() {
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <IconButton
+                        icon={Printer}
+                        onClick={() => setPrintingOC(oc)}
+                        title="Imprimir / guardar como PDF"
+                      />
+                      <IconButton
                         icon={Paperclip}
                         badge={oc.adjuntos?.length ?? 0}
                         onClick={() => setOcDocumentosId(oc.id)}
@@ -403,6 +492,23 @@ export default function ComprasPage() {
                         >
                           {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
                         </Button>
+                      )}
+                      {viendoArchivadas ? (
+                        <IconButton
+                          icon={ArchiveRestore}
+                          disabled={archivandoId === oc.id}
+                          onClick={() => desarchivar(oc)}
+                          title="Restaurar a la lista principal"
+                        />
+                      ) : (
+                        oc.estado === 'recibida' && (
+                          <IconButton
+                            icon={Archive}
+                            disabled={archivandoId === oc.id}
+                            onClick={() => archivar(oc)}
+                            title="Archivar"
+                          />
+                        )
                       )}
                       <IconButton
                         icon={Trash2}
@@ -445,6 +551,11 @@ export default function ComprasPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <IconButton
+                      icon={Printer}
+                      onClick={() => setPrintingOC(oc)}
+                      title="Imprimir / guardar como PDF"
+                    />
                     <IconButton
                       icon={Paperclip}
                       badge={oc.adjuntos?.length ?? 0}
@@ -509,6 +620,23 @@ export default function ComprasPage() {
                       {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
                     </Button>
                   )}
+                  {viendoArchivadas ? (
+                    <IconButton
+                      icon={ArchiveRestore}
+                      disabled={archivandoId === oc.id}
+                      onClick={() => desarchivar(oc)}
+                      title="Restaurar a la lista principal"
+                    />
+                  ) : (
+                    oc.estado === 'recibida' && (
+                      <IconButton
+                        icon={Archive}
+                        disabled={archivandoId === oc.id}
+                        onClick={() => archivar(oc)}
+                        title="Archivar"
+                      />
+                    )
+                  )}
                   <IconButton
                     icon={Trash2}
                     variant="danger"
@@ -548,5 +676,13 @@ export default function ComprasPage() {
         )}
       </Modal>
     </div>
+
+    <OrdenCompraImprimible
+      oc={printingOC}
+      numeroSerieOF={numeroSerieOF}
+      nombreProveedor={nombreProveedor}
+      nombreMaterial={nombreMaterial}
+    />
+    </>
   )
 }

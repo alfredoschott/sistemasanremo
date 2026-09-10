@@ -247,6 +247,15 @@ h1, h2, h3 {
     overflow: visible !important;
     padding: 0 !important;
   }
+  /* Sin esto, Chrome/Safari omiten colores de fondo al imprimir para
+     ahorrar tinta — los círculos del timeline, badges y franjas de marca
+     se ven vacíos/rotos en el PDF aunque en pantalla se vean bien. Fuerza
+     a que lo que se ve en pantalla sea lo que sale impreso. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
 }
 
 /* Aviso de "gira a vertical" — oculto siempre por default. */
