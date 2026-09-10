@@ -62,6 +62,20 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriale
     return pendiente > disponible
   }).length
 
+  // Solo de referencia junto al slider de avance — no lo reemplaza, porque
+  // tener todo el material en planta no es lo mismo que estar terminado
+  // (falta armar/soldar/probar), y hay OF sin lista de materiales donde
+  // no hay nada que calcular.
+  const totalPlaneado = materialesRequeridos.reduce((sum, l) => sum + l.cantidadPlan, 0)
+  const avanceMaterial =
+    totalPlaneado > 0
+      ? Math.round(
+          (materialesRequeridos.reduce((sum, l) => sum + Math.min(l.cantidadConsumida ?? 0, l.cantidadPlan), 0) /
+            totalPlaneado) *
+            100,
+        )
+      : null
+
   const runAction = async (action, message, onUndo) => {
     setBusy(true)
     try {
@@ -265,6 +279,12 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriale
               style={{ width: `${of.avance ?? 0}%` }}
             />
           </div>
+          {avanceMaterial !== null && (
+            <p className="mb-2 text-xs text-ink-faint">
+              Material consumido: <span className="font-medium text-ink-dim">{avanceMaterial}%</span>
+              {' '}— referencia, tú decides el avance real
+            </p>
+          )}
           <input
             type="range"
             min="0"
