@@ -19,8 +19,30 @@ service cloud.firestore {
       return usuario().data.roles;
     }
 
+    // Subconjunto de misRoles() marcado como solo-ver (ver UsuariosPage /
+    // actualizarRolesSoloLectura) — puede leer esas áreas pero no escribir
+    // en ellas. Ausente en usuarios creados antes de que existiera el
+    // campo, por eso el default a lista vacía.
+    function misRolesSoloLectura() {
+      return usuario().data.get('rolesSoloLectura', []);
+    }
+
+    // Los roles con los que sí puede escribir: los suyos, quitando los que
+    // marcó como solo-ver.
+    function misRolesEscritura() {
+      return misRoles().removeAll(misRolesSoloLectura());
+    }
+
     function esAdmin() {
       return autorizado() && ('admin' in misRoles());
+    }
+
+    // Esta cuenta nunca puede perder el rol de Admin ni ser eliminada —
+    // coincide con CUENTA_PROTEGIDA en usuarioActions.js (esa es solo la
+    // primera línea de defensa en la UI; esta regla es la que de verdad lo
+    // impide, incluso si alguien escribe directo a Firestore).
+    function esCuentaProtegida(correo) {
+      return correo == 'sistemasanremo@gmail.com';
     }
 
     // true si el usuario tiene AL MENOS UNO de los roles dados (o es admin).
@@ -33,60 +55,81 @@ service cloud.firestore {
       return autorizado() && (esAdmin() || misRoles().hasAny(roles));
     }
 
+    // Igual que tieneAlgunRol, pero para escribir: si de los roles pedidos
+    // solo tiene alguno marcado como solo-ver, puede leer pero no escribir.
+    function puedeEscribir(roles) {
+      return autorizado() && (esAdmin() || misRolesEscritura().hasAny(roles));
+    }
+
     // Solo cada quien puede leer su propio documento (para saber sus roles
     // al entrar), y solo un admin puede leer la lista completa o modificar
-    // el acceso/rol de cualquiera — incluido el suyo propio.
+    // el acceso/rol de cualquiera — incluido el suyo propio. Sobre la
+    // cuenta protegida, ni siquiera un admin puede escribir algo que le
+    // quite el rol "admin" o la borre (request.resource es null al
+    // borrar, así que la condición también bloquea el delete).
     match /usuariosAutorizados/{userEmail} {
       allow read: if request.auth != null && (email() == userEmail || esAdmin());
-      allow write: if esAdmin();
+      allow write: if esAdmin() &&
+        (!esCuentaProtegida(userEmail) ||
+          (request.resource != null && 'admin' in request.resource.data.roles));
     }
 
     match /cotizaciones/{id} {
-      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow read: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow write: if puedeEscribir(['ventas', 'compras', 'produccion', 'finanzas']);
     }
 
     match /notas/{id} {
-      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow read: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow write: if puedeEscribir(['ventas', 'compras', 'produccion', 'finanzas']);
     }
 
     match /auditoria/{id} {
-      allow read, write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow read: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow write: if puedeEscribir(['ventas', 'compras', 'produccion', 'finanzas']);
     }
 
     match /ordenesFabricacion/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'produccion']);
+      allow read: if tieneAlgunRol(['compras', 'produccion']);
+      allow write: if puedeEscribir(['compras', 'produccion']);
     }
 
     // Estándar de materiales por modelo (ver ListasMaterialesPage.jsx) —
     // Compras también lo lee al abrir una OF, para calcular
     // `materialesRequeridos` de esa orden.
     match /listasMateriales/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'produccion']);
+      allow read: if tieneAlgunRol(['compras', 'produccion']);
+      allow write: if puedeEscribir(['compras', 'produccion']);
     }
 
     match /ordenesCompra/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
+      allow read: if tieneAlgunRol(['compras', 'finanzas']);
+      allow write: if puedeEscribir(['compras', 'finanzas']);
     }
 
     match /proveedores/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'finanzas']);
+      allow read: if tieneAlgunRol(['compras', 'finanzas']);
+      allow write: if puedeEscribir(['compras', 'finanzas']);
     }
 
     // 'produccion' también escribe aquí: registrar consumo de materiales
     // en una OF resta stock real (ver stockActions.registrarConsumoMaterial).
     match /materiales/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
+      allow read: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
+      allow write: if puedeEscribir(['compras', 'almacen', 'produccion']);
     }
 
     match /movimientosAlmacen/{id} {
-      allow read, write: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
+      allow read: if tieneAlgunRol(['compras', 'almacen', 'produccion']);
+      allow write: if puedeEscribir(['compras', 'almacen', 'produccion']);
     }
 
     // 'produccion' también escribe aquí: al completar y facturar una OF,
     // sus transformadores pasan solos a este inventario (ver
     // completarYFacturar/deshacerCompletarYFacturar en ofActions.js).
     match /transformadoresTerminados/{id} {
-      allow read, write: if tieneAlgunRol(['transformadores', 'produccion']);
+      allow read: if tieneAlgunRol(['transformadores', 'produccion']);
+      allow write: if puedeEscribir(['transformadores', 'produccion']);
     }
 
     // Bajo riesgo (solo mensajes + link) y cruza todas las áreas — se
@@ -108,7 +151,7 @@ service cloud.firestore {
     // roles que ya tocan el ciclo de vida de una cotización.
     match /seguimientoPublico/{id} {
       allow read: if true;
-      allow write: if tieneAlgunRol(['ventas', 'compras', 'produccion', 'finanzas']);
+      allow write: if puedeEscribir(['ventas', 'compras', 'produccion', 'finanzas']);
     }
   }
 }

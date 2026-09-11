@@ -1,6 +1,7 @@
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from './firebase'
+import { limpiarNotificacionesViejas } from './notify'
 import { useRoles } from './RolesContext'
 
 // Trae más de las que se van a mostrar: al filtrar por área en el cliente
@@ -20,6 +21,14 @@ export function useNotificaciones() {
       setNotificaciones(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
     })
   }, [])
+
+  // Borra solas las notificaciones viejas (ver limpiarNotificacionesViejas)
+  // cada vez que llega una lista nueva, para que la campana no se acumule
+  // para siempre sin que nadie tenga que limpiarla a mano.
+  useEffect(() => {
+    if (notificaciones.length === 0) return
+    limpiarNotificacionesViejas(notificaciones).catch(() => {})
+  }, [notificaciones])
 
   // notif.areas ausente/null = visible para cualquiera autorizado (avisos
   // generales, o notificaciones viejas de antes de que existiera este

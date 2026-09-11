@@ -9,7 +9,14 @@ export function useUsuarios() {
   useEffect(() => {
     const q = query(collection(db, 'usuariosAutorizados'), orderBy('agregado', 'asc'))
     return onSnapshot(q, (snapshot) => {
-      setUsuarios(snapshot.docs.map((d) => ({ email: d.id, roles: d.data().roles ?? [] })))
+      setUsuarios(
+        snapshot.docs.map((d) => ({
+          email: d.id,
+          roles: d.data().roles ?? [],
+          rolesSoloLectura: d.data().rolesSoloLectura ?? [],
+          etiqueta: d.data().etiqueta ?? '',
+        })),
+      )
       setLoading(false)
     })
   }, [])
