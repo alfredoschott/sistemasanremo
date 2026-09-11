@@ -8,6 +8,7 @@ import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
 import ProveedorPicker from './ProveedorPicker'
@@ -82,8 +83,8 @@ function OrdenCompraForm({ onClose, oc, lineasIniciales }) {
       }
 
       onClose()
-    } catch {
-      toast('No se pudo guardar la orden de compra. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo guardar la orden de compra. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

@@ -25,6 +25,7 @@ import SearchInput from '../../components/SearchInput'
 import Skeleton, { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
 import CapturaRapidaModal from './CapturaRapidaModal'
@@ -66,8 +67,8 @@ function MinimoInput({ material }) {
   const commit = () => {
     const minimo = Number(value) || 0
     if (minimo !== material.minimo) {
-      updateDoc(doc(db, 'materiales', material.id), { minimo }).catch(() =>
-        toast('No se pudo actualizar el mínimo.', 'error'),
+      updateDoc(doc(db, 'materiales', material.id), { minimo }).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar el mínimo.'), 'error'),
       )
     }
   }
@@ -95,8 +96,8 @@ function UnidadInput({ material }) {
 
   const guardar = (unidad) => {
     if (unidad !== unidadActual) {
-      updateDoc(doc(db, 'materiales', material.id), { unidad }).catch(() =>
-        toast('No se pudo actualizar la unidad.', 'error'),
+      updateDoc(doc(db, 'materiales', material.id), { unidad }).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar la unidad.'), 'error'),
       )
     }
   }
@@ -152,8 +153,8 @@ function CategoriaSelect({ material }) {
   const toast = useToast()
 
   const onChange = (e) => {
-    updateDoc(doc(db, 'materiales', material.id), { categoria: e.target.value }).catch(() =>
-      toast('No se pudo actualizar la categoría.', 'error'),
+    updateDoc(doc(db, 'materiales', material.id), { categoria: e.target.value }).catch((err) =>
+      toast(mensajeError(err, 'No se pudo actualizar la categoría.'), 'error'),
     )
   }
 
@@ -181,8 +182,8 @@ function NombreEditable({ material }) {
     const nombre = value.trim()
     setEditing(false)
     if (nombre && nombre !== material.nombre) {
-      updateDoc(doc(db, 'materiales', material.id), { nombre }).catch(() =>
-        toast('No se pudo actualizar el nombre.', 'error'),
+      updateDoc(doc(db, 'materiales', material.id), { nombre }).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar el nombre.'), 'error'),
       )
     } else {
       setValue(material.nombre)
@@ -266,7 +267,7 @@ export default function AlmacenPage() {
           'error',
         )
       } else {
-        toast('No se pudo eliminar el material.', 'error')
+        toast(mensajeError(err, 'No se pudo eliminar el material.'), 'error')
       }
     }
   }

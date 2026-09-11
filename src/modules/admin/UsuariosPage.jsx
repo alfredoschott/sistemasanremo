@@ -5,6 +5,7 @@ import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { ROL_LABEL, ROLES_DISPONIBLES } from '../../lib/areas'
 import { useAuth } from '../../lib/AuthContext'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { inputClassInline } from '../../lib/ui'
 import { useToast } from '../../lib/ToastContext'
 import {
@@ -34,7 +35,10 @@ function NuevoUsuarioForm({ onClose }) {
       toast(`${limpio} agregado — asígnale sus áreas`)
       onClose()
     } catch (err) {
-      toast(err.message === 'ya-existe' ? 'Ese correo ya está autorizado.' : 'No se pudo agregar.', 'error')
+      toast(
+        err.message === 'ya-existe' ? 'Ese correo ya está autorizado.' : mensajeError(err, 'No se pudo agregar.'),
+        'error',
+      )
     } finally {
       setSaving(false)
     }
@@ -72,7 +76,9 @@ function EtiquetaInput({ usuario }) {
   const guardar = () => {
     setEditando(false)
     if (valor.trim() === usuario.etiqueta) return
-    actualizarEtiqueta(usuario.email, valor).catch(() => toast('No se pudo guardar la etiqueta.', 'error'))
+    actualizarEtiqueta(usuario.email, valor).catch((err) =>
+      toast(mensajeError(err, 'No se pudo guardar la etiqueta.'), 'error'),
+    )
   }
 
   if (editando) {
@@ -139,24 +145,26 @@ export default function UsuariosPage() {
       return
     }
     const roles = tiene ? usuario.roles.filter((r) => r !== 'admin') : [...usuario.roles, 'admin']
-    actualizarRoles(usuario.email, roles).catch(() => toast('No se pudo actualizar.', 'error'))
+    actualizarRoles(usuario.email, roles).catch((err) =>
+      toast(mensajeError(err, 'No se pudo actualizar.'), 'error'),
+    )
   }
 
   const ciclarArea = (usuario, rol) => {
     const estado = estadoDe(usuario, rol)
     if (estado === 'ninguno') {
-      actualizarRoles(usuario.email, [...usuario.roles, rol]).catch(() =>
-        toast('No se pudo actualizar.', 'error'),
+      actualizarRoles(usuario.email, [...usuario.roles, rol]).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar.'), 'error'),
       )
     } else if (estado === 'completo') {
-      actualizarRolesSoloLectura(usuario.email, [...usuario.rolesSoloLectura, rol]).catch(() =>
-        toast('No se pudo actualizar.', 'error'),
+      actualizarRolesSoloLectura(usuario.email, [...usuario.rolesSoloLectura, rol]).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar.'), 'error'),
       )
     } else {
       Promise.all([
         actualizarRoles(usuario.email, usuario.roles.filter((r) => r !== rol)),
         actualizarRolesSoloLectura(usuario.email, usuario.rolesSoloLectura.filter((r) => r !== rol)),
-      ]).catch(() => toast('No se pudo actualizar.', 'error'))
+      ]).catch((err) => toast(mensajeError(err, 'No se pudo actualizar.'), 'error'))
     }
   }
 
@@ -172,7 +180,7 @@ export default function UsuariosPage() {
     if (!window.confirm(`¿Quitar el acceso de ${usuario.email}? Ya no podrá entrar al sistema.`)) return
     eliminarUsuario(usuario.email)
       .then(() => toast(`${usuario.email} ya no tiene acceso`))
-      .catch(() => toast('No se pudo quitar el acceso.', 'error'))
+      .catch((err) => toast(mensajeError(err, 'No se pudo quitar el acceso.'), 'error'))
   }
 
   return (

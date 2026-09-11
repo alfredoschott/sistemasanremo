@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import MaterialPicker from './MaterialPicker'
@@ -41,7 +42,7 @@ export default function MovimientoModal({ open, onClose }) {
       if (err.message === 'stock-insuficiente') {
         toast('Ya no hay suficiente stock: alguien más registró un movimiento primero.', 'error')
       } else {
-        toast('No se pudo registrar el movimiento. Intenta de nuevo.', 'error')
+        toast(mensajeError(err, 'No se pudo registrar el movimiento. Intenta de nuevo.'), 'error')
       }
     } finally {
       setSaving(false)

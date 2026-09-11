@@ -3,6 +3,7 @@ import { MessageSquare, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import IconButton from '../../components/IconButton'
 import { auth, db } from '../../lib/firebase'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { useNotas } from '../../lib/useNotas'
 
@@ -27,8 +28,8 @@ export default function NotasInternas({ cotizacionId }) {
     if (!window.confirm('¿Eliminar esta nota?')) return
     try {
       await deleteDoc(doc(db, 'notas', nota.id))
-    } catch {
-      toast('No se pudo eliminar la nota. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar la nota. Intenta de nuevo.'), 'error')
     }
   }
 
@@ -45,8 +46,8 @@ export default function NotasInternas({ cotizacionId }) {
         fecha: serverTimestamp(),
       })
       setTexto('')
-    } catch {
-      toast('No se pudo agregar la nota. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo agregar la nota. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

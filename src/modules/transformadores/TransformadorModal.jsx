@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import { db } from '../../lib/firebase'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import { googleMapsUrl } from '../../lib/maps'
@@ -42,8 +43,8 @@ function TransformadorForm({ onClose, transformador }) {
         toast('Transformador agregado al inventario')
       }
       onClose()
-    } catch {
-      toast('No se pudo guardar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo guardar. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

@@ -20,6 +20,7 @@ import { TableSkeleton } from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
 import { ESTADOS_COTIZACION } from '../../lib/estados'
 import { estaVencido } from '../../lib/plazos'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { currency } from '../../lib/currency'
 import {
@@ -69,7 +70,7 @@ export default function VentasList() {
     setEliminandoId(cot.id)
     eliminarCotizacion(cot)
       .then(() => toast(`Cotización de ${cot.cliente} eliminada`))
-      .catch(() => toast('No se pudo eliminar. Intenta de nuevo.', 'error'))
+      .catch((err) => toast(mensajeError(err, 'No se pudo eliminar. Intenta de nuevo.'), 'error'))
       .finally(() => setEliminandoId(null))
   }
 
@@ -82,7 +83,7 @@ export default function VentasList() {
           onUndo: () => desarchivarCotizacion(cot),
         }),
       )
-      .catch(() => toast('No se pudo archivar. Intenta de nuevo.', 'error'))
+      .catch((err) => toast(mensajeError(err, 'No se pudo archivar. Intenta de nuevo.'), 'error'))
       .finally(() => setArchivandoId(null))
   }
 
@@ -91,7 +92,7 @@ export default function VentasList() {
     setArchivandoId(cot.id)
     desarchivarCotizacion(cot)
       .then(() => toast(`Cotización de ${cot.cliente} restaurada`))
-      .catch(() => toast('No se pudo restaurar. Intenta de nuevo.', 'error'))
+      .catch((err) => toast(mensajeError(err, 'No se pudo restaurar. Intenta de nuevo.'), 'error'))
       .finally(() => setArchivandoId(null))
   }
 

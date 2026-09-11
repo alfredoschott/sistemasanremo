@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Button from '../../components/Button'
 import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
 import MaterialNombre from '../almacen/MaterialNombre'
@@ -44,8 +45,8 @@ export default function MaterialesOFModal({ of, onClose }) {
     try {
       await recalcularMaterialesDeOF(of)
       toast('Materiales recalculados desde la cotización')
-    } catch {
-      toast('No se pudo recalcular. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo recalcular. Intenta de nuevo.'), 'error')
     } finally {
       setRecalculando(false)
     }
@@ -128,7 +129,7 @@ export default function MaterialesOFModal({ of, onClose }) {
       toast(
         err.message === 'stock-insuficiente'
           ? 'No hay suficiente stock de ese material.'
-          : 'No se pudo registrar el consumo. Intenta de nuevo.',
+          : mensajeError(err, 'No se pudo registrar el consumo. Intenta de nuevo.'),
         'error',
       )
     } finally {
@@ -149,7 +150,7 @@ export default function MaterialesOFModal({ of, onClose }) {
       toast(
         err.message === 'material-ya-agregado'
           ? 'Ese material ya está en la lista de esta OF.'
-          : 'No se pudo agregar. Intenta de nuevo.',
+          : mensajeError(err, 'No se pudo agregar. Intenta de nuevo.'),
         'error',
       )
     } finally {
@@ -165,7 +166,7 @@ export default function MaterialesOFModal({ of, onClose }) {
       toast(
         err.message === 'material-con-consumo'
           ? 'Ya tiene consumo registrado — no se puede quitar.'
-          : 'No se pudo quitar. Intenta de nuevo.',
+          : mensajeError(err, 'No se pudo quitar. Intenta de nuevo.'),
         'error',
       )
     } finally {

@@ -27,6 +27,7 @@ import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
 import { folioCorto, imprimirComoPdf } from '../../lib/imprimir'
 import { estaVencido } from '../../lib/plazos'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { recibirOrdenCompra, revertirRecepcion } from '../almacen/stockActions'
@@ -207,8 +208,8 @@ export default function ComprasPage() {
     try {
       await revertirRecepcion(oc)
       toast('O.C. regresada a pendiente — stock ajustado')
-    } catch {
-      toast('No se pudo revertir. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo revertir. Intenta de nuevo.'), 'error')
     } finally {
       setRevirtiendoId(null)
     }
@@ -227,8 +228,8 @@ export default function ComprasPage() {
       }
       await deleteDoc(doc(db, 'ordenesCompra', oc.id))
       toast('O.C. eliminada')
-    } catch {
-      toast('No se pudo eliminar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar. Intenta de nuevo.'), 'error')
     } finally {
       setEliminandoId(null)
     }
@@ -241,8 +242,8 @@ export default function ComprasPage() {
       toast('O.C. recibida — stock actualizado', 'success', {
         onUndo: () => revertir(oc),
       })
-    } catch {
-      toast('No se pudo marcar como recibida. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo marcar como recibida. Intenta de nuevo.'), 'error')
     } finally {
       setRecibiendoId(null)
     }
@@ -253,8 +254,8 @@ export default function ComprasPage() {
     try {
       await archivarOC(oc)
       toast('O.C. archivada', 'success', { onUndo: () => desarchivarOC(oc) })
-    } catch {
-      toast('No se pudo archivar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo archivar. Intenta de nuevo.'), 'error')
     } finally {
       setArchivandoId(null)
     }
@@ -265,8 +266,8 @@ export default function ComprasPage() {
     try {
       await desarchivarOC(oc)
       toast('O.C. restaurada')
-    } catch {
-      toast('No se pudo restaurar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo restaurar. Intenta de nuevo.'), 'error')
     } finally {
       setArchivandoId(null)
     }

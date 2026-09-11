@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { TableSkeleton } from '../../components/Skeleton'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import MaterialNombre from '../almacen/MaterialNombre'
 import ListaMaterialesModal from './ListaMaterialesModal'
@@ -24,8 +25,8 @@ export default function ListasMaterialesPage() {
     try {
       await eliminarListaMateriales(lista)
       toast(`Lista de "${lista.modelo}" eliminada`)
-    } catch {
-      toast('No se pudo eliminar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar. Intenta de nuevo.'), 'error')
     } finally {
       setEliminandoId(null)
     }

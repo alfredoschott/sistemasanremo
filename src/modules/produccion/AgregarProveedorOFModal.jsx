@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Button from '../../components/Button'
 import Modal from '../../components/Modal'
 import ProveedorMaterialesFila from '../compras/ProveedorMaterialesFila'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { agregarProveedorAOF } from './ofActions'
 
@@ -31,8 +32,8 @@ export default function AgregarProveedorOFModal({ of, onClose }) {
       })
       onClose()
       toast(`Proveedor agregado a ${of.numeroSerie}`)
-    } catch {
-      toast('No se pudo agregar el proveedor. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo agregar el proveedor. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

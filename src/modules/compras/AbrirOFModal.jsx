@@ -8,6 +8,7 @@ import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import MaterialNombre from '../almacen/MaterialNombre'
 import { useMateriales } from '../almacen/useMateriales'
@@ -155,8 +156,8 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
         accion: 'OF abierta',
         detalle: numeroSerie,
       })
-    } catch {
-      toast('No se pudo abrir la OF. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo abrir la OF. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

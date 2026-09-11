@@ -3,6 +3,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 import { FileText, Paperclip, Trash2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { db, storage } from '../lib/firebase'
+import { mensajeError } from '../lib/firestoreErrors'
 import { useToast } from '../lib/ToastContext'
 import Button from './Button'
 import IconButton from './IconButton'
@@ -46,8 +47,8 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
         }),
       })
       toast(`${file.name} adjuntado`)
-    } catch {
-      toast('No se pudo subir el archivo. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo subir el archivo. Intenta de nuevo.'), 'error')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -62,8 +63,8 @@ export default function Adjuntos({ coleccion, docId, adjuntos = [] }) {
       await updateDoc(doc(db, coleccion, docId), {
         adjuntos: arrayRemove(adjunto),
       })
-    } catch {
-      toast('No se pudo eliminar el archivo. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar el archivo. Intenta de nuevo.'), 'error')
     } finally {
       setDeletingPath(null)
     }

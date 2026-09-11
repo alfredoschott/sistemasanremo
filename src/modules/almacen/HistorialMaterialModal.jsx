@@ -2,6 +2,7 @@ import { ArrowDownCircle, ArrowUpCircle, ChevronDown, Undo2 } from 'lucide-react
 import { useMemo, useState } from 'react'
 import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { claveMes, nombreMes } from '../../lib/meses'
 import { useToast } from '../../lib/ToastContext'
 import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
@@ -96,8 +97,8 @@ export default function HistorialMaterialModal({ material, onClose }) {
         })
       }
       toast('Movimiento revertido')
-    } catch {
-      toast('No se pudo revertir el movimiento.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo revertir el movimiento.'), 'error')
     } finally {
       setRevirtiendoId(null)
     }

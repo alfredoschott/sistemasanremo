@@ -10,6 +10,7 @@ import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 import { currency } from '../../lib/currency'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
 import { useListasMateriales } from '../produccion/useListasMateriales'
@@ -141,8 +142,8 @@ function CotizacionForm({ onClose, cotizacion }) {
       }
 
       onClose()
-    } catch {
-      toast('No se pudo guardar la cotización. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo guardar la cotización. Intenta de nuevo.'), 'error')
     } finally {
       setSaving(false)
     }

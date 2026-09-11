@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Button from '../../components/Button'
 import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass, inputClassInline } from '../../lib/ui'
 import MaterialPicker from '../almacen/MaterialPicker'
@@ -55,7 +56,7 @@ function ListaMaterialesForm({ onClose, lista }) {
       toast(
         err.message === 'modelo-duplicado'
           ? 'Ya existe una lista de materiales para ese modelo.'
-          : 'No se pudo guardar. Intenta de nuevo.',
+          : mensajeError(err, 'No se pudo guardar. Intenta de nuevo.'),
         'error',
       )
     } finally {

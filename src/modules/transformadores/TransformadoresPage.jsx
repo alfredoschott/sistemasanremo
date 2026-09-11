@@ -12,6 +12,7 @@ import Skeleton, { TableSkeleton } from '../../components/Skeleton'
 import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
 import { googleMapsUrl } from '../../lib/maps'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import TransformadorModal from './TransformadorModal'
 import { useTransformadores } from './useTransformadores'
@@ -42,8 +43,8 @@ function CantidadInput({ transformador }) {
   const commit = () => {
     const cantidad = Math.max(0, Number(value) || 0)
     if (cantidad !== (transformador.cantidad ?? 0)) {
-      updateDoc(doc(db, 'transformadoresTerminados', transformador.id), { cantidad }).catch(() => {
-        toast('No se pudo actualizar la cantidad.', 'error')
+      updateDoc(doc(db, 'transformadoresTerminados', transformador.id), { cantidad }).catch((err) => {
+        toast(mensajeError(err, 'No se pudo actualizar la cantidad.'), 'error')
         setValue(transformador.cantidad ?? 0)
       })
     }
@@ -112,8 +113,8 @@ export default function TransformadoresPage() {
     try {
       await deleteDoc(doc(db, 'transformadoresTerminados', t.id))
       toast(`${t.modelo} eliminado`)
-    } catch {
-      toast('No se pudo eliminar.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar.'), 'error')
     }
   }
 

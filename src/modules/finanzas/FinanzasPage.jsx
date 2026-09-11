@@ -15,6 +15,7 @@ import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { exportCsv } from '../../lib/exportCsv'
 import { claveMes, nombreMes } from '../../lib/meses'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import ProveedorNombre from '../compras/ProveedorNombre'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
@@ -237,8 +238,8 @@ export default function FinanzasPage() {
       toast(`Cobro de ${cotizacion.cliente} registrado`, 'success', {
         onUndo: () => deshacerCobrado(cotizacion),
       })
-    } catch {
-      toast('No se pudo registrar el cobro. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo registrar el cobro. Intenta de nuevo.'), 'error')
     } finally {
       setBusyId(null)
     }
@@ -249,8 +250,8 @@ export default function FinanzasPage() {
     try {
       await deshacerCobrado(cotizacion)
       toast(`Cobro de ${cotizacion.cliente} deshecho`)
-    } catch {
-      toast('No se pudo deshacer. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo deshacer. Intenta de nuevo.'), 'error')
     } finally {
       setBusyId(null)
     }
@@ -261,8 +262,8 @@ export default function FinanzasPage() {
     try {
       await deshacerPagado(oc)
       toast('Pago deshecho')
-    } catch {
-      toast('No se pudo deshacer. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo deshacer. Intenta de nuevo.'), 'error')
     } finally {
       setBusyId(null)
     }
@@ -273,8 +274,8 @@ export default function FinanzasPage() {
     try {
       await marcarPagado(oc)
       toast('Pago registrado', 'success', { onUndo: () => deshacerPagado(oc) })
-    } catch {
-      toast('No se pudo registrar el pago. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo registrar el pago. Intenta de nuevo.'), 'error')
     } finally {
       setBusyId(null)
     }

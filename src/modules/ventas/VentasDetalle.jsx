@@ -10,6 +10,7 @@ import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
 import { currency } from '../../lib/currency'
 import { folioCorto, formatoFechaLarga, imprimirComoPdf } from '../../lib/imprimir'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
 import {
@@ -55,8 +56,8 @@ export default function VentasDetalle() {
       toast(`Cotización de ${cotizacion.cliente} cancelada`, 'success', {
         onUndo: () => deshacerCancelacion(cotizacion),
       })
-    } catch {
-      toast('No se pudo cancelar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo cancelar. Intenta de nuevo.'), 'error')
     } finally {
       setCancelando(false)
     }
@@ -72,8 +73,8 @@ export default function VentasDetalle() {
       await eliminarCotizacion(cotizacion)
       toast(`Cotización de ${cotizacion.cliente} eliminada`)
       navigate('/ventas')
-    } catch {
-      toast('No se pudo eliminar. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar. Intenta de nuevo.'), 'error')
       setEliminando(false)
     }
   }
@@ -94,8 +95,8 @@ export default function VentasDetalle() {
       const nuevaId = await duplicarCotizacion(cotizacion)
       toast(`Cotización duplicada para ${cotizacion.cliente}`)
       navigate(`/ventas/${nuevaId}`)
-    } catch {
-      toast('No se pudo duplicar la cotización. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo duplicar la cotización. Intenta de nuevo.'), 'error')
     } finally {
       setDuplicando(false)
     }

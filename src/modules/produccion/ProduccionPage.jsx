@@ -21,6 +21,7 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import SearchInput from '../../components/SearchInput'
 import Skeleton from '../../components/Skeleton'
 import { exportCsv } from '../../lib/exportCsv'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { imprimirComoPdf } from '../../lib/imprimir'
 import { useToast } from '../../lib/ToastContext'
 import { useMateriales } from '../almacen/useMateriales'
@@ -81,8 +82,8 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriale
     try {
       await action()
       if (message) toast(message, 'success', { onUndo })
-    } catch {
-      toast('No se pudo completar la acción. Intenta de nuevo.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo completar la acción. Intenta de nuevo.'), 'error')
     } finally {
       setBusy(false)
     }
@@ -130,7 +131,7 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriale
       if (err.message === 'ya-cobrada') {
         toast('Primero deshaz el cobro de esta cotización en Finanzas.', 'error')
       } else {
-        toast('No se pudo completar la acción. Intenta de nuevo.', 'error')
+        toast(mensajeError(err, 'No se pudo completar la acción. Intenta de nuevo.'), 'error')
       }
     } finally {
       setBusy(false)
@@ -293,8 +294,8 @@ function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriale
             value={of.avance ?? 0}
             disabled={busy}
             onChange={(e) =>
-              actualizarAvance(of, Number(e.target.value)).catch(() =>
-                toast('No se pudo actualizar el avance.', 'error'),
+              actualizarAvance(of, Number(e.target.value)).catch((err) =>
+                toast(mensajeError(err, 'No se pudo actualizar el avance.'), 'error'),
               )
             }
             className="mb-3 w-full accent-green-600"

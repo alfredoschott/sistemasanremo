@@ -5,6 +5,7 @@ import Button from '../../components/Button'
 import EmptyState from '../../components/EmptyState'
 import IconButton from '../../components/IconButton'
 import { db } from '../../lib/firebase'
+import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClassCompact, inputClassInline } from '../../lib/ui'
 import { useProveedores } from './useProveedores'
@@ -19,8 +20,8 @@ function CampoEditable({ proveedor, campo, placeholder = '—', width = 'w-32' }
     const nuevo = value.trim()
     setEditing(false)
     if (nuevo !== valorActual) {
-      updateDoc(doc(db, 'proveedores', proveedor.id), { [campo]: nuevo }).catch(() => {
-        toast('No se pudo guardar el cambio.', 'error')
+      updateDoc(doc(db, 'proveedores', proveedor.id), { [campo]: nuevo }).catch((err) => {
+        toast(mensajeError(err, 'No se pudo guardar el cambio.'), 'error')
         setValue(valorActual)
       })
     }
@@ -64,8 +65,8 @@ function NombreEditable({ proveedor }) {
     const nombre = value.trim()
     setEditing(false)
     if (nombre && nombre !== proveedor.nombre) {
-      updateDoc(doc(db, 'proveedores', proveedor.id), { nombre }).catch(() =>
-        toast('No se pudo actualizar el nombre.', 'error'),
+      updateDoc(doc(db, 'proveedores', proveedor.id), { nombre }).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar el nombre.'), 'error'),
       )
     } else {
       setValue(proveedor.nombre)
@@ -108,8 +109,8 @@ function PlazoPagoInput({ proveedor }) {
   const commit = () => {
     const plazoPagoDias = Number(value) || 0
     if (plazoPagoDias !== (proveedor.plazoPagoDias ?? 0)) {
-      updateDoc(doc(db, 'proveedores', proveedor.id), { plazoPagoDias }).catch(() =>
-        toast('No se pudo actualizar el plazo de pago.', 'error'),
+      updateDoc(doc(db, 'proveedores', proveedor.id), { plazoPagoDias }).catch((err) =>
+        toast(mensajeError(err, 'No se pudo actualizar el plazo de pago.'), 'error'),
       )
     }
   }
@@ -149,8 +150,8 @@ function NuevoProveedorForm({ onClose }) {
       })
       toast('Proveedor agregado')
       onClose()
-    } catch {
-      toast('No se pudo crear el proveedor.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo crear el proveedor.'), 'error')
     } finally {
       setSaving(false)
     }
@@ -225,8 +226,8 @@ export default function ProveedoresPanel() {
     try {
       await deleteDoc(doc(db, 'proveedores', proveedor.id))
       toast(`${proveedor.nombre} eliminado`)
-    } catch {
-      toast('No se pudo eliminar el proveedor.', 'error')
+    } catch (err) {
+      toast(mensajeError(err, 'No se pudo eliminar el proveedor.'), 'error')
     }
   }
 
