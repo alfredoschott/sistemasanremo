@@ -30,8 +30,9 @@ import { useToast } from '../../lib/ToastContext'
 import NuevaOrdenCompraModal from '../compras/NuevaOrdenCompraModal'
 import CapturaRapidaModal from './CapturaRapidaModal'
 import HistorialMaterialModal from './HistorialMaterialModal'
-import { CATEGORIAS, estadoMaterial } from './materialStatus'
+import { CATEGORIAS, estadoMaterial, UNIDADES_SUGERIDAS } from './materialStatus'
 import MovimientoModal from './MovimientoModal'
+import NuevoMaterialModal from './NuevoMaterialModal'
 import { eliminarMaterial as eliminarMaterialSeguro, restaurarMaterial } from './stockActions'
 import { useMateriales } from './useMateriales'
 import { useMovimientosHoy } from './useMovimientosHoy'
@@ -85,7 +86,6 @@ function MinimoInput({ material }) {
   )
 }
 
-const UNIDADES_SUGERIDAS = ['pza', 'caja', 'rollo', 'par', 'kg', 'litro', 'metro', 'hoja', 'juego', 'cubeta', 'lata']
 const OTRA_UNIDAD = '__otra__'
 
 function UnidadInput({ material }) {
@@ -230,6 +230,7 @@ export default function AlmacenPage() {
   const movimientosHoy = useMovimientosHoy()
   const [modalOpen, setModalOpen] = useState(false)
   const [capturaOpen, setCapturaOpen] = useState(false)
+  const [nuevoMaterialOpen, setNuevoMaterialOpen] = useState(false)
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas')
@@ -346,6 +347,14 @@ export default function AlmacenPage() {
           >
             <ListChecks className="h-4 w-4" />
             Captura rápida
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setNuevoMaterialOpen(true)}
+            className="inline-flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo material
           </Button>
           <Button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-1.5">
             <Plus className="h-4 w-4" />
@@ -545,6 +554,7 @@ export default function AlmacenPage() {
 
       <MovimientoModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <CapturaRapidaModal open={capturaOpen} onClose={() => setCapturaOpen(false)} materiales={materiales} />
+      <NuevoMaterialModal open={nuevoMaterialOpen} onClose={() => setNuevoMaterialOpen(false)} />
       <HistorialMaterialModal
         material={historialMaterial}
         onClose={() => setHistorialMaterial(null)}

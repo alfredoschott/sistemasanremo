@@ -9,6 +9,20 @@ export const CATEGORIAS = [
   'Otros',
 ]
 
+export const UNIDADES_SUGERIDAS = [
+  'pza',
+  'caja',
+  'rollo',
+  'par',
+  'kg',
+  'litro',
+  'metro',
+  'hoja',
+  'juego',
+  'cubeta',
+  'lata',
+]
+
 // "sinCapturar": nunca se le dio un mínimo ni un stock real (recién importado).
 // No es lo mismo que "critico" (mínimo configurado y en cero) — evita que todo
 // el catálogo recién cargado se vea como una alerta real.
