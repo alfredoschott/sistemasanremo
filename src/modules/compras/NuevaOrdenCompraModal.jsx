@@ -20,14 +20,14 @@ function lineasFromOc(oc) {
     : [{ ...lineaVacia }]
 }
 
-function OrdenCompraForm({ onClose, oc, lineaInicial }) {
+function OrdenCompraForm({ onClose, oc, lineasIniciales }) {
   const [proveedorId, setProveedorId] = useState(oc?.proveedorId ?? '')
   const [plazoEntregaDias, setPlazoEntregaDias] = useState(String(oc?.plazoEntregaDias ?? '20'))
   const [fechaCompromiso, setFechaCompromiso] = useState(oc?.fechaCompromiso ?? '')
   const [montoTotal, setMontoTotal] = useState(String(oc?.montoTotal ?? ''))
   const [materiales, setMateriales] = useState(() => {
     if (oc) return lineasFromOc(oc)
-    if (lineaInicial) return [lineaInicial]
+    if (lineasIniciales?.length) return lineasIniciales
     return [{ ...lineaVacia }]
   })
   const [saving, setSaving] = useState(false)
@@ -200,7 +200,7 @@ function OrdenCompraForm({ onClose, oc, lineaInicial }) {
   )
 }
 
-export default function NuevaOrdenCompraModal({ open, onClose, oc = null, lineaInicial = null }) {
+export default function NuevaOrdenCompraModal({ open, onClose, oc = null, lineasIniciales = null }) {
   return (
     <Modal
       open={open}
@@ -209,10 +209,10 @@ export default function NuevaOrdenCompraModal({ open, onClose, oc = null, lineaI
       maxWidth="max-w-lg"
     >
       <OrdenCompraForm
-        key={oc?.id ?? lineaInicial?.materialId ?? 'new'}
+        key={oc?.id ?? lineasIniciales?.map((l) => l.materialId).join(',') ?? 'new'}
         onClose={onClose}
         oc={oc}
-        lineaInicial={lineaInicial}
+        lineasIniciales={lineasIniciales}
       />
     </Modal>
   )

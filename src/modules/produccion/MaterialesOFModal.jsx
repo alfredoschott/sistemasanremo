@@ -35,6 +35,7 @@ export default function MaterialesOFModal({ of, onClose }) {
   const [ocSugerida, setOcSugerida] = useState(null)
   const [quitandoId, setQuitandoId] = useState(null)
   const [recalculando, setRecalculando] = useState(false)
+  const [seleccionados, setSeleccionados] = useState(() => new Set())
 
   if (!of) return null
 
@@ -53,6 +54,38 @@ export default function MaterialesOFModal({ of, onClose }) {
   const requeridos = of.materialesRequeridos ?? []
   const nombreMaterial = (id) => materiales.find((m) => m.id === id)?.nombre ?? ''
   const stockDe = (id) => materiales.find((m) => m.id === id)?.stock ?? 0
+
+  const faltaDe = (linea) => {
+    const consumido = linea.cantidadConsumida ?? 0
+    const pendiente = Math.max(0, linea.cantidadPlan - consumido)
+    return Math.max(0, pendiente - stockDe(linea.materialId))
+  }
+  const faltantes = requeridos.filter((l) => faltaDe(l) > 0)
+  const todosSeleccionados =
+    faltantes.length > 0 && faltantes.every((l) => seleccionados.has(l.materialId))
+
+  const toggleSeleccion = (materialId) => {
+    setSeleccionados((prev) => {
+      const next = new Set(prev)
+      if (next.has(materialId)) next.delete(materialId)
+      else next.add(materialId)
+      return next
+    })
+  }
+
+  const toggleTodos = () => {
+    setSeleccionados(
+      todosSeleccionados ? new Set() : new Set(faltantes.map((l) => l.materialId)),
+    )
+  }
+
+  const generarOcSeleccionados = () => {
+    const lineas = faltantes
+      .filter((l) => seleccionados.has(l.materialId))
+      .map((l) => ({ materialId: l.materialId, cantidad: String(faltaDe(l)) }))
+    if (lineas.length === 0) return
+    setOcSugerida(lineas)
+  }
 
   const resetFormConsumo = () => {
     setMaterialConsumo('')
@@ -147,7 +180,7 @@ export default function MaterialesOFModal({ of, onClose }) {
         onClose={onClose}
         title="Materiales de la OF"
         subtitle={`${of.numeroSerie} — ${of.cliente}${of.modelos?.length ? ` — ${of.modelos.join(', ')}` : ''}`}
-        maxWidth="max-w-xl"
+        maxWidth="max-w-2xl"
       >
         <div className="mb-2 flex justify-end">
           <button
@@ -167,72 +200,123 @@ export default function MaterialesOFModal({ of, onClose }) {
             Este modelo no tiene lista de materiales capturada todavía — agrégalos a mano abajo.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-line-strong">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
-                <tr>
-                  <th className="px-3 py-2">Material</th>
-                  <th className="px-3 py-2 text-right">Planeado</th>
-                  <th className="px-3 py-2 text-right">Consumido</th>
-                  <th className="px-3 py-2 text-right">Disponible</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {requeridos.map((linea) => {
-                  const consumido = linea.cantidadConsumida ?? 0
-                  const pendiente = Math.max(0, linea.cantidadPlan - consumido)
-                  const disponible = stockDe(linea.materialId)
-                  const falta = Math.max(0, pendiente - disponible)
-                  return (
-                    <tr key={linea.materialId}>
-                      <td className="px-3 py-2 font-medium text-ink">
-                        <MaterialNombre materialId={linea.materialId} />
-                        {falta > 0 && (
-                          <span className="ml-2 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-[0.6875rem] font-medium text-red-700">
-                            <AlertTriangle className="h-3 w-3" />
-                            Falta {falta}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right text-ink-dim">{linea.cantidadPlan}</td>
-                      <td className="px-3 py-2 text-right text-ink-dim">
-                        {consumido}
-                        {consumido > linea.cantidadPlan && (
-                          <span className="ml-1 text-red-600" title="Se usó más de lo planeado">
-                            ▲
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right text-ink-dim">{disponible}</td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
+          <>
+            {faltantes.length > 0 && (
+              <div className="mb-2 flex items-center justify-between rounded-md bg-surface-2 px-3 py-2">
+                <label className="flex items-center gap-2 text-xs font-medium text-ink-dim">
+                  <input
+                    type="checkbox"
+                    checked={todosSeleccionados}
+                    onChange={toggleTodos}
+                    className="h-3.5 w-3.5 rounded border-line-strong text-brand-700 focus:ring-brand-500"
+                  />
+                  Seleccionar todo lo que falta ({faltantes.length})
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={seleccionados.size === 0}
+                  onClick={generarOcSeleccionados}
+                >
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Generar O.C. ({seleccionados.size})
+                </Button>
+              </div>
+            )}
+            <div className="overflow-hidden rounded-md border border-line-strong">
+              <table className="w-full table-fixed text-left text-sm">
+                <colgroup>
+                  <col className="w-8" />
+                  <col />
+                  <col className="w-20" />
+                  <col className="w-20" />
+                  <col className="w-20" />
+                  <col className="w-16" />
+                </colgroup>
+                <thead className="bg-surface-2 text-[0.625rem] font-mono uppercase tracking-wide text-ink-faint">
+                  <tr>
+                    <th className="px-3 py-2" />
+                    <th className="px-3 py-2">Material</th>
+                    <th className="px-3 py-2 text-right">Plan</th>
+                    <th className="px-3 py-2 text-right">Usado</th>
+                    <th className="px-3 py-2 text-right">Disp.</th>
+                    <th className="px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {requeridos.map((linea) => {
+                    const consumido = linea.cantidadConsumida ?? 0
+                    const disponible = stockDe(linea.materialId)
+                    const falta = faltaDe(linea)
+                    return (
+                      <tr key={linea.materialId} className="align-top">
+                        <td className="px-3 py-2.5">
                           {falta > 0 && (
-                            <IconButton
-                              icon={ShoppingCart}
-                              onClick={() =>
-                                setOcSugerida({ materialId: linea.materialId, cantidad: String(falta) })
-                              }
-                              title="Generar O.C. sugerida"
+                            <input
+                              type="checkbox"
+                              checked={seleccionados.has(linea.materialId)}
+                              onChange={() => toggleSeleccion(linea.materialId)}
+                              className="h-3.5 w-3.5 rounded border-line-strong text-brand-700 focus:ring-brand-500"
                             />
                           )}
-                          {consumido === 0 && (
-                            <IconButton
-                              icon={Trash2}
-                              variant="danger"
-                              disabled={quitandoId === linea.materialId}
-                              onClick={() => quitar(linea.materialId)}
-                              title="Quitar de la lista"
-                            />
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="font-medium leading-snug text-ink">
+                            <MaterialNombre materialId={linea.materialId} />
+                          </div>
+                          {falta > 0 && (
+                            <span className="mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-[0.6875rem] font-medium text-red-700">
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              Falta {falta}
+                            </span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-ink-dim">
+                          {linea.cantidadPlan}
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-ink-dim">
+                          {consumido}
+                          {consumido > linea.cantidadPlan && (
+                            <span className="ml-1 text-red-600" title="Se usó más de lo planeado">
+                              ▲
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-ink-dim">
+                          {disponible}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <div className="flex items-center justify-end gap-1">
+                            {falta > 0 && (
+                              <IconButton
+                                icon={ShoppingCart}
+                                onClick={() =>
+                                  setOcSugerida([
+                                    { materialId: linea.materialId, cantidad: String(falta) },
+                                  ])
+                                }
+                                title="Generar O.C. sugerida"
+                              />
+                            )}
+                            {consumido === 0 && (
+                              <IconButton
+                                icon={Trash2}
+                                variant="danger"
+                                disabled={quitandoId === linea.materialId}
+                                onClick={() => quitar(linea.materialId)}
+                                title="Quitar de la lista"
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <form onSubmit={submitConsumo} className="mt-4 border-t border-line pt-4">
@@ -332,8 +416,11 @@ export default function MaterialesOFModal({ of, onClose }) {
 
       <NuevaOrdenCompraModal
         open={Boolean(ocSugerida)}
-        onClose={() => setOcSugerida(null)}
-        lineaInicial={ocSugerida}
+        onClose={() => {
+          setOcSugerida(null)
+          setSeleccionados(new Set())
+        }}
+        lineasIniciales={ocSugerida}
       />
     </>
   )

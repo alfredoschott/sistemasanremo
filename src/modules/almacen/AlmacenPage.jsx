@@ -551,7 +551,7 @@ export default function AlmacenPage() {
       <NuevaOrdenCompraModal
         open={Boolean(ocSugerida)}
         onClose={() => setOcSugerida(null)}
-        lineaInicial={ocSugerida}
+        lineasIniciales={ocSugerida ? [ocSugerida] : null}
       />
     </div>
   )
