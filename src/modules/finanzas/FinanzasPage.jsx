@@ -1,17 +1,5 @@
-import {
-  AlertTriangle,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Check,
-  ChevronDown,
-  Download,
-  Undo2,
-  Wallet,
-} from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import Button from '../../components/Button'
-import EmptyState from '../../components/EmptyState'
-import IconButton from '../../components/IconButton'
 import { MetricCard, MetricsRow } from '../../components/Metric'
 import { exportCsv } from '../../lib/exportCsv'
 import { claveMes, nombreMes } from '../../lib/meses'
@@ -22,6 +10,8 @@ import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useProveedores } from '../compras/useProveedores'
 import { currency } from '../../lib/currency'
 import { useCotizaciones } from '../ventas/useCotizaciones'
+import CuentaPendienteSection from './CuentaPendienteSection'
+import DesgloseDeuda from './DesgloseDeuda'
 import { deshacerCobrado, deshacerPagado, marcarCobrado, marcarPagado } from './finanzasActions'
 import FlujoMensualChart from './FlujoMensualChart'
 
@@ -79,28 +69,6 @@ function agruparPorMes(lista, montoDe) {
     grupos.set(clave, previo)
   }
   return [...grupos.values()]
-}
-
-function GrupoMes({ label, total, count, defaultOpen, children }) {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <div className="border-b border-line last:border-b-0">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 bg-surface-2 px-4 py-2 text-left"
-      >
-        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-          <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} />
-          {label}
-          <span className="font-normal normal-case text-ink-faint">
-            ({count})
-          </span>
-        </span>
-        <span className="text-xs font-semibold text-ink">{currency.format(total)}</span>
-      </button>
-      {open && <ul className="stagger divide-y divide-line">{children}</ul>}
-    </div>
-  )
 }
 
 export default function FinanzasPage() {
@@ -299,248 +267,77 @@ export default function FinanzasPage() {
       </MetricsRow>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-              <ArrowDownCircle className="h-4 w-4 text-brand-600" />
-              {verCobrados ? 'Cobrados' : 'Por cobrar (crédito Fudeco)'}
-            </h2>
-            <div className="flex items-center gap-3">
-              {(porCobrar.length > 0 || cobrados.length > 0) && (
-                <IconButton icon={Download} onClick={exportarCobrar} title="Exportar CSV" />
-              )}
-              {(cobrados.length > 0 || verCobrados) && (
-                <button
-                  onClick={() => setVerCobrados((v) => !v)}
-                  className="text-xs font-medium text-teal-700 hover:underline"
-                >
-                  {verCobrados ? 'Ver por cobrar' : `Ver cobrados (${cobrados.length})`}
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="overflow-x-auto border border-line-strong bg-surface">
-            {verCobrados ? (
-              cobrados.length === 0 ? (
-                <EmptyState icon={Wallet} title="Nada cobrado todavía" />
-              ) : (
-                <ul className="stagger divide-y divide-line">
-                  {cobrados.map((c) => (
-                    <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink">{c.cliente}</p>
-                        <p className="text-xs text-ink-faint">
-                          Cobrado {formatFecha(c.fechaCobro?.toMillis?.())}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-ink">{currency.format(c.monto ?? 0)}</span>
-                        <IconButton
-                          icon={Undo2}
-                          disabled={busyId === c.id}
-                          onClick={() => deshacerCobro(c)}
-                          title="Deshacer cobro"
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )
-            ) : porCobrar.length === 0 ? (
-              <EmptyState icon={Wallet} title="Nada pendiente de cobro" />
-            ) : (
-              gruposPorCobrar.map((g) => (
-                <GrupoMes
-                  key={g.clave}
-                  label={g.label}
-                  total={g.total}
-                  count={g.items.length}
-                  defaultOpen={abiertoPorDefecto(g.clave)}
-                >
-                  {g.items.map((c) => {
-                    const vencida = c.vencimiento && c.vencimiento < Date.now()
-                    return (
-                      <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                        <div className="min-w-0">
-                          <p className="font-medium text-ink">{c.cliente}</p>
-                          <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
-                            {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                            {textoVencimiento(c.vencimiento)}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <span className="font-medium text-ink">
-                            {currency.format(c.monto ?? 0)}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            loading={busyId === c.id}
-                            onClick={() => accionCobrar(c)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            {busyId !== c.id && <Check className="h-3.5 w-3.5" />}
-                            Cobrado
-                          </Button>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </GrupoMes>
-              ))
-            )}
-          </div>
-        </section>
+        <CuentaPendienteSection
+          icon={ArrowDownCircle}
+          iconColor="text-brand-600"
+          tituloActivo="Por cobrar (crédito Fudeco)"
+          tituloActivoCorto="por cobrar"
+          tituloHistorico="Cobrados"
+          pendientes={porCobrar}
+          historicos={cobrados}
+          verHistorico={verCobrados}
+          onToggleVer={() => setVerCobrados((v) => !v)}
+          onExportar={exportarCobrar}
+          grupos={gruposPorCobrar}
+          abiertoPorDefecto={abiertoPorDefecto}
+          renderNombre={(c) => c.cliente}
+          montoDe={(c) => c.monto}
+          fechaHistoricaDe={(c) => c.fechaCobro}
+          labelFechaHistorica="Cobrado"
+          busyId={busyId}
+          onAccionPendiente={accionCobrar}
+          labelAccionPendiente="Cobrado"
+          onAccionHistorica={deshacerCobro}
+          labelAccionHistorica="Deshacer cobro"
+          formatFecha={formatFecha}
+          textoVencimiento={textoVencimiento}
+          emptyTitlePendiente="Nada pendiente de cobro"
+        />
 
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-              <ArrowUpCircle className="h-4 w-4 text-amber-600" />
-              {verPagados ? 'Pagados' : 'Por pagar (proveedores)'}
-            </h2>
-            <div className="flex items-center gap-3">
-              {(porPagar.length > 0 || pagados.length > 0) && (
-                <IconButton icon={Download} onClick={exportarPagar} title="Exportar CSV" />
-              )}
-              {(pagados.length > 0 || verPagados) && (
-                <button
-                  onClick={() => setVerPagados((v) => !v)}
-                  className="text-xs font-medium text-teal-700 hover:underline"
-                >
-                  {verPagados ? 'Ver por pagar' : `Ver pagados (${pagados.length})`}
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="overflow-x-auto border border-line-strong bg-surface">
-            {verPagados ? (
-              pagados.length === 0 ? (
-                <EmptyState icon={Wallet} title="Nada pagado todavía" />
-              ) : (
-                <ul className="stagger divide-y divide-line">
-                  {pagados.map((o) => (
-                    <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink">
-                          <ProveedorNombre proveedorId={o.proveedorId} />
-                        </p>
-                        <p className="text-xs text-ink-faint">
-                          Pagado {formatFecha(o.fechaPago?.toMillis?.())}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-medium text-ink">
-                          {currency.format(o.montoTotal ?? 0)}
-                        </span>
-                        <IconButton
-                          icon={Undo2}
-                          disabled={busyId === o.id}
-                          onClick={() => deshacerPago(o)}
-                          title="Deshacer pago"
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )
-            ) : porPagar.length === 0 ? (
-              <EmptyState icon={Wallet} title="Nada pendiente de pago" />
-            ) : (
-              gruposPorPagar.map((g) => (
-                <GrupoMes
-                  key={g.clave}
-                  label={g.label}
-                  total={g.total}
-                  count={g.items.length}
-                  defaultOpen={abiertoPorDefecto(g.clave)}
-                >
-                  {g.items.map((o) => {
-                    const vencida = o.vencimiento && o.vencimiento < Date.now()
-                    return (
-                      <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                        <div className="min-w-0">
-                          <p className="font-medium text-ink">
-                            <ProveedorNombre proveedorId={o.proveedorId} />
-                          </p>
-                          <p className={`text-xs ${vencida ? 'text-red-600' : 'text-ink-faint'}`}>
-                            {vencida && <AlertTriangle className="mr-1 inline h-3 w-3" />}
-                            {textoVencimiento(o.vencimiento)}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <span className="font-medium text-ink">
-                            {currency.format(o.montoTotal ?? 0)}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            loading={busyId === o.id}
-                            onClick={() => accionPagar(o)}
-                            className="inline-flex items-center gap-1"
-                          >
-                            {busyId !== o.id && <Check className="h-3.5 w-3.5" />}
-                            Pagado
-                          </Button>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </GrupoMes>
-              ))
-            )}
-          </div>
-        </section>
+        <CuentaPendienteSection
+          icon={ArrowUpCircle}
+          iconColor="text-amber-600"
+          tituloActivo="Por pagar (proveedores)"
+          tituloActivoCorto="por pagar"
+          tituloHistorico="Pagados"
+          pendientes={porPagar}
+          historicos={pagados}
+          verHistorico={verPagados}
+          onToggleVer={() => setVerPagados((v) => !v)}
+          onExportar={exportarPagar}
+          grupos={gruposPorPagar}
+          abiertoPorDefecto={abiertoPorDefecto}
+          renderNombre={(o) => <ProveedorNombre proveedorId={o.proveedorId} />}
+          montoDe={(o) => o.montoTotal}
+          fechaHistoricaDe={(o) => o.fechaPago}
+          labelFechaHistorica="Pagado"
+          busyId={busyId}
+          onAccionPendiente={accionPagar}
+          labelAccionPendiente="Pagado"
+          onAccionHistorica={deshacerPago}
+          labelAccionHistorica="Deshacer pago"
+          formatFecha={formatFecha}
+          textoVencimiento={textoVencimiento}
+          emptyTitlePendiente="Nada pendiente de pago"
+        />
       </div>
 
       {(desglosePorCliente.length > 0 || desglosePorProveedor.length > 0) && (
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-ink">Quién debe más</h2>
-            <div className="overflow-x-auto border border-line-strong bg-surface">
-              {desglosePorCliente.length === 0 ? (
-                <EmptyState icon={Wallet} title="Nada pendiente de cobro" />
-              ) : (
-                <ul className="divide-y divide-line">
-                  {desglosePorCliente.map((g) => (
-                    <li key={g.clave} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                      <p className="min-w-0 truncate font-medium text-ink">{g.clave}</p>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-xs text-ink-faint">
-                          {g.count} {g.count === 1 ? 'cotización' : 'cotizaciones'}
-                        </span>
-                        <span className="font-medium text-ink">{currency.format(g.monto)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-ink">A quién le debemos más</h2>
-            <div className="overflow-x-auto border border-line-strong bg-surface">
-              {desglosePorProveedor.length === 0 ? (
-                <EmptyState icon={Wallet} title="Nada pendiente de pago" />
-              ) : (
-                <ul className="divide-y divide-line">
-                  {desglosePorProveedor.map((g) => (
-                    <li key={g.clave} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                      <p className="min-w-0 truncate font-medium text-ink">
-                        {proveedorNombrePorId.get(g.clave) ?? '—'}
-                      </p>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-xs text-ink-faint">
-                          {g.count} {g.count === 1 ? 'orden' : 'órdenes'}
-                        </span>
-                        <span className="font-medium text-ink">{currency.format(g.monto)}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
+          <DesgloseDeuda
+            titulo="Quién debe más"
+            grupos={desglosePorCliente}
+            emptyTitle="Nada pendiente de cobro"
+            nombreDe={(clave) => clave}
+            etiquetaConteo={{ singular: 'cotización', plural: 'cotizaciones' }}
+          />
+          <DesgloseDeuda
+            titulo="A quién le debemos más"
+            grupos={desglosePorProveedor}
+            emptyTitle="Nada pendiente de pago"
+            nombreDe={(clave) => proveedorNombrePorId.get(clave) ?? '—'}
+            etiquetaConteo={{ singular: 'orden', plural: 'órdenes' }}
+          />
         </div>
       )}
 
