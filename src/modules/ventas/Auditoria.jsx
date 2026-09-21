@@ -13,7 +13,7 @@ function formatFecha(fecha) {
 }
 
 export default function Auditoria({ cotizacionId }) {
-  const eventos = useAuditoria(cotizacionId)
+  const { eventos, hayMas, cargarMas } = useAuditoria(cotizacionId)
 
   if (eventos.length === 0) return null
 
@@ -35,6 +35,14 @@ export default function Auditoria({ cotizacionId }) {
           </li>
         ))}
       </ul>
+      {hayMas && (
+        <button
+          onClick={cargarMas}
+          className="mt-2 text-xs font-medium text-brand-700 hover:underline"
+        >
+          Cargar más
+        </button>
+      )}
     </div>
   )
 }

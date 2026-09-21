@@ -57,7 +57,7 @@ function GrupoMes({ label, count, defaultOpen, children }) {
 }
 
 export default function HistorialMaterialModal({ material, onClose }) {
-  const movimientos = useMovimientosMaterial(material?.id)
+  const { movimientos, hayMas, cargarMas } = useMovimientosMaterial(material?.id)
   const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
   const [revirtiendoId, setRevirtiendoId] = useState(null)
   const toast = useToast()
@@ -157,6 +157,14 @@ export default function HistorialMaterialModal({ material, onClose }) {
               ))}
             </GrupoMes>
           ))}
+          {hayMas && (
+            <button
+              onClick={cargarMas}
+              className="w-full py-2 text-center text-xs font-medium text-brand-700 hover:underline"
+            >
+              Cargar más
+            </button>
+          )}
         </div>
       )}
     </Modal>

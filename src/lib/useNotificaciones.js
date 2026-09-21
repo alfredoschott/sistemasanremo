@@ -1,8 +1,10 @@
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from './firebase'
+import { mensajeError } from './firestoreErrors'
 import { limpiarNotificacionesViejas } from './notify'
 import { useRoles } from './RolesContext'
+import { useToast } from './ToastContext'
 
 // Trae más de las que se van a mostrar: al filtrar por área en el cliente
 // (la colección es compartida entre todos, ver firestore.rules), alguien
@@ -14,13 +16,18 @@ const LIMITE_MOSTRAR = 30
 export function useNotificaciones() {
   const { roles, esAdmin } = useRoles()
   const [notificaciones, setNotificaciones] = useState([])
+  const toast = useToast()
 
   useEffect(() => {
     const q = query(collection(db, 'notificaciones'), orderBy('fecha', 'desc'), limit(LIMITE_CONSULTA))
-    return onSnapshot(q, (snapshot) => {
-      setNotificaciones(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
-    })
-  }, [])
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        setNotificaciones(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+      },
+      (err) => toast(mensajeError(err, 'No se pudieron cargar las notificaciones.'), 'error'),
+    )
+  }, [toast])
 
   // Borra solas las notificaciones viejas (ver limpiarNotificacionesViejas)
   // cada vez que llega una lista nueva, para que la campana no se acumule
