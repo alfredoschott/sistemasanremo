@@ -1,10 +1,11 @@
 import { CheckCircle2, Undo2, XCircle } from 'lucide-react'
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useRef, useState } from 'react'
 
 const ToastContext = createContext(null)
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
+  const undoneRef = useRef(new Set())
 
   const dismiss = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
@@ -49,6 +50,8 @@ export function ToastProvider({ children }) {
             {t.onUndo && (
               <button
                 onClick={() => {
+                  if (undoneRef.current.has(t.id)) return
+                  undoneRef.current.add(t.id)
                   t.onUndo()
                   dismiss(t.id)
                 }}
