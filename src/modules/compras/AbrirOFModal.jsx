@@ -1,11 +1,13 @@
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { AlertTriangle, ShoppingCart } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button'
 import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import { registrarAuditoria } from '../../lib/audit'
+import { calcularFechaEntrega } from '../../lib/entrega'
 import { db } from '../../lib/firebase'
+import { reservarFolioOF } from '../../lib/folios'
 import { crearNotificacion } from '../../lib/notify'
 import { actualizarSeguimiento } from '../../lib/seguimientoPublico'
 import { mensajeError } from '../../lib/firestoreErrors'
@@ -15,12 +17,6 @@ import { useMateriales } from '../almacen/useMateriales'
 import { calcularMaterialesRequeridos } from '../produccion/materialesRequeridos'
 import { useListasMateriales } from '../produccion/useListasMateriales'
 import ProveedorMaterialesFila from './ProveedorMaterialesFila'
-
-function generarNumeroSerie() {
-  const year = new Date().getFullYear()
-  const suffix = Date.now().toString().slice(-6)
-  return `OF-${year}-${suffix}`
-}
 
 function filaVacia() {
   return { proveedorId: '', plazoEntregaDias: '20', fechaCompromiso: '', materiales: [] }
@@ -81,9 +77,9 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
     e.preventDefault()
     setSaving(true)
     try {
-      const numeroSerie = generarNumeroSerie()
       const cotizacionRef = doc(db, 'cotizaciones', cotizacion.id)
       const ofRef = doc(collection(db, 'ordenesFabricacion'))
+      const fechaEntregaEstimada = calcularFechaEntrega(Date.now(), cotizacion.entregaSemanas)
 
       const proveedoresValidos = proveedores
         .filter((f) => f.proveedorId)
@@ -96,47 +92,54 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
             .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad) || 1 })),
         }))
 
-      const batch = writeBatch(db)
-      batch.set(ofRef, {
-        numeroSerie,
-        cotizacionId: cotizacion.id,
-        cliente: cotizacion.cliente,
-        // Modelos cotizados, sin duplicados — para que en Producción/Compras
-        // se vea de una vez qué se va a fabricar sin tener que ir a Ventas.
-        modelos,
-        proveedores: proveedoresValidos,
-        // Mismo cálculo que ya se muestra arriba en el modal (lista de
-        // materiales del modelo cotizado × cantidad) — queda como copia
-        // propia de esta OF, editable después sin tocar el estándar.
-        materialesRequeridos,
-        estado: 'Abierta',
-        fecha: serverTimestamp(),
-      })
-      batch.update(cotizacionRef, { estado: 'OF abierta', ofId: ofRef.id, numeroSerie })
+      const proveedoresConMateriales = proveedoresValidos.filter((p) => p.materiales.length > 0)
+      const ocCreadas = proveedoresConMateriales.length
 
-      // Por cada proveedor con materiales, se genera de una vez su O.C.
-      // (enlazada a esta OF con ofId) — así Producción abre la compra de
-      // materiales directamente, y al marcarla "recibida" en Compras el
-      // stock entra solo a Almacén (recibirOrdenCompra ya hace eso).
-      let ocCreadas = 0
-      for (const prov of proveedoresValidos) {
-        if (prov.materiales.length === 0) continue
-        const ocRef = doc(collection(db, 'ordenesCompra'))
-        batch.set(ocRef, {
-          ofId: ofRef.id,
-          proveedorId: prov.proveedorId,
-          plazoEntregaDias: prov.plazoEntregaDias,
-          fechaCompromiso: prov.fechaCompromiso,
-          montoTotal: null,
-          materiales: prov.materiales,
-          estado: 'pendiente',
+      // Transacción (no batch) para poder reservar el folio consecutivo en
+      // la misma operación atómica — ver src/lib/folios.js.
+      const numeroSerie = await runTransaction(db, async (tx) => {
+        const folio = await reservarFolioOF(tx)
+        tx.set(ofRef, {
+          numeroSerie: folio,
+          cotizacionId: cotizacion.id,
+          cliente: cotizacion.cliente,
+          // Modelos cotizados, sin duplicados — para que en Producción/Compras
+          // se vea de una vez qué se va a fabricar sin tener que ir a Ventas.
+          modelos,
+          proveedores: proveedoresValidos,
+          // Mismo cálculo que ya se muestra arriba en el modal (lista de
+          // materiales del modelo cotizado × cantidad) — queda como copia
+          // propia de esta OF, editable después sin tocar el estándar.
+          materialesRequeridos,
+          estado: 'Abierta',
           fecha: serverTimestamp(),
         })
-        ocCreadas += 1
-      }
+        tx.update(cotizacionRef, {
+          estado: 'OF abierta',
+          ofId: ofRef.id,
+          numeroSerie: folio,
+          fechaEntregaEstimada,
+        })
 
-      await batch.commit()
-      actualizarSeguimiento(cotizacion.id, { estado: 'OF abierta' })
+        // Por cada proveedor con materiales, se genera de una vez su O.C.
+        // (enlazada a esta OF con ofId) — así Producción abre la compra de
+        // materiales directamente, y al marcarla "recibida" en Compras el
+        // stock entra solo a Almacén (recibirOrdenCompra ya hace eso).
+        for (const prov of proveedoresConMateriales) {
+          tx.set(doc(collection(db, 'ordenesCompra')), {
+            ofId: ofRef.id,
+            proveedorId: prov.proveedorId,
+            plazoEntregaDias: prov.plazoEntregaDias,
+            fechaCompromiso: prov.fechaCompromiso,
+            montoTotal: null,
+            materiales: prov.materiales,
+            estado: 'pendiente',
+            fecha: serverTimestamp(),
+          })
+        }
+        return folio
+      })
+      actualizarSeguimiento(cotizacion.id, { estado: 'OF abierta', fechaEntregaEstimada })
 
       onClose()
       toast(

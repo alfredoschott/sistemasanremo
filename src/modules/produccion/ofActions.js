@@ -184,11 +184,12 @@ export async function eliminarOF(of) {
       fechaFacturado: deleteField(),
       cobrado: deleteField(),
       fechaCobro: deleteField(),
+      fechaEntregaEstimada: deleteField(),
     })
   }
   await batch.commit()
   await quitarTransformadoresTerminadosDeOF(of.id)
-  actualizarSeguimiento(of.cotizacionId, { estado: 'Cotizado', avance: 0 })
+  actualizarSeguimiento(of.cotizacionId, { estado: 'Cotizado', avance: 0, fechaEntregaEstimada: null })
 }
 
 // Agrega un proveedor a una OF que ya está abierta (no solo al crearla).

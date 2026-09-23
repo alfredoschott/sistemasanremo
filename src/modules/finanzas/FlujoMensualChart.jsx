@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import BarraGrafica from '../../components/BarraGrafica'
 import { currencyCompact as currency } from '../../lib/currency'
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -68,34 +69,30 @@ export default function FlujoMensualChart({ cobrados, pagados }) {
         </div>
       </div>
 
-      <div className="flex h-32 items-end gap-3">
+      <div className="flex h-36 items-end gap-3 pt-5">
         {datos.map((d, i) => {
           const activo = hover === i
           return (
             <div
               key={`${d.anio}-${d.label}`}
-              className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+              className="flex h-full flex-1 flex-col items-center gap-1.5"
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
             >
-              {activo && (d.cobrado > 0 || d.pagado > 0) && (
-                <span className="mb-0.5 whitespace-nowrap font-mono text-[0.625rem] font-semibold text-ink-dim">
-                  {currency.format(d.cobrado)} / {currency.format(d.pagado)}
-                </span>
-              )}
-              <div className="flex w-full flex-1 items-end gap-1">
-                <div
-                  className={`w-full rounded-t-sm transition-colors ${activo ? 'bg-brand-700' : 'bg-brand-600'}`}
-                  style={{ height: `${d.cobrado > 0 ? Math.max((d.cobrado / max) * 100, 4) : 2}%` }}
-                  title={`Cobrado ${d.label} ${d.anio}: ${currency.format(d.cobrado)}`}
+              <div className="flex w-full flex-1 gap-1">
+                <BarraGrafica
+                  valor={d.cobrado}
+                  max={max}
+                  activo={activo}
+                  colorClass={activo ? 'bg-brand-700' : 'bg-brand-600'}
+                  titulo={`Cobrado ${d.label} ${d.anio}: ${currency.format(d.cobrado)}`}
                 />
-                <div
-                  className="w-full rounded-t-sm bg-copper transition-opacity"
-                  style={{
-                    height: `${d.pagado > 0 ? Math.max((d.pagado / max) * 100, 4) : 2}%`,
-                    opacity: activo ? 1 : 0.85,
-                  }}
-                  title={`Pagado ${d.label} ${d.anio}: ${currency.format(d.pagado)}`}
+                <BarraGrafica
+                  valor={d.pagado}
+                  max={max}
+                  activo={activo}
+                  colorClass={activo ? 'bg-copper' : 'bg-copper/85'}
+                  titulo={`Pagado ${d.label} ${d.anio}: ${currency.format(d.pagado)}`}
                 />
               </div>
               <span className="font-mono text-[0.6875rem] uppercase text-ink-faint">{d.label}</span>

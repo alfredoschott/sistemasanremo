@@ -6,11 +6,13 @@ import {
   doc,
   getDocs,
   query,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { borrarAdjuntos } from '../../lib/adjuntos'
 import { registrarAuditoria } from '../../lib/audit'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
@@ -30,6 +32,54 @@ export async function cancelarCotizacion(cotizacion) {
     link: `/ventas/${cotizacion.id}`,
     areas: ['ventas', 'compras'],
   })
+}
+
+// Cancela la cotización y además elimina su OF y las O.C. de esa OF que
+// todavía estén pendientes — todo en una transacción. Las O.C. ya
+// recibidas se conservan (su stock ya entró a almacén y es real). Si la OF
+// ya tiene material consumido, se rechaza: borrarla perdería el rastro de
+// ese stock que salió; primero hay que revertir los consumos en Producción.
+// No tiene "Deshacer": la OF y las O.C. se eliminan de verdad.
+export async function cancelarCotizacionYOF(cotizacion) {
+  const ofRef = doc(db, 'ordenesFabricacion', cotizacion.ofId)
+  const ocsSnap = await getDocs(
+    query(collection(db, 'ordenesCompra'), where('ofId', '==', cotizacion.ofId)),
+  )
+  const ocsPendientes = ocsSnap.docs.filter((d) => d.data().estado === 'pendiente')
+
+  await runTransaction(db, async (tx) => {
+    const ofSnap = await tx.get(ofRef)
+    if (ofSnap.exists()) {
+      const conConsumo = (ofSnap.data().materialesRequeridos ?? []).some(
+        (l) => (l.cantidadConsumida ?? 0) > 0,
+      )
+      if (conConsumo) throw new Error('of-con-consumo')
+      tx.delete(ofRef)
+    }
+    ocsPendientes.forEach((d) => tx.delete(d.ref))
+    tx.update(doc(db, 'cotizaciones', cotizacion.id), {
+      estado: 'Cancelado',
+      ofId: deleteField(),
+      numeroSerie: deleteField(),
+      fechaEntregaEstimada: deleteField(),
+    })
+  })
+
+  await Promise.all(ocsPendientes.map((d) => borrarAdjuntos(d.data().adjuntos)))
+  actualizarSeguimiento(cotizacion.id, { estado: 'Cancelado', fechaEntregaEstimada: null })
+  await registrarAuditoria({
+    entidad: 'cotizacion',
+    entidadId: cotizacion.id,
+    accion: 'Cancelada',
+    detalle: `También se eliminó ${cotizacion.numeroSerie} y ${ocsPendientes.length} O.C. pendiente${ocsPendientes.length === 1 ? '' : 's'}`,
+  })
+  await crearNotificacion({
+    mensaje: `Cotización de ${cotizacion.cliente} cancelada junto con ${cotizacion.numeroSerie}`,
+    tipo: 'warning',
+    link: `/ventas/${cotizacion.id}`,
+    areas: ['ventas', 'compras', 'produccion'],
+  })
+  return { ocsEliminadas: ocsPendientes.length }
 }
 
 export async function deshacerCancelacion(cotizacion) {
@@ -57,6 +107,7 @@ export async function eliminarCotizacion(cotizacion) {
     query(collection(db, 'notas'), where('entidad', '==', 'cotizacion'), where('entidadId', '==', cotizacion.id)),
   )
   await Promise.all(notasSnap.docs.map((d) => deleteDoc(d.ref)))
+  await borrarAdjuntos(cotizacion.adjuntos)
   await deleteDoc(doc(db, 'cotizaciones', cotizacion.id))
   eliminarSeguimiento(cotizacion.id)
 }

@@ -9,6 +9,17 @@ export const currency = new Intl.NumberFormat('es-MX', {
   currencyDisplay: 'code',
 })
 
+// Etiqueta mínima para encima de una barra de gráfica ("618k", "1.2M"),
+// donde el ancho no alcanza para "MXN 618,000" y el título de la gráfica
+// ya dice de qué moneda se trata.
+export function montoCorto(n) {
+  const abs = Math.abs(n)
+  const signo = n < 0 ? '-' : ''
+  if (abs >= 1_000_000) return `${signo}${(abs / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  if (abs >= 1_000) return `${signo}${Math.round(abs / 1_000)}k`
+  return `${signo}${Math.round(abs)}`
+}
+
 // Sin centavos: para tarjetas de resumen angostas (dashboard, gráficas)
 // donde el detalle exacto ya está un clic más adentro, en la página del
 // módulo correspondiente.

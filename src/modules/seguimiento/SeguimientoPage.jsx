@@ -3,6 +3,7 @@ import { Ban, ClipboardCheck, Factory, FileSearch, FileText, PackageCheck, Searc
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import BrandMark from '../../components/BrandMark'
+import { formatoFechaEntrega } from '../../lib/entrega'
 import { db } from '../../lib/firebase'
 
 // Página pública, fuera de RequireAuth (ver App.jsx) — la abre el cliente
@@ -95,6 +96,11 @@ export default function SeguimientoPage() {
 
   const cancelado = seguimiento?.estado === 'Cancelado'
   const actualizado = timeAgo(seguimiento?.actualizado?.toMillis?.())
+  // Ya entregado o cancelado, una "fecha estimada" deja de tener sentido.
+  const fechaEntrega =
+    !cancelado && seguimiento?.estado !== 'Facturado'
+      ? formatoFechaEntrega(seguimiento?.fechaEntregaEstimada)
+      : null
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
@@ -195,10 +201,24 @@ export default function SeguimientoPage() {
                   }`}
                 >
                   <div>
-                    <dt className="text-xs text-ink-faint">Entrega comprometida</dt>
-                    <dd className="font-medium text-ink">
-                      {seguimiento.entregaSemanas ?? '—'} semanas
-                    </dd>
+                    {fechaEntrega ? (
+                      <>
+                        <dt className="text-xs text-ink-faint">Entrega estimada</dt>
+                        <dd className="font-medium text-ink">{fechaEntrega}</dd>
+                      </>
+                    ) : (
+                      <>
+                        <dt className="text-xs text-ink-faint">Entrega comprometida</dt>
+                        <dd className="font-medium text-ink">
+                          {seguimiento.entregaSemanas ?? '—'} semanas
+                          {seguimiento.estado === 'Cotizado' && (
+                            <span className="block text-xs font-normal text-ink-faint">
+                              a partir de confirmar tu pedido
+                            </span>
+                          )}
+                        </dd>
+                      </>
+                    )}
                   </div>
                   {actualizado && (
                     <p className="text-xs text-ink-faint">Actualizado {actualizado}</p>

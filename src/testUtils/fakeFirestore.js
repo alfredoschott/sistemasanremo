@@ -26,6 +26,7 @@ export function createFakeFirestore(seed = {}) {
     const data = colOf(path).get(id)
     return {
       id,
+      ref: { __ref: true, path, id },
       exists: () => data !== undefined,
       data: () => (data === undefined ? undefined : { ...data }),
     }

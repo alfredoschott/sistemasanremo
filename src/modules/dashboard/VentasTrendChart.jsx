@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import BarraGrafica from '../../components/BarraGrafica'
 import { currencyCompact as currency } from '../../lib/currency'
 import { useCotizaciones } from '../ventas/useCotizaciones'
 
@@ -45,40 +46,31 @@ export default function VentasTrendChart() {
 
   return (
     <div className="mt-6 rounded-lg border border-line bg-surface p-5 shadow-sm">
-      <div className="mb-4 flex items-baseline justify-between">
+      <div className="mb-4 flex items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">Facturado por mes</h2>
-        <p className="font-mono text-xs text-ink-faint">últimos {MESES_A_MOSTRAR} meses</p>
+        <p className="font-mono text-xs text-ink-faint">
+          {currency.format(total)} · últimos {MESES_A_MOSTRAR} meses
+        </p>
       </div>
 
-      <div className="flex h-32 items-end gap-3">
-        {datos.map((d, i) => {
-          const alturaPct = d.total > 0 ? Math.max((d.total / max) * 100, 4) : 0
-          const activo = hover === i
-          return (
-            <div
-              key={`${d.anio}-${d.label}`}
-              className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
-              onMouseEnter={() => setHover(i)}
-              onMouseLeave={() => setHover(null)}
-            >
-              {activo && d.total > 0 && (
-                <span className="mb-0.5 whitespace-nowrap font-mono text-[0.6875rem] font-semibold text-brand-800">
-                  {currency.format(d.total)}
-                </span>
-              )}
-              <div className="flex w-full flex-1 items-end">
-                <div
-                  className={`w-full rounded-t-sm transition-colors ${
-                    d.total > 0 ? (activo ? 'bg-brand-700' : 'bg-brand-600') : 'bg-line'
-                  }`}
-                  style={{ height: `${d.total > 0 ? alturaPct : 2}%` }}
-                  title={`${d.label} ${d.anio}: ${currency.format(d.total)}`}
-                />
-              </div>
-              <span className="font-mono text-[0.6875rem] uppercase text-ink-faint">{d.label}</span>
-            </div>
-          )
-        })}
+      <div className="flex h-36 items-end gap-3 pt-5">
+        {datos.map((d, i) => (
+          <div
+            key={`${d.anio}-${d.label}`}
+            className="flex h-full flex-1 flex-col items-center gap-1.5"
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(null)}
+          >
+            <BarraGrafica
+              valor={d.total}
+              max={max}
+              activo={hover === i}
+              colorClass={hover === i ? 'bg-brand-700' : 'bg-brand-600'}
+              titulo={`${d.label} ${d.anio}: ${currency.format(d.total)}`}
+            />
+            <span className="font-mono text-[0.6875rem] uppercase text-ink-faint">{d.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

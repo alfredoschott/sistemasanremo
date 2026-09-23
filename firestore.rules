@@ -132,6 +132,13 @@ service cloud.firestore {
       allow write: if puedeEscribir(['transformadores', 'produccion']);
     }
 
+    // Contadores de folios consecutivos (OF-2026-001…) — ver
+    // src/lib/folios.js. Los escribe quien abre una OF (desde Compras).
+    match /contadores/{id} {
+      allow read: if tieneAlgunRol(['compras', 'produccion']);
+      allow write: if puedeEscribir(['compras', 'produccion']);
+    }
+
     // Bajo riesgo (solo mensajes + link) y cruza todas las áreas — se
     // genera desde casi cualquier acción de negocio. Cualquier persona
     // autorizada la puede leer/marcar leída.

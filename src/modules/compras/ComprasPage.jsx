@@ -20,6 +20,7 @@ import { MetricCard, MetricsRow } from '../../components/Metric'
 import Modal from '../../components/Modal'
 import SearchInput from '../../components/SearchInput'
 import { TableSkeleton } from '../../components/Skeleton'
+import { borrarAdjuntos } from '../../lib/adjuntos'
 import { currency } from '../../lib/currency'
 import { db } from '../../lib/firebase'
 import { exportCsv } from '../../lib/exportCsv'
@@ -227,6 +228,7 @@ export default function ComprasPage() {
       if (oc.estado === 'recibida') {
         await revertirRecepcion(oc)
       }
+      await borrarAdjuntos(oc.adjuntos)
       await deleteDoc(doc(db, 'ordenesCompra', oc.id))
       toast('O.C. eliminada')
     } catch (err) {

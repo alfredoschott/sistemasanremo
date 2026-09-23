@@ -1,5 +1,5 @@
 import { deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { Container, Download, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, Container, Download, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Button from '../../components/Button'
@@ -14,6 +14,7 @@ import { exportCsv } from '../../lib/exportCsv'
 import { googleMapsUrl } from '../../lib/maps'
 import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
+import { datosFaltantes } from './transformadorDatos'
 import TransformadorModal from './TransformadorModal'
 import { useTransformadores } from './useTransformadores'
 
@@ -35,6 +36,24 @@ function DestinoLink({ destino, className = '' }) {
 }
 
 const POR_PAGINA = 20
+
+// Aviso compacto bajo el modelo cuando faltan datos para poder entregarlo;
+// abre el formulario de edición directo.
+function CompletarDatos({ transformador, onClick }) {
+  const faltan = datosFaltantes(transformador)
+  if (faltan.length === 0) return null
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Falta: ${faltan.join(', ')}`}
+      className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[0.6875rem] font-medium text-amber-800 transition-colors hover:bg-amber-100"
+    >
+      <AlertTriangle className="h-3 w-3" />
+      Completar datos
+    </button>
+  )
+}
 
 function CantidadInput({ transformador }) {
   const [value, setValue] = useState(transformador.cantidad ?? 0)
@@ -89,7 +108,8 @@ export default function TransformadoresPage() {
     const totalUnidades = transformadores.reduce((sum, t) => sum + (t.cantidad ?? 0), 0)
     const modelosDistintos = new Set(transformadores.map((t) => t.modelo)).size
     const sinStock = transformadores.filter((t) => (t.cantidad ?? 0) === 0).length
-    return { totalUnidades, modelosDistintos, sinStock }
+    const porCompletar = transformadores.filter((t) => datosFaltantes(t).length > 0).length
+    return { totalUnidades, modelosDistintos, sinStock, porCompletar }
   }, [transformadores])
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
@@ -145,6 +165,11 @@ export default function TransformadoresPage() {
         <MetricCard label="Unidades en inventario" value={metrics.totalUnidades} variant="lime" />
         <MetricCard label="Modelos distintos" value={metrics.modelosDistintos} />
         <MetricCard label="Modelos sin stock" value={metrics.sinStock} variant="warn" />
+        <MetricCard
+          label="Por completar datos"
+          value={metrics.porCompletar}
+          variant={metrics.porCompletar > 0 ? 'warn' : 'default'}
+        />
       </MetricsRow>
 
       <SearchInput value={search} onChange={buscar} placeholder="Buscar por modelo, voltaje o ubicación…" />
@@ -177,7 +202,12 @@ export default function TransformadoresPage() {
             )}
             {pagina.map((t) => (
               <tr key={t.id} className="transition-colors hover:bg-surface-2">
-                <td className="px-4 py-3 font-medium text-ink">{t.modelo}</td>
+                <td className="px-4 py-3 font-medium text-ink">
+                  {t.modelo}
+                  <div>
+                    <CompletarDatos transformador={t} onClick={() => setParaEditar(t)} />
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-ink-dim">{t.capacidadKva ? `${t.capacidadKva} kVA` : '—'}</td>
                 <td className="px-4 py-3 text-ink-dim">{t.voltaje || '—'}</td>
                 <td className="px-4 py-3 text-ink-dim">{t.ubicacion || '—'}</td>
@@ -223,6 +253,7 @@ export default function TransformadoresPage() {
                   </p>
                   {t.ubicacion && <p className="text-xs text-ink-faint">{t.ubicacion}</p>}
                   {t.destino && <DestinoLink destino={t.destino} className="mt-1 text-xs" />}
+                  <CompletarDatos transformador={t} onClick={() => setParaEditar(t)} />
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <IconButton icon={Pencil} onClick={() => setParaEditar(t)} title="Editar" />

@@ -8,6 +8,7 @@ import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import { inputClass } from '../../lib/ui'
 import { googleMapsUrl } from '../../lib/maps'
+import { sugerirCapacidadKva } from './transformadorDatos'
 
 function TransformadorForm({ onClose, transformador }) {
   const isEdit = Boolean(transformador)
@@ -20,6 +21,7 @@ function TransformadorForm({ onClose, transformador }) {
   const [notas, setNotas] = useState(transformador?.notas ?? '')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
+  const capacidadSugerida = sugerirCapacidadKva(modelo)
 
   const submit = async (e) => {
     e.preventDefault()
@@ -75,6 +77,15 @@ function TransformadorForm({ onClose, transformador }) {
             onChange={(e) => setCapacidadKva(e.target.value)}
             className={inputClass}
           />
+          {!capacidadKva && capacidadSugerida !== null && (
+            <button
+              type="button"
+              onClick={() => setCapacidadKva(String(capacidadSugerida))}
+              className="mt-1.5 text-xs font-medium text-brand-700 hover:text-brand-800 hover:underline"
+            >
+              Usar {capacidadSugerida} kVA (según el modelo)
+            </button>
+          )}
         </label>
         <label className="flex-1 text-sm font-medium text-ink-dim">
           Voltaje

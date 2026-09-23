@@ -21,6 +21,7 @@ import { useOrdenesCompra } from '../compras/useOrdenesCompra'
 import { useProveedores } from '../compras/useProveedores'
 import { calcularPorCobrar, calcularPorPagar, calcularResumenFinanzas } from '../finanzas/resumenFinanzas'
 import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
+import { datosFaltantes } from '../transformadores/transformadorDatos'
 import { useTransformadores } from '../transformadores/useTransformadores'
 import VencimientosProximos from './VencimientosProximos'
 import VentasTrendChart from './VentasTrendChart'
@@ -196,9 +197,13 @@ function TransformadoresCard() {
   const { transformadores } = useTransformadores()
   const stats = useMemo(() => {
     const unidades = transformadores.reduce((sum, t) => sum + (t.cantidad ?? 0), 0)
+    const porCompletar = transformadores.filter((t) => datosFaltantes(t).length > 0).length
+    // "Unidades" va al final a propósito: con 3 datos, el último se vuelve
+    // la cifra destacada a todo el ancho (ver AreaCard).
     return [
       { label: 'Modelos en catálogo', value: transformadores.length },
-      { label: 'Unidades totales', value: unidades },
+      { label: 'Por completar datos', value: porCompletar },
+      { label: 'Unidades en inventario', value: unidades },
     ]
   }, [transformadores])
   return <AreaCard to="/transformadores" icon={Container} title="Transformadores" stats={stats} accent="lime" />

@@ -1,4 +1,14 @@
-import { AlertTriangle, ArrowLeft, Ban, Copy, Link2, Pencil, Printer, Trash2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Ban,
+  Copy,
+  Link2,
+  MessageCircle,
+  Pencil,
+  Printer,
+  Trash2,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
@@ -9,12 +19,14 @@ import IconButton from '../../components/IconButton'
 import Modal from '../../components/Modal'
 import Timeline from '../../components/Timeline'
 import { currency } from '../../lib/currency'
+import { formatoFechaEntrega } from '../../lib/entrega'
 import { folioCorto, formatoFechaLarga, imprimirComoPdf } from '../../lib/imprimir'
 import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 import Auditoria from './Auditoria'
 import {
   cancelarCotizacion,
+  cancelarCotizacionYOF,
   deshacerCancelacion,
   duplicarCotizacion,
   eliminarCotizacion,
@@ -39,6 +51,7 @@ export default function VentasDetalle() {
   const [cancelando, setCancelando] = useState(false)
   const [duplicando, setDuplicando] = useState(false)
   const [eliminando, setEliminando] = useState(false)
+  const [cancelarTambienOF, setCancelarTambienOF] = useState(false)
   const toast = useToast()
   const navigate = useNavigate()
 
@@ -52,13 +65,29 @@ export default function VentasDetalle() {
   const confirmarCancelacion = async () => {
     setCancelando(true)
     try {
-      await cancelarCotizacion(cotizacion)
-      setConfirmCancelOpen(false)
-      toast(`Cotización de ${cotizacion.cliente} cancelada`, 'success', {
-        onUndo: () => deshacerCancelacion(cotizacion),
-      })
+      if (cancelarTambienOF && cotizacion.ofId) {
+        const { ocsEliminadas } = await cancelarCotizacionYOF(cotizacion)
+        setConfirmCancelOpen(false)
+        toast(
+          `Cotización cancelada; se eliminó ${cotizacion.numeroSerie}` +
+            (ocsEliminadas > 0 ? ` y ${ocsEliminadas} O.C. pendiente${ocsEliminadas === 1 ? '' : 's'}` : ''),
+        )
+      } else {
+        await cancelarCotizacion(cotizacion)
+        setConfirmCancelOpen(false)
+        toast(`Cotización de ${cotizacion.cliente} cancelada`, 'success', {
+          onUndo: () => deshacerCancelacion(cotizacion),
+        })
+      }
     } catch (err) {
-      toast(mensajeError(err, 'No se pudo cancelar. Intenta de nuevo.'), 'error')
+      if (err.message === 'of-con-consumo') {
+        toast(
+          `${cotizacion.numeroSerie} ya tiene material consumido. Reviértelo en Producción o cancela solo la cotización.`,
+          'error',
+        )
+      } else {
+        toast(mensajeError(err, 'No se pudo cancelar. Intenta de nuevo.'), 'error')
+      }
     } finally {
       setCancelando(false)
     }
@@ -80,8 +109,19 @@ export default function VentasDetalle() {
     }
   }
 
+  const linkSeguimiento = `${window.location.origin}/seguimiento/${cotizacion.id}`
+
+  // Sin número de teléfono del cliente guardado: wa.me sin número abre
+  // WhatsApp con el mensaje listo y deja elegir el contacto.
+  const enviarPorWhatsApp = () => {
+    const mensaje =
+      `Hola, le comparto el enlace para consultar el estatus de su pedido con SRM Telsa ` +
+      `(${cotizacion.cliente}):\n${linkSeguimiento}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank', 'noopener')
+  }
+
   const copiarLinkSeguimiento = async () => {
-    const url = `${window.location.origin}/seguimiento/${cotizacion.id}`
+    const url = linkSeguimiento
     try {
       await navigator.clipboard.writeText(url)
       toast('Link para el cliente copiado')
@@ -123,16 +163,18 @@ export default function VentasDetalle() {
           fecha={formatoFechaLarga(cotizacion.fecha)}
         />
 
-        <div className="mb-6 flex items-start justify-between">
-          <div>
+        {/* En móvil el nombre y las acciones van en dos renglones: en uno
+            solo, los íconos se salían de la pantalla. */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-ink">{cotizacion.cliente}</h1>
             <p className="text-sm text-ink-faint">{currency.format(cotizacion.monto ?? 0)}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Fuera de no-print a propósito: el estado también debe verse
                 en el PDF, no solo en pantalla. */}
             <EstadoBadge estado={cotizacion.estado} />
-            <div className="no-print flex items-center gap-3">
+            <div className="no-print flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1 border-r border-line pr-2">
                 <IconButton
                   icon={Printer}
@@ -150,6 +192,13 @@ export default function VentasDetalle() {
                   onClick={copiarLinkSeguimiento}
                   title="Copiar link de seguimiento para el cliente"
                 />
+                {cotizacion.estado !== 'Cancelado' && (
+                  <IconButton
+                    icon={MessageCircle}
+                    onClick={enviarPorWhatsApp}
+                    title="Enviar link de seguimiento por WhatsApp"
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {puedeEditar && (
@@ -203,7 +252,15 @@ export default function VentasDetalle() {
           </div>
           <div>
             <dt className="text-ink-faint">Entrega comprometida</dt>
-            <dd className="text-ink">{cotizacion.entregaSemanas} semanas</dd>
+            <dd className="text-ink">
+              {cotizacion.entregaSemanas} semanas
+              {cotizacion.fechaEntregaEstimada &&
+                !['Facturado', 'Cancelado'].includes(cotizacion.estado) && (
+                  <span className="text-ink-faint">
+                    {' '}· aprox. {formatoFechaEntrega(cotizacion.fechaEntregaEstimada)}
+                  </span>
+                )}
+            </dd>
           </div>
           {cotizacion.numeroSerie && (
             <div>
@@ -236,7 +293,7 @@ export default function VentasDetalle() {
                 <tbody className="divide-y divide-line">
                   {cotizacion.items.map((item, i) => (
                     <tr key={i}>
-                      <td className="px-3 py-2 font-medium text-ink">{item.modelo}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">{item.modelo}</td>
                       <td className="px-3 py-2 text-right text-ink-dim">{item.cantidad}</td>
                       <td className="px-3 py-2 text-right text-ink-dim">
                         {currency.format(item.precioUnitario ?? 0)}
@@ -287,14 +344,27 @@ export default function VentasDetalle() {
         title="¿Cancelar esta cotización?"
         subtitle={cotizacion.cliente}
       >
-        {cotizacion.numeroSerie && (
-          <p className="mb-4 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              Esta cotización ya tiene la {cotizacion.numeroSerie}. Cancelarla aquí no detiene la
-              OF ni sus O.C. — revísalas en Producción y Compras.
-            </span>
-          </p>
+        {cotizacion.ofId && (
+          <div className="mb-4 flex flex-col gap-3">
+            <p className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Esta cotización ya tiene la {cotizacion.numeroSerie} abierta.</span>
+            </p>
+            <label className="flex cursor-pointer items-start gap-2 text-sm text-ink-dim">
+              <input
+                type="checkbox"
+                checked={cancelarTambienOF}
+                onChange={(e) => setCancelarTambienOF(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-brand-700"
+              />
+              <span>
+                Eliminar también la {cotizacion.numeroSerie} y sus O.C. pendientes
+                <span className="block text-xs text-ink-faint">
+                  Las O.C. ya recibidas se conservan. Esto no se puede deshacer.
+                </span>
+              </span>
+            </label>
+          </div>
         )}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmCancelOpen(false)}>
