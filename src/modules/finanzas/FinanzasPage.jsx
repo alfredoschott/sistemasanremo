@@ -14,15 +14,9 @@ import CuentaPendienteSection from './CuentaPendienteSection'
 import DesgloseDeuda from './DesgloseDeuda'
 import { deshacerCobrado, deshacerPagado, marcarCobrado, marcarPagado } from './finanzasActions'
 import FlujoMensualChart from './FlujoMensualChart'
+import { calcularPorCobrar, calcularPorPagar, calcularResumenFinanzas } from './resumenFinanzas'
 
 const DIA_MS = 24 * 60 * 60 * 1000
-
-function fechaVencimiento(base, dias) {
-  const ms = base?.toMillis?.()
-  // dias puede ser 0 (pago/cobro de contado) — es un valor válido, no "sin dato".
-  if (!ms || dias == null) return null
-  return ms + dias * DIA_MS
-}
 
 function formatFecha(ms) {
   if (!ms) return '—'
@@ -79,31 +73,17 @@ export default function FinanzasPage() {
   const [busyId, setBusyId] = useState(null)
   const [verCobrados, setVerCobrados] = useState(false)
   const [verPagados, setVerPagados] = useState(false)
+  // Se fija una vez al abrir la página (no en cada render) para que las
+  // cuentas y los grupos por mes sean estables mientras se usa la pantalla.
+  const [ahora] = useState(Date.now)
 
   const proveedorPlazo = useMemo(() => {
     const map = new Map(proveedores.map((p) => [p.id, p.plazoPagoDias ?? 0]))
     return (id) => map.get(id) ?? 0
   }, [proveedores])
 
-  const porCobrar = useMemo(() => {
-    return cotizaciones
-      .filter((c) => c.estado === 'Facturado' && c.condicionPago === 'fudeco' && !c.cobrado)
-      .map((c) => ({
-        ...c,
-        vencimiento: fechaVencimiento(c.fechaFacturado ?? c.fecha, c.diasCredito ?? 60),
-      }))
-      .sort((a, b) => (a.vencimiento ?? 0) - (b.vencimiento ?? 0))
-  }, [cotizaciones])
-
-  const porPagar = useMemo(() => {
-    return ordenes
-      .filter((o) => o.estado === 'recibida' && !o.pagado && o.montoTotal)
-      .map((o) => ({
-        ...o,
-        vencimiento: fechaVencimiento(o.fechaRecibida ?? o.fecha, proveedorPlazo(o.proveedorId)),
-      }))
-      .sort((a, b) => (a.vencimiento ?? 0) - (b.vencimiento ?? 0))
-  }, [ordenes, proveedorPlazo])
+  const porCobrar = useMemo(() => calcularPorCobrar(cotizaciones), [cotizaciones])
+  const porPagar = useMemo(() => calcularPorPagar(ordenes, proveedorPlazo), [ordenes, proveedorPlazo])
 
   const cobrados = useMemo(
     () =>
@@ -121,27 +101,19 @@ export default function FinanzasPage() {
     [ordenes],
   )
 
-  const metrics = useMemo(() => {
-    const totalCobrar = porCobrar.reduce((sum, c) => sum + (c.monto ?? 0), 0)
-    const totalPagar = porPagar.reduce((sum, o) => sum + (o.montoTotal ?? 0), 0)
-    const en30dias = Date.now() + 30 * DIA_MS
-    const cobrarPronto = porCobrar
-      .filter((c) => c.vencimiento && c.vencimiento <= en30dias)
-      .reduce((sum, c) => sum + (c.monto ?? 0), 0)
-    const pagarPronto = porPagar
-      .filter((o) => o.vencimiento && o.vencimiento <= en30dias)
-      .reduce((sum, o) => sum + (o.montoTotal ?? 0), 0)
-    return { totalCobrar, totalPagar, saldoProyectado30: cobrarPronto - pagarPronto }
-  }, [porCobrar, porPagar])
+  const metrics = useMemo(
+    () => calcularResumenFinanzas(porCobrar, porPagar, ahora),
+    [porCobrar, porPagar, ahora],
+  )
 
   // Mes actual y siguiente empiezan expandidos; el resto (más lejano o ya
   // vencido de meses pasados) empieza colapsado para no saturar la pantalla.
-  const mesActualClave = useMemo(() => claveMes(Date.now()), [])
+  const mesActualClave = useMemo(() => claveMes(ahora), [ahora])
   const mesSiguienteClave = useMemo(() => {
-    const d = new Date()
+    const d = new Date(ahora)
     d.setMonth(d.getMonth() + 1)
     return claveMes(d.getTime())
-  }, [])
+  }, [ahora])
   const abiertoPorDefecto = (clave) =>
     clave === mesActualClave || clave === mesSiguienteClave || clave === 'sin-fecha'
 
@@ -240,7 +212,7 @@ export default function FinanzasPage() {
   const accionPagar = async (oc) => {
     setBusyId(oc.id)
     try {
-      await marcarPagado(oc)
+      await marcarPagado(oc, proveedorNombrePorId.get(oc.proveedorId))
       toast('Pago registrado', 'success', { onUndo: () => deshacerPagado(oc) })
     } catch (err) {
       toast(mensajeError(err, 'No se pudo registrar el pago. Intenta de nuevo.'), 'error')

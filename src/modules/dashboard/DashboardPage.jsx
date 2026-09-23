@@ -9,7 +9,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { currencyCompact as currency } from '../../lib/currency'
 import { useRoles } from '../../lib/RolesContext'
@@ -18,6 +18,8 @@ import { estadoMaterial } from '../almacen/materialStatus'
 import { useMateriales } from '../almacen/useMateriales'
 import { useMovimientosHoy } from '../almacen/useMovimientosHoy'
 import { useOrdenesCompra } from '../compras/useOrdenesCompra'
+import { useProveedores } from '../compras/useProveedores'
+import { calcularPorCobrar, calcularPorPagar, calcularResumenFinanzas } from '../finanzas/resumenFinanzas'
 import { useOrdenesFabricacion } from '../produccion/useOrdenesFabricacion'
 import { useTransformadores } from '../transformadores/useTransformadores'
 import VencimientosProximos from './VencimientosProximos'
@@ -124,7 +126,8 @@ function VentasCard() {
       .reduce((sum, c) => sum + (c.monto ?? 0), 0)
     return [
       { label: 'Cotizado sin OF', value: currency.format(cotizado) },
-      { label: 'Cotizaciones', value: cotizaciones.length },
+      // Solo activas, igual que el contador de la página de Ventas.
+      { label: 'Cotizaciones', value: cotizaciones.filter((c) => !c.archivada).length },
       { label: 'Facturado', value: currency.format(facturado) },
     ]
   }, [cotizaciones])
@@ -204,20 +207,21 @@ function TransformadoresCard() {
 function FinanzasCard() {
   const { cotizaciones } = useCotizaciones()
   const { ordenes } = useOrdenesCompra()
+  const proveedores = useProveedores()
+  const [ahora] = useState(Date.now)
   const stats = useMemo(() => {
-    const porCobrar = cotizaciones
-      .filter((c) => c.estado === 'Facturado' && c.condicionPago === 'fudeco' && !c.cobrado)
-      .reduce((sum, c) => sum + (c.monto ?? 0), 0)
-    const porPagar = ordenes
-      .filter((o) => o.estado === 'recibida' && !o.pagado && o.montoTotal)
-      .reduce((sum, o) => sum + (o.montoTotal ?? 0), 0)
-    const saldo = porCobrar - porPagar
+    const plazos = new Map(proveedores.map((p) => [p.id, p.plazoPagoDias ?? 0]))
+    const { totalCobrar, totalPagar, saldoProyectado30 } = calcularResumenFinanzas(
+      calcularPorCobrar(cotizaciones),
+      calcularPorPagar(ordenes, (id) => plazos.get(id) ?? 0),
+      ahora,
+    )
     return [
-      { label: 'Por cobrar', value: currency.format(porCobrar) },
-      { label: 'Por pagar', value: currency.format(porPagar) },
-      { label: 'Saldo (30d)', value: currency.format(saldo), danger: saldo < 0 },
+      { label: 'Por cobrar', value: currency.format(totalCobrar) },
+      { label: 'Por pagar', value: currency.format(totalPagar) },
+      { label: 'Saldo proyectado (30d)', value: currency.format(saldoProyectado30), danger: saldoProyectado30 < 0 },
     ]
-  }, [cotizaciones, ordenes])
+  }, [cotizaciones, ordenes, proveedores, ahora])
   return <AreaCard to="/finanzas" icon={Wallet} title="Finanzas" stats={stats} accent="teal" />
 }
 

@@ -1,5 +1,5 @@
 import { AlertTriangle, CalendarClock } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fechaVencimiento } from '../../lib/plazos'
 import { useRoles } from '../../lib/RolesContext'
@@ -13,8 +13,20 @@ const LIMITE = 6
 // junto con lo urgente de esta semana — se pierde la prioridad.
 const DIAS_ADELANTE = 14
 
+const DIA_MS = 24 * 60 * 60 * 1000
+
 function formatoFecha(ms) {
   return new Date(ms).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+}
+
+// "hoy", "mañana", "en 5 días" — más rápido de leer que solo la fecha para
+// saber qué tan urgente es. Se cuenta por día de calendario, no por horas.
+function diasRestantes(ms, ahora) {
+  const inicio = (t) => new Date(t).setHours(0, 0, 0, 0)
+  const dias = Math.round((inicio(ms) - inicio(ahora)) / DIA_MS)
+  if (dias === 0) return 'hoy'
+  if (dias === 1) return 'mañana'
+  return `en ${dias} días`
 }
 
 // Junta lo que se está por vencer (o ya venció) entre las OF de Producción
@@ -24,9 +36,10 @@ export default function VencimientosProximos() {
   const { tieneAcceso } = useRoles()
   const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
   const { ordenes: ordenesCompra } = useOrdenesCompra()
+  const [ahora] = useState(Date.now)
 
   const items = useMemo(() => {
-    const limiteMs = Date.now() + DIAS_ADELANTE * 24 * 60 * 60 * 1000
+    const limiteMs = ahora + DIAS_ADELANTE * DIA_MS
     const lista = []
 
     if (tieneAcceso('produccion')) {
@@ -68,7 +81,7 @@ export default function VencimientosProximos() {
     }
 
     return lista.sort((a, b) => a.ms - b.ms).slice(0, LIMITE)
-  }, [ordenesFabricacion, ordenesCompra, tieneAcceso])
+  }, [ordenesFabricacion, ordenesCompra, tieneAcceso, ahora])
 
   if (!tieneAcceso('produccion') && !tieneAcceso('compras')) return null
   if (items.length === 0) return null
@@ -81,7 +94,7 @@ export default function VencimientosProximos() {
       </div>
       <ul className="stagger flex flex-col gap-2">
         {items.map((item) => {
-          const vencido = item.ms < Date.now()
+          const vencido = item.ms < ahora
           return (
             <li key={item.key}>
               <Link
@@ -104,7 +117,9 @@ export default function VencimientosProximos() {
                   }`}
                 >
                   {vencido && <AlertTriangle className="h-3 w-3" />}
-                  {vencido ? 'Vencida' : formatoFecha(item.ms)}
+                  {vencido
+                    ? `Vencida · ${formatoFecha(item.ms)}`
+                    : `${formatoFecha(item.ms)} · ${diasRestantes(item.ms, ahora)}`}
                 </span>
               </Link>
             </li>

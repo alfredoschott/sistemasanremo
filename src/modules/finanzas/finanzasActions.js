@@ -1,5 +1,6 @@
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { registrarAuditoria } from '../../lib/audit'
+import { currencyCompact as currency } from '../../lib/currency'
 import { db } from '../../lib/firebase'
 import { crearNotificacion } from '../../lib/notify'
 
@@ -21,13 +22,15 @@ export async function marcarCobrado(cotizacion) {
   })
 }
 
-export async function marcarPagado(oc) {
+export async function marcarPagado(oc, nombreProveedor) {
   await updateDoc(doc(db, 'ordenesCompra', oc.id), {
     pagado: true,
     fechaPago: serverTimestamp(),
   })
   await crearNotificacion({
-    mensaje: 'Pago a proveedor registrado',
+    mensaje: nombreProveedor
+      ? `Pago de ${currency.format(oc.montoTotal ?? 0)} a ${nombreProveedor} registrado`
+      : 'Pago a proveedor registrado',
     tipo: 'info',
     link: '/finanzas',
     areas: ['finanzas', 'compras'],

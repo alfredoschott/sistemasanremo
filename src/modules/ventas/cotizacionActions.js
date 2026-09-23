@@ -42,9 +42,16 @@ export async function deshacerCancelacion(cotizacion) {
   })
 }
 
-// Solo se puede eliminar una cotización que no tiene una OF abierta detrás
-// (estado 'Cotizado' o 'Cancelado' — ver puedeEliminar en VentasDetalle),
-// así nunca deja una OF huérfana apuntando a una cotización inexistente.
+// Solo se puede eliminar una cotización que no tiene una OF detrás, así
+// nunca queda una OF huérfana apuntando a una cotización inexistente. Una
+// "Cancelado" puede venir de haber tenido OF (se permite cancelar en
+// Producción), así que no basta con el estado: también se revisa ofId
+// (eliminarOF lo borra, así que si sigue ahí, la OF existe).
+export function puedeEliminarCotizacion(cotizacion) {
+  if (cotizacion.estado === 'Cotizado') return true
+  return cotizacion.estado === 'Cancelado' && !cotizacion.ofId
+}
+
 export async function eliminarCotizacion(cotizacion) {
   const notasSnap = await getDocs(
     query(collection(db, 'notas'), where('entidad', '==', 'cotizacion'), where('entidadId', '==', cotizacion.id)),

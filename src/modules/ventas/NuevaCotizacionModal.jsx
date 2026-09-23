@@ -269,7 +269,8 @@ function CotizacionForm({ onClose, cotizacion }) {
           % de anticipo
           <input
             type="number"
-            min="0"
+            required
+            min="1"
             max="100"
             value={form.porcentajeAnticipo}
             onChange={update('porcentajeAnticipo')}
@@ -283,6 +284,7 @@ function CotizacionForm({ onClose, cotizacion }) {
           Días de crédito
           <input
             type="number"
+            required
             min="1"
             value={form.diasCredito}
             onChange={update('diasCredito')}

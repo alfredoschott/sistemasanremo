@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, Copy, Link2, Pencil, Printer, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Ban, Copy, Link2, Pencil, Printer, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Adjuntos from '../../components/Adjuntos'
@@ -18,6 +18,7 @@ import {
   deshacerCancelacion,
   duplicarCotizacion,
   eliminarCotizacion,
+  puedeEliminarCotizacion,
 } from './cotizacionActions'
 import NotasInternas from './NotasInternas'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
@@ -46,7 +47,7 @@ export default function VentasDetalle() {
 
   const puedeEditar = cotizacion.estado === 'Cotizado'
   const puedeCancelar = !['Facturado', 'Cancelado'].includes(cotizacion.estado)
-  const puedeEliminar = ['Cotizado', 'Cancelado'].includes(cotizacion.estado)
+  const puedeEliminar = puedeEliminarCotizacion(cotizacion)
 
   const confirmarCancelacion = async () => {
     setCancelando(true)
@@ -207,7 +208,14 @@ export default function VentasDetalle() {
           {cotizacion.numeroSerie && (
             <div>
               <dt className="text-ink-faint">Orden de fabricación</dt>
-              <dd className="text-ink">{cotizacion.numeroSerie}</dd>
+              <dd>
+                <Link
+                  to={`/produccion?q=${encodeURIComponent(cotizacion.numeroSerie)}`}
+                  className="text-brand-700 hover:text-brand-800 hover:underline print:text-ink print:no-underline"
+                >
+                  {cotizacion.numeroSerie}
+                </Link>
+              </dd>
             </div>
           )}
         </dl>
@@ -277,8 +285,17 @@ export default function VentasDetalle() {
         open={confirmCancelOpen}
         onClose={() => setConfirmCancelOpen(false)}
         title="¿Cancelar esta cotización?"
-        subtitle={`${cotizacion.cliente} — esta acción no se puede deshacer.`}
+        subtitle={cotizacion.cliente}
       >
+        {cotizacion.numeroSerie && (
+          <p className="mb-4 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Esta cotización ya tiene la {cotizacion.numeroSerie}. Cancelarla aquí no detiene la
+              OF ni sus O.C. — revísalas en Producción y Compras.
+            </span>
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirmCancelOpen(false)}>
             No, mantener

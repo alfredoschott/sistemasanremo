@@ -149,8 +149,14 @@ service cloud.firestore {
     // precio) — nunca montos, materiales ni nada más del resto de
     // `cotizaciones`. Escribir sigue restringido a los mismos
     // roles que ya tocan el ciclo de vida de una cotización.
+    //
+    // `get` y no `read`: `read` también permite `list`, y con eso
+    // cualquiera sin cuenta podía descargar la colección completa (todos
+    // los clientes y el estado de sus pedidos). Con `get` solo se abre un
+    // pedido si ya se tiene su id — que es justo lo que trae el link.
     match /seguimientoPublico/{id} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if autorizado();
       allow write: if puedeEscribir(['ventas', 'compras', 'produccion', 'finanzas']);
     }
   }

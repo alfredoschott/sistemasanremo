@@ -28,11 +28,11 @@ import {
   autoArchivarVencidas,
   desarchivarCotizacion,
   eliminarCotizacion,
+  puedeEliminarCotizacion,
 } from './cotizacionActions'
 import NuevaCotizacionModal from './NuevaCotizacionModal'
 import { useCotizaciones } from './useCotizaciones'
 
-const PUEDE_ELIMINAR = new Set(['Cotizado', 'Cancelado'])
 const PUEDE_ARCHIVAR = new Set(['Facturado', 'Cancelado'])
 
 const ESTADOS_FILTRO = ['Todos', ...ESTADOS_COTIZACION, 'Cancelado']
@@ -105,7 +105,12 @@ export default function VentasList() {
       .filter((c) => c.estado === 'Facturado')
       .reduce((sum, c) => sum + (c.monto ?? 0), 0)
     const anticipos = cotizaciones
-      .filter((c) => c.condicionPago === 'anticipo' && c.estado !== 'Facturado')
+      .filter(
+        (c) =>
+          c.condicionPago === 'anticipo' &&
+          !['Facturado', 'Cancelado'].includes(c.estado) &&
+          !c.archivada,
+      )
       .reduce((sum, c) => sum + ((c.monto ?? 0) * (c.porcentajeAnticipo ?? 0)) / 100, 0)
     return { cotizado, enProduccion, facturado, anticipos }
   }, [cotizaciones])
@@ -307,7 +312,7 @@ export default function VentasList() {
                         />
                       )
                     )}
-                    {PUEDE_ELIMINAR.has(cot.estado) && (
+                    {puedeEliminarCotizacion(cot) && (
                       <IconButton
                         icon={Trash2}
                         variant="danger"
@@ -379,7 +384,7 @@ export default function VentasList() {
                         />
                       )
                     )}
-                    {PUEDE_ELIMINAR.has(cot.estado) && (
+                    {puedeEliminarCotizacion(cot) && (
                       <IconButton
                         icon={Trash2}
                         variant="danger"

@@ -141,11 +141,11 @@ export default function AbrirOFModal({ cotizacion, onClose }) {
       onClose()
       toast(
         ocCreadas > 0
-          ? `OF ${numeroSerie} abierta con ${ocCreadas} O.C. generada${ocCreadas > 1 ? 's' : ''}`
-          : `OF ${numeroSerie} abierta para ${cotizacion.cliente}`,
+          ? `${numeroSerie} abierta con ${ocCreadas} O.C. generada${ocCreadas > 1 ? 's' : ''}`
+          : `${numeroSerie} abierta para ${cotizacion.cliente}`,
       )
       crearNotificacion({
-        mensaje: `OF ${numeroSerie} abierta para ${cotizacion.cliente}`,
+        mensaje: `${numeroSerie} abierta para ${cotizacion.cliente}`,
         tipo: 'success',
         link: `/ventas/${cotizacion.id}`,
         areas: ['ventas', 'compras', 'produccion'],
