@@ -1,5 +1,8 @@
 import { doc } from 'firebase/firestore'
 import { db } from './firebase'
+import { formatoFolioOF } from './folioFormato'
+
+export { formatoFolioOF }
 
 // Folios consecutivos por año (OF-2026-001, OF-2026-002…) en vez de los
 // últimos dígitos del reloj, que no llevaban orden ni se podían dictar
@@ -9,10 +12,6 @@ import { db } from './firebase'
 // creación falla, el contador tampoco avanza (no quedan huecos).
 export function refContadorOF(year) {
   return doc(db, 'contadores', `of-${year}`)
-}
-
-export function formatoFolioOF(year, numero) {
-  return `OF-${year}-${String(numero).padStart(3, '0')}`
 }
 
 // Recibe la transacción ya abierta; devuelve el folio y deja escrito el

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { calcularFechaEntrega, formatoFechaEntrega } from './entrega'
-import { formatoFolioOF } from './folios'
+import { formatoFolioOF } from './folioFormato'
 
 describe('calcularFechaEntrega', () => {
   it('suma las semanas comprometidas a la fecha de inicio', () => {
