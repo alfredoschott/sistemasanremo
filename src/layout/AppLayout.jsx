@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
+import FirmaSchott from '../components/FirmaSchott'
 
 export default function AppLayout() {
   const location = useLocation()
@@ -21,6 +22,7 @@ export default function AppLayout() {
         <div key={location.pathname} className="mx-auto max-w-6xl animate-fade-in">
           <Outlet />
         </div>
+        <FirmaSchott grande={location.pathname.startsWith('/usuarios')} className="mt-8 pb-2" />
       </main>
     </div>
   )

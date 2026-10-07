@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BrandMark from '../../components/BrandMark'
+import FirmaSchott from '../../components/FirmaSchott'
 import Button from '../../components/Button'
 import { authProviders } from '../../lib/authProviders'
 
@@ -50,6 +51,8 @@ export default function LoginPage() {
         </div>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+
+        <FirmaSchott className="mt-6 border-t border-line pt-4" />
       </div>
     </div>
   )
