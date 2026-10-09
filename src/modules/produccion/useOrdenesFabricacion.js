@@ -4,12 +4,15 @@ import { db } from '../../lib/firebase'
 import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 
-export function useOrdenesFabricacion() {
+// `enabled: false` evita suscribirse (y pagar las lecturas) cuando quien lo usa
+// no necesita los datos todavía o el rol del usuario no los puede leer.
+export function useOrdenesFabricacion({ enabled = true } = {}) {
   const [ordenes, setOrdenes] = useState([])
   const [loading, setLoading] = useState(true)
   const toast = useToast()
 
   useEffect(() => {
+    if (!enabled) return
     const q = query(collection(db, 'ordenesFabricacion'), orderBy('fecha', 'desc'))
     const unsubscribe = onSnapshot(
       q,
@@ -23,7 +26,7 @@ export function useOrdenesFabricacion() {
       },
     )
     return unsubscribe
-  }, [toast])
+  }, [toast, enabled])
 
   return { ordenes, loading }
 }

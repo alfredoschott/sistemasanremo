@@ -4,11 +4,14 @@ import { db } from '../../lib/firebase'
 import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 
-export function useProveedores() {
+// `enabled: false` evita suscribirse (y pagar las lecturas) cuando quien lo usa
+// no necesita los datos todavía o el rol del usuario no los puede leer.
+export function useProveedores({ enabled = true } = {}) {
   const [proveedores, setProveedores] = useState([])
   const toast = useToast()
 
   useEffect(() => {
+    if (!enabled) return
     const q = query(collection(db, 'proveedores'), orderBy('nombre'))
     return onSnapshot(
       q,
@@ -17,7 +20,7 @@ export function useProveedores() {
       },
       (err) => toast(mensajeError(err, 'No se pudieron cargar los proveedores.'), 'error'),
     )
-  }, [toast])
+  }, [toast, enabled])
 
   return proveedores
 }

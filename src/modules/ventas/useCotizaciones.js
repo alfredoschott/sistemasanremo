@@ -4,12 +4,15 @@ import { db } from '../../lib/firebase'
 import { mensajeError } from '../../lib/firestoreErrors'
 import { useToast } from '../../lib/ToastContext'
 
-export function useCotizaciones() {
+// `enabled: false` evita suscribirse (y pagar las lecturas) cuando quien lo usa
+// no necesita los datos todavía o el rol del usuario no los puede leer.
+export function useCotizaciones({ enabled = true } = {}) {
   const [cotizaciones, setCotizaciones] = useState([])
   const [loading, setLoading] = useState(true)
   const toast = useToast()
 
   useEffect(() => {
+    if (!enabled) return
     const q = query(collection(db, 'cotizaciones'), orderBy('fecha', 'desc'))
     const unsubscribe = onSnapshot(
       q,
@@ -23,7 +26,7 @@ export function useCotizaciones() {
       },
     )
     return unsubscribe
-  }, [toast])
+  }, [toast, enabled])
 
   return { cotizaciones, loading }
 }

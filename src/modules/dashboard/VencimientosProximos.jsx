@@ -34,8 +34,10 @@ function diasRestantes(ms, ahora) {
 // tener que revisar módulo por módulo buscando qué urge.
 export default function VencimientosProximos() {
   const { tieneAcceso } = useRoles()
-  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
-  const { ordenes: ordenesCompra } = useOrdenesCompra()
+  // Solo se suscribe a lo que el rol puede ver: las reglas de Firestore
+  // rechazarían el resto, y de todos modos serían lecturas gastadas.
+  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion({ enabled: tieneAcceso('produccion') })
+  const { ordenes: ordenesCompra } = useOrdenesCompra({ enabled: tieneAcceso('compras') })
   const [ahora] = useState(Date.now)
 
   const items = useMemo(() => {

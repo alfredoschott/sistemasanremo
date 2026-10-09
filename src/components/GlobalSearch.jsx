@@ -19,46 +19,27 @@ function normaliza(texto) {
     .replace(/[̀-ͯ]/g, '')
 }
 
-export default function GlobalSearch() {
-  const [open, setOpen] = useState(false)
+// Los datos de la búsqueda (cinco colecciones completas) solo se descargan
+// mientras el panel está abierto — y solo las que el rol puede leer. Antes
+// vivían en la barra superior y cada sesión las leía en cada pantalla, aunque
+// nadie usara el buscador.
+function BuscadorPanel({ onClose }) {
   const [query, setQuery] = useState('')
   const inputRef = useRef(null)
   const navigate = useNavigate()
   const { tieneAcceso } = useRoles()
 
-  const { cotizaciones } = useCotizaciones()
-  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion()
-  const { materiales } = useMateriales()
-  const proveedores = useProveedores()
-  const { transformadores } = useTransformadores()
+  const { cotizaciones } = useCotizaciones({ enabled: tieneAcceso('ventas') })
+  const { ordenes: ordenesFabricacion } = useOrdenesFabricacion({ enabled: tieneAcceso('produccion') })
+  const { materiales } = useMateriales({ enabled: tieneAcceso('almacen') })
+  const proveedores = useProveedores({ enabled: tieneAcceso('compras') })
+  const { transformadores } = useTransformadores({ enabled: tieneAcceso('transformadores') })
 
-  const abrir = () => {
-    setQuery('')
-    setOpen(true)
-  }
-
-  // Atajo Cmd/Ctrl+K, como en casi cualquier app con búsqueda global —
-  // y Escape para cerrar, sin importar qué tenga el foco.
+  // Foco del input al abrir (sincroniza con el DOM, un sistema externo a React).
   useEffect(() => {
-    const onKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault()
-        abrir()
-      } else if (e.key === 'Escape') {
-        setOpen(false)
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => inputRef.current?.focus(), 0)
+    return () => clearTimeout(t)
   }, [])
-
-  // Efecto solo para el foco del input (sincroniza con el DOM, un sistema
-  // externo a React) — reiniciar `query` vive en `abrir()`, en el evento
-  // que causa la apertura, no aquí.
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 0)
-  }, [open])
 
   const q = normaliza(query.trim())
 
@@ -143,13 +124,92 @@ export default function GlobalSearch() {
 
   const elegir = (item) => {
     item.onClick()
-    setOpen(false)
+    onClose()
   }
+
+  return (
+    <div
+      className="fixed inset-0 z-30 flex items-start justify-center bg-slate-900/50 pt-[max(4rem,calc(env(safe-area-inset-top)+2rem))] backdrop-blur-[2px] animate-fade-in"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div className="w-full max-w-lg overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl animate-scale-in">
+        <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+          <Search className="h-4 w-4 shrink-0 text-ink-faint" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar cotizaciones, OF, materiales, proveedores, transformadores…"
+            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
+          />
+          <button
+            onClick={() => onClose()}
+            className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-surface-2 hover:text-ink-dim"
+            aria-label="Cerrar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
+          {!q && (
+            <p className="px-4 py-8 text-center text-sm text-ink-faint">
+              Escribe para buscar en toda la app.
+            </p>
+          )}
+          {q && totalResultados === 0 && (
+            <p className="px-4 py-8 text-center text-sm text-ink-faint">Sin resultados para "{query}".</p>
+          )}
+          {resultados.map((grupo) => (
+            <div key={grupo.label} className="border-b border-line last:border-0">
+              <p className="px-4 pt-3 pb-1 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
+                {grupo.label}
+              </p>
+              {grupo.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => elegir(item)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-2"
+                >
+                  <grupo.icon className="h-4 w-4 shrink-0 text-ink-faint" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-ink">{item.titulo}</span>
+                    <span className="block truncate text-xs text-ink-faint">{item.subtitulo}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function GlobalSearch() {
+  const [open, setOpen] = useState(false)
+
+  // Atajo Cmd/Ctrl+K, como en casi cualquier app con búsqueda global —
+  // y Escape para cerrar, sin importar qué tenga el foco.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setOpen(true)
+      } else if (e.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <>
       <button
-        onClick={abrir}
+        onClick={() => setOpen(true)}
         title="Buscar (Cmd/Ctrl+K)"
         aria-label="Buscar"
         className="flex h-[32px] w-[32px] items-center justify-center rounded-full text-brand-50/90 transition-colors hover:bg-surface/10"
@@ -157,65 +217,7 @@ export default function GlobalSearch() {
         <Search className="h-[18px] w-[18px]" />
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-30 flex items-start justify-center bg-slate-900/50 pt-[max(4rem,calc(env(safe-area-inset-top)+2rem))] backdrop-blur-[2px] animate-fade-in"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setOpen(false)
-          }}
-        >
-          <div className="w-full max-w-lg overflow-hidden rounded-lg border border-line-strong bg-surface shadow-2xl animate-scale-in">
-            <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-              <Search className="h-4 w-4 shrink-0 text-ink-faint" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar cotizaciones, OF, materiales, proveedores, transformadores…"
-                className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
-              />
-              <button
-                onClick={() => setOpen(false)}
-                className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-surface-2 hover:text-ink-dim"
-                aria-label="Cerrar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
-              {!q && (
-                <p className="px-4 py-8 text-center text-sm text-ink-faint">
-                  Escribe para buscar en toda la app.
-                </p>
-              )}
-              {q && totalResultados === 0 && (
-                <p className="px-4 py-8 text-center text-sm text-ink-faint">Sin resultados para "{query}".</p>
-              )}
-              {resultados.map((grupo) => (
-                <div key={grupo.label} className="border-b border-line last:border-0">
-                  <p className="px-4 pt-3 pb-1 font-mono text-[0.625rem] uppercase tracking-wide text-ink-faint">
-                    {grupo.label}
-                  </p>
-                  {grupo.items.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => elegir(item)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-2"
-                    >
-                      <grupo.icon className="h-4 w-4 shrink-0 text-ink-faint" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-ink">{item.titulo}</span>
-                        <span className="block truncate text-xs text-ink-faint">{item.subtitulo}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {open && <BuscadorPanel onClose={() => setOpen(false)} />}
     </>
   )
 }
