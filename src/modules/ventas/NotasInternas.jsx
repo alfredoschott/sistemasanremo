@@ -78,7 +78,7 @@ export default function NotasInternas({ cotizacionId }) {
                 variant="danger"
                 onClick={() => eliminarNota(n)}
                 title="Eliminar nota"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="transition-opacity lg:opacity-0 lg:focus-visible:opacity-100 lg:group-hover:opacity-100"
               />
             </li>
           ))}

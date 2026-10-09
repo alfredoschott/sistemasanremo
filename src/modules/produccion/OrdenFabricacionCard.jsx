@@ -9,7 +9,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Button from '../../components/Button'
 import IconButton from '../../components/IconButton'
 import { mensajeError } from '../../lib/firestoreErrors'
@@ -37,6 +37,11 @@ const ESTADO_OF_BADGE = {
 
 export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir, onVerMateriales, materiales }) {
   const [busy, setBusy] = useState(false)
+  // Valor del deslizador mientras se arrastra: se guarda en Firestore hasta
+  // soltar, no en cada paso (varias escrituras seguidas y el gesto táctil
+  // se sentía trabado).
+  const [avancePendiente, setAvancePendiente] = useState(null)
+  const ultimoGuardado = useRef(null)
   const [agregandoProveedor, setAgregandoProveedor] = useState(false)
   const toast = useToast()
   const proveedoresOF = proveedoresDe(of)
@@ -123,20 +128,38 @@ export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir,
     }
   }
 
+  // El valor pendiente solo vale mientras Firestore no cambie el avance
+  // (base); en cuanto llega el valor guardado, manda el de la base de datos.
+  const avanceActual = of.avance ?? 0
+  const avanceMostrado =
+    avancePendiente && avancePendiente.base === avanceActual ? avancePendiente.valor : avanceActual
+
+  const guardarAvance = () => {
+    if (!avancePendiente || avancePendiente.base !== avanceActual) return
+    const { valor } = avancePendiente
+    if (valor === avanceActual || ultimoGuardado.current === valor) return
+    ultimoGuardado.current = valor
+    actualizarAvance(of, valor).catch((err) => {
+      ultimoGuardado.current = null
+      setAvancePendiente(null)
+      toast(mensajeError(err, 'No se pudo actualizar el avance.'), 'error')
+    })
+  }
+
   return (
     <div className="group rounded-lg border border-line bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="mb-3 flex items-start justify-between">
-        <div>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0">
           <p className="text-sm text-ink-faint">{of.numeroSerie}</p>
           <h3 className="text-lg font-semibold text-ink">{of.cliente}</h3>
           {of.modelos?.length > 0 && (
             <p className="text-xs text-ink-faint">{of.modelos.join(', ')}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex shrink-0 flex-col items-end gap-1">
           <div className="flex items-center gap-1">
             <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+              className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
                 ESTADO_OF_BADGE[of.estado] ?? 'bg-surface-2 text-ink'
               }`}
             >
@@ -166,7 +189,7 @@ export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir,
           {of.estado !== 'Completada' && ofVencida(of) && (
             <span
               title="Plazo del proveedor vencido"
-              className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
             >
               <AlertTriangle className="h-3 w-3" />
               Vencida
@@ -249,7 +272,7 @@ export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir,
           <div className="mb-1 flex items-center justify-between text-xs text-ink-faint">
             <span>Avance</span>
             <div className="flex items-center gap-1">
-              <span>{of.avance ?? 0}%</span>
+              <span>{avanceMostrado}%</span>
               <IconButton
                 icon={Undo2}
                 disabled={busy}
@@ -262,7 +285,7 @@ export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir,
           <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-line">
             <div
               className="h-full bg-green-600 transition-all duration-300 ease-out"
-              style={{ width: `${of.avance ?? 0}%` }}
+              style={{ width: `${avanceMostrado}%` }}
             />
           </div>
           {avanceMaterial !== null && (
@@ -276,14 +299,16 @@ export default function OrdenFabricacionCard({ of, viendoArchivadas, onImprimir,
             min="0"
             max="100"
             step="5"
-            value={of.avance ?? 0}
+            value={avanceMostrado}
             disabled={busy}
-            onChange={(e) =>
-              actualizarAvance(of, Number(e.target.value)).catch((err) =>
-                toast(mensajeError(err, 'No se pudo actualizar el avance.'), 'error'),
-              )
-            }
-            className="mb-3 w-full accent-green-600"
+            onChange={(e) => {
+              ultimoGuardado.current = null
+              setAvancePendiente({ valor: Number(e.target.value), base: avanceActual })
+            }}
+            onPointerUp={guardarAvance}
+            onKeyUp={guardarAvance}
+            onBlur={guardarAvance}
+            className="mb-3 w-full"
           />
           <Button
             className="w-full"

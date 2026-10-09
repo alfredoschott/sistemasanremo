@@ -137,7 +137,7 @@ export default function HistorialMaterialModal({ material, onClose }) {
                         <span className="text-ink-faint"> · O.C.</span>
                       )}
                       {m.referencia?.tipo === 'produccion' && (
-                        <span className="text-ink-faint"> · OF {numeroSerieOF(m.referencia.id) ?? ''}</span>
+                        <span className="text-ink-faint"> · {numeroSerieOF(m.referencia.id) ?? ''}</span>
                       )}
                     </span>
                     <span className="shrink-0 text-xs text-ink-faint">{formatFecha(m.fecha)}</span>

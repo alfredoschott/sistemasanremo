@@ -178,7 +178,7 @@ export default function NotificationBell() {
                       <button
                         onMouseDown={(e) => eliminarNotificacion(e, n)}
                         title="Eliminar notificación"
-                        className="shrink-0 rounded-md p-1 text-ink-faint opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                        className="shrink-0 rounded-md p-1 text-ink-faint transition-opacity hover:bg-red-50 hover:text-red-600 lg:opacity-0 lg:focus-visible:opacity-100 lg:group-hover:opacity-100"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

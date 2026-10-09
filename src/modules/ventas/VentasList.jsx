@@ -349,7 +349,7 @@ export default function VentasList() {
               className="flex w-full cursor-pointer items-center justify-between gap-3 p-4 text-left transition-colors active:bg-brand-50/40"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{cot.cliente}</p>
+                <p className="break-words font-medium text-ink">{cot.cliente}</p>
                 <p className="text-sm text-ink-faint">{currency.format(cot.monto ?? 0)}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-ink-faint">
                   {cot.condicionPago === 'anticipo'

@@ -37,7 +37,7 @@ export default function OrdenCompraImprimible({ oc, numeroSerieOF, nombreProveed
         </div>
         {of && (
           <span className="shrink-0 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-800">
-            OF {of}
+            {of}
           </span>
         )}
       </div>

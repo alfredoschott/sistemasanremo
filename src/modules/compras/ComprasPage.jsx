@@ -398,28 +398,28 @@ export default function ComprasPage() {
                     <ProveedorNombre proveedorId={oc.proveedorId} />
                     {oc.ofId && (
                       <p className="text-xs font-normal text-ink-faint">
-                        OF {numeroSerieOF(oc.ofId) ?? '—'}
+                        {numeroSerieOF(oc.ofId) ?? '—'}
                       </p>
                     )}
                   </td>
                   <td className="px-4 py-3 text-ink-dim">
                     <ul className="flex flex-col gap-0.5">
                       {(oc.materiales ?? []).map((linea, i) => (
-                        <li key={i} className="whitespace-nowrap">
+                        <li key={i}>
                           <span className="font-medium text-ink">{linea.cantidad}×</span>{' '}
                           <MaterialNombre materialId={linea.materialId} />
                         </li>
                       ))}
                     </ul>
                   </td>
-                  <td className="px-4 py-3 text-ink-dim">{plazoTexto(oc)}</td>
-                  <td className="px-4 py-3 text-ink-dim">
+                  <td className="whitespace-nowrap px-4 py-3 text-ink-dim">{plazoTexto(oc)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-ink-dim">
                     {oc.montoTotal ? currency.format(oc.montoTotal) : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-col items-start gap-1">
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                        className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
                           OC_BADGE[oc.estado] ?? 'bg-surface-2 text-ink'
                         }`}
                       >
@@ -429,7 +429,7 @@ export default function ComprasPage() {
                         estaVencido(oc.fecha, oc.plazoEntregaDias, oc.fechaCompromiso) && (
                         <span
                           title="Plazo vencido"
-                          className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                          className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
                         >
                           <AlertTriangle className="h-3 w-3" />
                           Vencida
@@ -438,7 +438,7 @@ export default function ComprasPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                       <IconButton
                         icon={Printer}
                         onClick={() => setPrintingOC(oc)}
@@ -531,12 +531,12 @@ export default function ComprasPage() {
               <div key={oc.id} className="flex flex-col gap-2.5 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-ink">
+                    <p className="break-words font-medium text-ink">
                       <ProveedorNombre proveedorId={oc.proveedorId} />
                     </p>
                     <p className="text-sm text-ink-faint">
                       {oc.montoTotal ? currency.format(oc.montoTotal) : '—'} · {plazoTexto(oc)}
-                      {oc.ofId && ` · OF ${numeroSerieOF(oc.ofId) ?? '—'}`}
+                      {oc.ofId && ` · ${numeroSerieOF(oc.ofId) ?? '—'}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -564,10 +564,10 @@ export default function ComprasPage() {
                   ))}
                 </ul>
 
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
                         OC_BADGE[oc.estado] ?? 'bg-surface-2 text-ink'
                       }`}
                     >
@@ -577,62 +577,64 @@ export default function ComprasPage() {
                       estaVencido(oc.fecha, oc.plazoEntregaDias, oc.fechaCompromiso) && (
                       <span
                         title="Plazo vencido"
-                        className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
+                        className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700"
                       >
                         <AlertTriangle className="h-3 w-3" />
                         Vencida
                       </span>
                     )}
                   </div>
-                  {oc.estado === 'pendiente' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      loading={recibiendoId === oc.id}
-                      onClick={() => marcarRecibida(oc)}
-                    >
-                      {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
-                    </Button>
-                  )}
-                  {oc.estado === 'recibida' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      loading={revirtiendoId === oc.id}
-                      onClick={() => {
-                        if (window.confirm('¿Regresar esta O.C. a pendiente? Se restará el stock que sumó.')) {
-                          revertir(oc)
-                        }
-                      }}
-                      title="Revertir a pendiente"
-                    >
-                      {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
-                    </Button>
-                  )}
-                  {viendoArchivadas ? (
-                    <IconButton
-                      icon={ArchiveRestore}
-                      disabled={archivandoId === oc.id}
-                      onClick={() => desarchivar(oc)}
-                      title="Restaurar a la lista principal"
-                    />
-                  ) : (
-                    oc.estado === 'recibida' && (
+                  <div className="ml-auto flex items-center gap-1">
+                    {oc.estado === 'pendiente' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        loading={recibiendoId === oc.id}
+                        onClick={() => marcarRecibida(oc)}
+                      >
+                        {recibiendoId === oc.id ? 'Recibiendo…' : 'Marcar recibida'}
+                      </Button>
+                    )}
+                    {oc.estado === 'recibida' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        loading={revirtiendoId === oc.id}
+                        onClick={() => {
+                          if (window.confirm('¿Regresar esta O.C. a pendiente? Se restará el stock que sumó.')) {
+                            revertir(oc)
+                          }
+                        }}
+                        title="Revertir a pendiente"
+                      >
+                        {revirtiendoId === oc.id ? 'Revirtiendo…' : 'Revertir'}
+                      </Button>
+                    )}
+                    {viendoArchivadas ? (
                       <IconButton
-                        icon={Archive}
+                        icon={ArchiveRestore}
                         disabled={archivandoId === oc.id}
-                        onClick={() => archivar(oc)}
-                        title="Archivar"
+                        onClick={() => desarchivar(oc)}
+                        title="Restaurar a la lista principal"
                       />
-                    )
-                  )}
-                  <IconButton
-                    icon={Trash2}
-                    variant="danger"
-                    disabled={eliminandoId === oc.id}
-                    onClick={() => eliminarOC(oc)}
-                    title="Eliminar O.C."
-                  />
+                    ) : (
+                      oc.estado === 'recibida' && (
+                        <IconButton
+                          icon={Archive}
+                          disabled={archivandoId === oc.id}
+                          onClick={() => archivar(oc)}
+                          title="Archivar"
+                        />
+                      )
+                    )}
+                    <IconButton
+                      icon={Trash2}
+                      variant="danger"
+                      disabled={eliminandoId === oc.id}
+                      onClick={() => eliminarOC(oc)}
+                      title="Eliminar O.C."
+                    />
+                  </div>
                 </div>
               </div>
             ))}

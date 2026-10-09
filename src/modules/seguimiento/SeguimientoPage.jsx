@@ -3,6 +3,7 @@ import { Ban, ClipboardCheck, Factory, FileSearch, FileText, PackageCheck, Searc
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import BrandMark from '../../components/BrandMark'
+import FirmaSchott from '../../components/FirmaSchott'
 import { formatoFechaEntrega } from '../../lib/entrega'
 import { db } from '../../lib/firebase'
 
@@ -159,7 +160,7 @@ export default function SeguimientoPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="mt-6 overflow-x-auto pb-1">
+                    <div className="-mx-1.5 mt-4 overflow-x-auto px-1.5 py-2">
                       <EstadoStepper estadoActual={seguimiento.estado} />
                     </div>
 
@@ -231,6 +232,7 @@ export default function SeguimientoPage() {
           <p className="mt-6 text-center text-xs text-ink-faint">
             ¿Dudas sobre tu pedido? Contacta a tu asesor de SRM Telsa.
           </p>
+          <FirmaSchott className="mt-4" />
         </div>
       </div>
     </div>

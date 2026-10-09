@@ -63,7 +63,7 @@ export default function CotizacionesPorAbrirOF({ cotizaciones, loading, onAbrirO
           {cotizaciones.map((cot) => (
             <div key={cot.id} className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{cot.cliente}</p>
+                <p className="break-words font-medium text-ink">{cot.cliente}</p>
                 <p className="text-sm text-ink-faint">
                   {currency.format(cot.monto ?? 0)} · {cot.entregaSemanas} sem.
                 </p>
