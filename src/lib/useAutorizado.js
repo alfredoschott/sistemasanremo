@@ -11,18 +11,48 @@ import { db } from './firebase'
 //
 // Devuelve:
 //   undefined -> todavía cargando
-//   null      -> no autorizado (el documento no existe)
+//   null      -> no autorizado (el servidor confirma que el documento no existe)
 //   { roles } -> autorizado, con sus roles asignados (puede ser [])
 export function useAutorizado(email) {
   const [datos, setDatos] = useState(undefined)
 
   useEffect(() => {
     if (!email) return
-    return onSnapshot(
-      doc(db, 'usuariosAutorizados', email),
-      (snap) => setDatos(snap.exists() ? { roles: snap.data().roles ?? [] } : null),
-      () => setDatos(null),
-    )
+    let reintentado = false
+    let timer
+    let unsub = () => {}
+
+    const suscribir = () => {
+      unsub = onSnapshot(
+        doc(db, 'usuariosAutorizados', email),
+        (snap) => {
+          // Un "no existe" que viene solo de la caché local (sin haber
+          // preguntado al servidor) no prueba nada: pasa justo después de
+          // iniciar sesión en un navegador sin datos guardados. Se espera
+          // la respuesta real antes de mostrar "Sin acceso".
+          if (!snap.exists() && snap.metadata.fromCache) return
+          setDatos(snap.exists() ? { roles: snap.data().roles ?? [] } : null)
+        },
+        (err) => {
+          console.error('useAutorizado:', err)
+          // Un error pasajero (token que aún no llega, red) no debe
+          // expulsar a alguien autorizado: se reintenta una vez antes de rendirse.
+          if (!reintentado) {
+            reintentado = true
+            unsub()
+            timer = setTimeout(suscribir, 1500)
+          } else {
+            setDatos(null)
+          }
+        },
+      )
+    }
+
+    suscribir()
+    return () => {
+      clearTimeout(timer)
+      unsub()
+    }
   }, [email])
 
   return datos
